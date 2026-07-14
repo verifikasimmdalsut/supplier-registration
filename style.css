@@ -1,0 +1,38 @@
+body{
+    background:#f5f5f5;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+.card{
+    max-width:600px;
+    margin:auto;
+    border-radius:15px;
+}
+
+h2{
+    font-weight:bold;
+    color:#c62828;
+}
+
+label{
+    font-weight:600;
+    margin-bottom:5px;
+}
+
+.form-control,
+.form-select{
+    height:48px;
+    border-radius:10px;
+}
+
+.btn-danger{
+    height:50px;
+    border-radius:10px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.btn-danger:hover{
+    transform:scale(1.02);
+    transition:.2s;
+}
