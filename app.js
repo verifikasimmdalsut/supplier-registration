@@ -9,179 +9,136 @@ const form = document.getElementById("formRegistrasi");
 // ===============================
 
 document
-.getElementById("kode_supplier")
-.addEventListener("change", async function () {
+  .getElementById("kode_supplier")
+  .addEventListener("change", async function () {
 
     const kode = this.value.trim();
 
-    if(kode==""){
-        document.getElementById("nama_supplier").value="";
-        return;
+    if (kode === "") {
+      document.getElementById("nama_supplier").value = "";
+      return;
     }
 
-    const { data, error } = await supabase
-    .from("supplier")
-    .select("nama_supplier")
-    .eq("kode_supplier", kode)
-    .single();
+    const { data, error } = await db
+      .from("supplier")
+      .select("nama_supplier")
+      .eq("kode_supplier", kode)
+      .single();
 
-    if(error){
-
-        document.getElementById("nama_supplier").value="";
-        alert("Kode Supplier tidak ditemukan");
-
-        return;
-
+    if (error || !data) {
+      document.getElementById("nama_supplier").value = "";
+      alert("Kode Supplier tidak ditemukan");
+      return;
     }
 
-    document.getElementById("nama_supplier").value =
-    data.nama_supplier;
+    document.getElementById("nama_supplier").value = data.nama_supplier;
 
-});
-
+  });
 
 // ===============================
 // SUBMIT
 // ===============================
 
-form.addEventListener("submit", async function(e){
+form.addEventListener("submit", async function (e) {
 
-    e.preventDefault();
+  e.preventDefault();
 
-    const kode_supplier =
-    document.getElementById("kode_supplier").value.trim();
+  const kode_supplier = document.getElementById("kode_supplier").value.trim();
+  const nama_supplier = document.getElementById("nama_supplier").value;
+  const nomor_kendaraan = document.getElementById("nomor_kendaraan").value;
+  const nama_supir = document.getElementById("nama_supir").value;
+  const no_identitas = document.getElementById("no_identitas").value;
+  const no_hp = document.getElementById("no_hp").value;
+  const jenis_kendaraan = document.getElementById("jenis_kendaraan").value;
+  const warna_antrian = document.getElementById("warna_antrian").value;
 
-    const nama_supplier =
-    document.getElementById("nama_supplier").value;
+  if (
+    kode_supplier === "" ||
+    nama_supplier === "" ||
+    nomor_kendaraan === "" ||
+    nama_supir === ""
+  ) {
+    alert("Data belum lengkap");
+    return;
+  }
 
-    const nomor_kendaraan =
-    document.getElementById("nomor_kendaraan").value;
+  // ===============================
+  // PREFIX NOMOR
+  // ===============================
 
-    const nama_supir =
-    document.getElementById("nama_supir").value;
+  let prefix = "";
 
-    const no_identitas =
-    document.getElementById("no_identitas").value;
+  switch (warna_antrian) {
+    case "MERAH":
+      prefix = "M";
+      break;
 
-    const no_hp =
-    document.getElementById("no_hp").value;
+    case "KUNING":
+      prefix = "K";
+      break;
 
-    const jenis_kendaraan =
-    document.getElementById("jenis_kendaraan").value;
+    case "HIJAU":
+      prefix = "H";
+      break;
 
-    const warna_antrian =
-    document.getElementById("warna_antrian").value;
+    case "PUTIH":
+      prefix = "P";
+      break;
 
-    if(
-        kode_supplier=="" ||
-        nama_supplier=="" ||
-        nomor_kendaraan=="" ||
-        nama_supir==""
-    ){
+    case "EXPRESS":
+      prefix = "E";
+      break;
+  }
 
-        alert("Data belum lengkap");
-        return;
+  // ===============================
+  // HITUNG NOMOR ANTRIAN
+  // ===============================
 
-    }
-
-    // ==========================
-    // PREFIX NOMOR
-    // ==========================
-
-    let prefix="";
-
-    switch(warna_antrian){
-
-        case "MERAH":
-            prefix="M";
-        break;
-
-        case "KUNING":
-            prefix="K";
-        break;
-
-        case "HIJAU":
-            prefix="H";
-        break;
-
-        case "PUTIH":
-            prefix="P";
-        break;
-
-        case "EXPRESS":
-            prefix="E";
-        break;
-
-    }
-
-    // ==========================
-    // HITUNG NOMOR
-    // ==========================
-
-    const { data:list } =
-    await supabase
+  const { data: list } = await db
     .from("registrasi")
     .select("nomor_antrian")
-    .eq("warna_antrian",warna_antrian);
+    .eq("warna_antrian", warna_antrian);
 
-    let nomor = 1;
+  let nomor = 1;
 
-    if(list){
+  if (list) {
+    nomor = list.length + 1;
+  }
 
-        nomor = list.length + 1;
+  const nomor_antrian = prefix + String(nomor).padStart(4, "0");
 
-    }
+  // ===============================
+  // SIMPAN KE DATABASE
+  // ===============================
 
-    const nomor_antrian =
-    prefix + String(nomor).padStart(4,"0");
-
-    // ==========================
-    // INSERT
-    // ==========================
-
-    const { error } =
-    await supabase
+  const { error } = await db
     .from("registrasi")
-    .insert({
-
-        tanggal:new Date(),
-
+    .insert([
+      {
+        tanggal: new Date(),
         kode_supplier,
-
         nama_supplier,
-
         nomor_kendaraan,
-
         nama_supir,
-
         no_identitas,
-
         no_hp,
-
         jenis_kendaraan,
-
         warna_antrian,
-
         nomor_antrian,
+        status: "Waiting"
+      }
+    ]);
 
-        status:"Waiting"
+  if (error) {
+    console.error(error);
+    alert("Gagal menyimpan");
+    return;
+  }
 
-    });
+  alert(
+    "Registrasi Berhasil\n\nNomor Antrian : " + nomor_antrian
+  );
 
-    if(error){
-
-        console.log(error);
-
-        alert("Gagal menyimpan");
-
-        return;
-
-    }
-
-    alert(
-        "Registrasi Berhasil\n\nNomor Antrian : "+nomor_antrian
-    );
-
-    form.reset();
+  form.reset();
 
 });
