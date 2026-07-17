@@ -194,11 +194,50 @@ if (errRows) {
 
     }
 
-    alert(
-        "Registrasi Berhasil!\n\nNomor Antrian : " +
-        nomor_antrian
-    );
+    let icon = "";
 
-    form.reset();
+switch (warna_antrian) {
+
+    case "MERAH":
+        icon = "🔴";
+        break;
+
+    case "KUNING":
+        icon = "🟡";
+        break;
+
+    case "HIJAU":
+        icon = "🟢";
+        break;
+
+    case "PUTIH":
+        icon = "⚪";
+        break;
+
+    case "EXPRESS":
+        icon = "🩷";
+        break;
+
+}
+
+alert(
+`✅ REGISTRASI BERHASIL
+
+━━━━━━━━━━━━━━━━━━
+
+Nomor Antrian
+${nomor_antrian}
+
+${icon} ${warna_antrian}
+
+━━━━━━━━━━━━━━━━━━
+
+Silakan menunggu
+sesuai kategori antrian.
+
+Terima kasih.
+`);
+
+form.reset();
 
 });
