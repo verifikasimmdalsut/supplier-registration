@@ -219,7 +219,8 @@ switch (warna_antrian) {
         break;
 
 }
-
+console.log(document.getElementById("ticketNumber"));
+console.log(document.getElementById("ticketKategori"));
 const ticketNumber = document.getElementById("ticketNumber");
 const ticketKategori = document.getElementById("ticketKategori");
 
