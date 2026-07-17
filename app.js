@@ -225,3 +225,48 @@ const ticketKategori = document.getElementById("ticketKategori");
 
 ticketNumber.innerHTML = nomor_antrian;
 ticketKategori.innerHTML = icon + " " + warna_antrian;
+    // ===============================
+// WARNA BACKGROUND NOMOR ANTRIAN
+// ===============================
+
+ticketNumber.style.background = "";
+ticketNumber.style.color = "#ffffff";
+
+switch (warna_antrian) {
+
+    case "MERAH":
+        ticketNumber.style.background = "#dc3545";
+        break;
+
+    case "KUNING":
+        ticketNumber.style.background = "#ffc107";
+        ticketNumber.style.color = "#000000";
+        break;
+
+    case "HIJAU":
+        ticketNumber.style.background = "#198754";
+        break;
+
+    case "PUTIH":
+        ticketNumber.style.background = "#6c757d";
+        break;
+
+    case "EXPRESS":
+        ticketNumber.style.background = "#ff4fa3";
+        break;
+
+}
+
+// ===============================
+// TAMPILKAN MODAL
+// ===============================
+
+const modal = new bootstrap.Modal(
+    document.getElementById("ticketModal")
+);
+
+modal.show();
+
+form.reset();
+
+});
