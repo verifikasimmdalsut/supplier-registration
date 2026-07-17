@@ -122,9 +122,9 @@ form.addEventListener("submit", async function(e){
     .from("registrasi")
     .select("nomor_antrian")
     .eq("warna_antrian", warna_antrian);
-console.log(rows);
-console.log(warna_antrian);
-    if(errRows){
+console.log("ROWS =", rows);
+console.log("WARNA =", warna_antrian);
+console.log("ERROR =", errRows);
 
         console.log(errRows);
         alert(errRows.message);
