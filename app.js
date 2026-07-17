@@ -121,7 +121,8 @@ const { data: rows, error: errRows } = await db
     .from("registrasi")
     .select("nomor_antrian")
     .eq("warna_antrian", warna_antrian);
-
+console.log("ROWS =", rows);
+console.log("ERROR =", errRows);
 console.log("ROWS =", rows);
 console.log("WARNA =", warna_antrian);
 console.log("ERROR =", errRows);
