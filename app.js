@@ -220,24 +220,8 @@ switch (warna_antrian) {
 
 }
 
-alert(
-`✅ REGISTRASI BERHASIL
+const ticketNumber = document.getElementById("ticketNumber");
+const ticketKategori = document.getElementById("ticketKategori");
 
-━━━━━━━━━━━━━━━━━━
-
-Nomor Antrian
-${nomor_antrian}
-
-${icon} ${warna_antrian}
-
-━━━━━━━━━━━━━━━━━━
-
-Silakan menunggu
-sesuai kategori antrian.
-
-Terima kasih.
-`);
-
-form.reset();
-
-});
+ticketNumber.innerHTML = nomor_antrian;
+ticketKategori.innerHTML = icon + " " + warna_antrian;
