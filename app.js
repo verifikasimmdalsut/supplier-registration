@@ -117,20 +117,22 @@ form.addEventListener("submit", async function(e){
       // =====================================
     // HITUNG NOMOR ANTRIAN
     // =====================================
-
-    const { data: rows, error: errRows } = await db
+const { data: rows, error: errRows } = await db
     .from("registrasi")
     .select("nomor_antrian")
     .eq("warna_antrian", warna_antrian);
+
 console.log("ROWS =", rows);
 console.log("WARNA =", warna_antrian);
 console.log("ERROR =", errRows);
 
-        console.log(errRows);
-        alert(errRows.message);
-        return;
+if (errRows) {
 
-    }
+    console.log(errRows);
+    alert(errRows.message);
+    return;
+
+}
 
     let nomorTerakhir = 0;
 
