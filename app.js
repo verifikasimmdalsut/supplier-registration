@@ -1,3 +1,4 @@
+console.log("APP.JS LOADED");
 // =====================================
 // APP.JS
 // REGISTRASI SUPPLIER
