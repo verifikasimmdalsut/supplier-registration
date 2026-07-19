@@ -200,32 +200,60 @@ body{
 }
 
 /* ---------- Ticket modal ---------- */
+.ticket-modal{
+  --tk-strong: var(--magenta-bright);
+  --tk-soft: var(--pink-100);
+  --tk-text: var(--magenta);
+  --tk-bg: #ffffff;
+  --tk-body-text: var(--ink);
+  --tk-subtitle-text: var(--ink-soft);
+  background: var(--tk-bg);
+  transition: background .2s ease;
+}
+
 .ticket-color-strip{
   height:10px;
   width:100%;
-  background:var(--pink-300);
+  background:var(--tk-strong);
+}
+
+.ticket-brand{
+  font-family:'Poppins', sans-serif;
+  font-weight:700;
+  font-size:19px;
+  letter-spacing:4px;
+  text-align:center;
+  padding-top:20px;
+  color:var(--tk-strong);
+}
+.ticket-brand span{
+  font-size:11px;
+  display:block;
+  letter-spacing:2px;
+  font-weight:600;
+  color:var(--tk-subtitle-text);
+  margin-top:2px;
 }
 
 /* Varian warna tiket berdasarkan warna antrian yang dipilih */
-.ticket-merah .ticket-color-strip{ background:#e02424; }
-.ticket-merah .queue-badge{ background:#fde2e2; color:#c81414; }
-.ticket-merah .queue-number{ color:#c81414; }
+.ticket-merah{ --tk-strong:#e02424; --tk-soft:#fbcaca; --tk-text:#c81414; --tk-bg:#fff2f2; }
+.ticket-kuning{ --tk-strong:#d69600; --tk-soft:#fbe4a3; --tk-text:#8a6200; --tk-bg:#fffaeb; }
+.ticket-hijau{ --tk-strong:#1f9d6b; --tk-soft:#b9ecd4; --tk-text:#0e6b47; --tk-bg:#effaf4; }
+.ticket-putih{ --tk-strong:#8a8a8a; --tk-soft:#e6e6e6; --tk-text:#4a4a4a; --tk-bg:#fafafa; }
 
-.ticket-kuning .ticket-color-strip{ background:#f0b400; }
-.ticket-kuning .queue-badge{ background:#fff3d1; color:#a9720a; }
-.ticket-kuning .queue-number{ color:#a9720a; }
+.ticket-express{
+  --tk-strong:#e8c766;
+  --tk-soft:#2a2a2a;
+  --tk-text:#e8c766;
+  --tk-bg:#141414;
+  --tk-body-text:#f2f2f2;
+  --tk-subtitle-text:#b8b8b8;
+}
+.ticket-express .ticket-color-strip{ background:linear-gradient(90deg, #e8c766, #1a1a1a, #e8c766); }
+.ticket-express .ticket-details{ border-color:#3a3a3a; }
+.ticket-express .ticket-row span:first-child{ color:#a8a8a8; }
+.ticket-express .ticket-row span:last-child{ color:#f2f2f2; }
 
-.ticket-hijau .ticket-color-strip{ background:#1f9d6b; }
-.ticket-hijau .queue-badge{ background:#dcf5ea; color:#137a50; }
-.ticket-hijau .queue-number{ color:#137a50; }
-
-.ticket-putih .ticket-color-strip{ background:#c9c9c9; }
-.ticket-putih .queue-badge{ background:#f2f2f2; color:#555; border:1px solid #d8d8d8; }
-.ticket-putih .queue-number{ color:#333; }
-
-.ticket-express .ticket-color-strip{ background:linear-gradient(90deg, #1a1a1a, #c99a2e); }
-.ticket-express .queue-badge{ background:#1a1a1a; color:#e8c766; }
-.ticket-express .queue-number{ color:#1a1a1a; }
 .success-icon{
   font-size:44px;
   margin-bottom:8px;
@@ -233,20 +261,20 @@ body{
 .ticket-title{
   font-family:'Poppins', sans-serif;
   font-weight:700;
-  color:var(--magenta);
+  color:var(--tk-strong);
   margin-bottom:2px;
 }
 .ticket-subtitle{
   font-size:13px;
-  color:var(--ink-soft);
+  color:var(--tk-subtitle-text);
   margin-bottom:18px;
 }
 .queue-badge{
   display:inline-block;
   padding:5px 16px;
   border-radius:999px;
-  background:var(--pink-100);
-  color:var(--magenta);
+  background:var(--tk-soft);
+  color:var(--tk-text);
   font-weight:700;
   font-size:12.5px;
   letter-spacing:1px;
@@ -256,13 +284,13 @@ body{
   font-family:'Poppins', sans-serif;
   font-size:44px;
   font-weight:700;
-  color:var(--ink);
+  color:var(--tk-strong);
   margin-bottom:18px;
   line-height:1;
 }
 .ticket-details{
-  background:var(--pink-50);
-  border:1px solid var(--pink-100);
+  background:var(--tk-soft);
+  border:1px solid var(--tk-strong);
   border-radius:14px;
   padding:14px 16px;
   font-size:13px;
@@ -273,8 +301,13 @@ body{
   gap:12px;
   padding:5px 0;
 }
-.ticket-row span:first-child{ color:var(--ink-soft); }
-.ticket-row span:last-child{ font-weight:700; color:var(--ink); text-align:right; }
+.ticket-row span:first-child{ color:var(--tk-subtitle-text); }
+.ticket-row span:last-child{ font-weight:700; color:var(--tk-body-text); text-align:right; }
+
+.ticket-modal .btn-register{
+  background:linear-gradient(120deg, var(--tk-strong), var(--tk-text));
+  box-shadow:0 12px 24px -8px color-mix(in srgb, var(--tk-strong) 60%, transparent);
+}
 
 @media (max-width:480px){
   .register-card{ padding:28px 20px 24px; border-radius:22px; }
