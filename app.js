@@ -1,320 +1,189 @@
-console.log("APP.JS LOADED");
-// =====================================
-// APP.JS
-// REGISTRASI SUPPLIER
-// =====================================
+// ==========================================
+// AEON Registrasi Supplier — app.js
+// Logic form: cari supplier, validasi, submit
+// (Menggunakan koneksi `sb` dari supabase.js)
+// ==========================================
 
-const form = document.getElementById("formRegistrasi");
+// --- Elemen ---
+const kodeInput = document.getElementById('kode_supplier');
+const supplierStatus = document.getElementById('supplierStatus');
+const supplierCard = document.getElementById('supplierCard');
+const namaSupplierEl = document.getElementById('nama_supplier');
+const form = document.getElementById('formRegistrasi');
+const btnDaftar = document.getElementById('btnDaftar');
 
-// =====================================
-// AUTO NAMA SUPPLIER
-// =====================================
+let verifiedSupplier = null;
+let searchTimer = null;
 
-const kodeSupplier = document.getElementById("kode_supplier");
-const supplierCard = document.getElementById("supplierCard");
-const supplierStatus = document.getElementById("supplierStatus");
-const namaSupplier = document.getElementById("nama_supplier");
+// --- Pencarian supplier (live search, debounce 400ms) ---
+function setStatus(type, text){
+  supplierStatus.className = 'status-text' + (type ? ' ' + type : '');
+  supplierStatus.textContent = text;
+}
 
-let timer;
-
-kodeSupplier.addEventListener("input", function () {
-
-    clearTimeout(timer);
-
-    const kode = this.value.trim();
-
-    if (kode == "") {
-
-        supplierCard.style.display = "none";
-        supplierStatus.innerHTML = "Ketik kode supplier.";
-        namaSupplier.textContent = "-";
-
-        return;
-
-    }
-
-    supplierStatus.innerHTML = "🔄 Mencari supplier...";
-
-    timer = setTimeout(async () => {
-
-        const { data, error } = await db
-    .from("supplier")
-    .select("*");
-
-console.log(data);
-console.log(error);
-console.log("Kode yang dicari:", kode);
-console.log("Data supplier:", data);
-console.log("Error:", error);
-        if (error) {
-
-            console.log(error);
-
-            supplierStatus.innerHTML =
-                "❌ Terjadi kesalahan.";
-
-            supplierCard.style.display = "none";
-
-            return;
-
-        }
-
-        if (!data) {
-
-            supplierStatus.innerHTML =
-                "❌ Supplier tidak ditemukan.";
-
-            supplierCard.style.display = "none";
-
-            namaSupplier.textContent = "-";
-
-            return;
-
-        }
-
-        namaSupplier.textContent =
-            data.nama_supplier;
-
-        supplierCard.style.display = "block";
-
-        supplierStatus.innerHTML =
-            "✅ Supplier ditemukan.";
-
-        document
-            .getElementById("nomor_kendaraan")
-            .focus();
-
-    }, 500);
-
-});
-// =====================================
-// SUBMIT
-// =====================================
-
-form.addEventListener("submit", async function(e){
-
-    e.preventDefault();
-
-    const kode_supplier =
-    document.getElementById("kode_supplier").value.trim();
-
-   const nama_supplier =
-document.getElementById("nama_supplier").textContent.trim();
-
-    const nomor_kendaraan =
-    document.getElementById("nomor_kendaraan").value.trim();
-
-    const nama_supir =
-    document.getElementById("nama_supir").value.trim();
-
-    const no_identitas =
-    document.getElementById("no_identitas").value.trim();
-
-    const no_hp =
-    document.getElementById("no_hp").value.trim();
-
-    const jenis_kendaraan =
-    document.getElementById("jenis_kendaraan").value;
-
-    const warna_antrian =
-    document.getElementById("warna_antrian").value;
-
-    if(
-        kode_supplier=="" ||
-        nama_supplier=="" ||
-        nomor_kendaraan=="" ||
-        nama_supir==""
-    ){
-
-        alert("Data belum lengkap");
-        return;
-
-    }
-
-    let prefix="";
-
-    switch(warna_antrian){
-
-        case "MERAH":
-            prefix="M";
-        break;
-
-        case "KUNING":
-            prefix="K";
-        break;
-
-        case "HIJAU":
-            prefix="H";
-        break;
-
-        case "PUTIH":
-            prefix="P";
-        break;
-
-        case "EXPRESS":
-            prefix="E";
-        break;
-
-    }
-      // =====================================
-    // HITUNG NOMOR ANTRIAN
-    // =====================================
-const { data: rows, error: errRows } = await db
-    .from("registrasi")
-    .select("nomor_antrian")
-    .eq("warna_antrian", warna_antrian);
-console.log("ROWS =", rows);
-console.log("ERROR =", errRows);
-console.log("ROWS =", rows);
-console.log("WARNA =", warna_antrian);
-console.log("ERROR =", errRows);
-
-if (errRows) {
-
-    console.log(errRows);
-    alert(errRows.message);
+async function cariSupplier(kode){
+  if(!kode){
+    setStatus('', 'Ketik kode supplier...');
+    supplierCard.style.display = 'none';
+    verifiedSupplier = null;
     return;
+  }
 
+  setStatus('', 'Mencari...');
+
+  const { data, error } = await sb
+    .from('supplier')
+    .select('kode_supplier, nama_supplier')
+    .ilike('kode_supplier', kode)
+    .limit(1)
+    .maybeSingle();
+
+  // Hindari race condition: pastikan input belum berubah lagi
+  if(kodeInput.value.trim() !== kode) return;
+
+  if(error){
+    verifiedSupplier = null;
+    supplierCard.style.display = 'none';
+    setStatus('error', 'Gagal terhubung ke server. Coba lagi.');
+    return;
+  }
+
+  if(data){
+    verifiedSupplier = { code: data.kode_supplier, name: data.nama_supplier };
+    namaSupplierEl.textContent = data.nama_supplier;
+    supplierCard.style.display = 'flex';
+    setStatus('success', 'Kode supplier ditemukan.');
+  } else {
+    verifiedSupplier = null;
+    supplierCard.style.display = 'none';
+    setStatus('error', 'Kode supplier tidak ditemukan.');
+  }
 }
 
-    let nomorTerakhir = 0;
+kodeInput.addEventListener('input', () => {
+  const kode = kodeInput.value.trim();
+  clearTimeout(searchTimer);
+  if(!kode){
+    setStatus('', 'Ketik kode supplier...');
+    supplierCard.style.display = 'none';
+    verifiedSupplier = null;
+    return;
+  }
+  searchTimer = setTimeout(() => cariSupplier(kode), 400);
+});
 
-    if(rows && rows.length > 0){
+// --- Validasi field wajib ---
+const REQUIRED_FIELDS = {
+  nomor_kendaraan: 'Nomor kendaraan wajib diisi.',
+  nama_supir: 'Nama supir wajib diisi.',
+  no_identitas: 'Nomor identitas wajib diisi.',
+  no_hp: 'Nomor HP wajib diisi.',
+  jenis_kendaraan: 'Pilih jenis kendaraan.',
+  warna_antrian: 'Pilih warna antrian.',
+};
 
-        rows.forEach(function(item){
+Object.keys(REQUIRED_FIELDS).forEach(id => {
+  const el = document.getElementById(id);
+  const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+  el.addEventListener(evt, () => {
+    el.classList.remove('is-invalid');
+    const err = document.getElementById('err_' + id);
+    if(err) err.textContent = '';
+  });
+});
 
-            if(item.nomor_antrian){
+function validateForm(){
+  let valid = true;
 
-                const angka = parseInt(
-                    item.nomor_antrian.replace(/[^0-9]/g,"")
-                );
+  if(!verifiedSupplier){
+    setStatus('error', 'Cari dan pastikan kode supplier ditemukan dulu.');
+    kodeInput.classList.add('is-invalid');
+    valid = false;
+  }
 
-                if(angka > nomorTerakhir){
-
-                    nomorTerakhir = angka;
-
-                }
-
-            }
-
-        });
-
+  const values = {};
+  Object.entries(REQUIRED_FIELDS).forEach(([id, msg]) => {
+    const el = document.getElementById(id);
+    const val = el.value.trim();
+    values[id] = val;
+    if(!val){
+      el.classList.add('is-invalid');
+      const err = document.getElementById('err_' + id);
+      if(err) err.textContent = msg;
+      valid = false;
     }
+  });
 
-    const nomor = nomorTerakhir + 1;
-
-    const nomor_antrian =
-    prefix + String(nomor).padStart(4,"0");
-
-    console.log("Nomor Baru :", nomor_antrian);
-    // =====================================
-    // SIMPAN KE DATABASE
-    // =====================================
-
-    const { error: insertError } = await db
-    .from("registrasi")
-    .insert([
-        {
-            tanggal: new Date().toISOString(),
-            kode_supplier: kode_supplier,
-            nama_supplier: nama_supplier,
-            nomor_kendaraan: nomor_kendaraan,
-            nama_supir: nama_supir,
-            no_identitas: no_identitas,
-            no_hp: no_hp,
-            jenis_kendaraan: jenis_kendaraan,
-            warna_antrian: warna_antrian,
-            nomor_antrian: nomor_antrian
-        }
-    ]);
-
-    if(insertError){
-
-        console.log(insertError);
-        alert(insertError.message);
-        return;
-
-    }
-
-    let icon = "";
-
-switch (warna_antrian) {
-
-    case "MERAH":
-        icon = "🔴";
-        break;
-
-    case "KUNING":
-        icon = "🟡";
-        break;
-
-    case "HIJAU":
-        icon = "🟢";
-        break;
-
-    case "PUTIH":
-        icon = "⚪";
-        break;
-
-    case "EXPRESS":
-        icon = "🩷";
-        break;
-
-}
-console.log(document.getElementById("ticketNumber"));
-console.log(document.getElementById("ticketKategori"));
-const ticketNumber = document.getElementById("ticketNumber");
-const ticketKategori = document.getElementById("ticketKategori");
-
-ticketNumber.innerHTML = nomor_antrian;
-ticketKategori.innerHTML = icon + " " + warna_antrian;
-    // ===============================
-// WARNA BACKGROUND NOMOR ANTRIAN
-// ===============================
-
-ticketNumber.style.background = "";
-ticketNumber.style.color = "#ffffff";
-
-switch (warna_antrian) {
-
-    case "MERAH":
-        ticketNumber.style.background = "#dc3545";
-        break;
-
-    case "KUNING":
-        ticketNumber.style.background = "#ffc107";
-        ticketNumber.style.color = "#000000";
-        break;
-
-    case "HIJAU":
-        ticketNumber.style.background = "#198754";
-        break;
-
-    case "PUTIH":
-        ticketNumber.style.background = "#6c757d";
-        break;
-
-    case "EXPRESS":
-        ticketNumber.style.background = "#ff4fa3";
-        break;
-
+  return { valid, values };
 }
 
-// ===============================
-// TAMPILKAN MODAL
-// ===============================
+// --- Submit form ---
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-const modal = new bootstrap.Modal(
-    document.getElementById("ticketModal")
-);
+  const { valid, values } = validateForm();
+  if(!valid) return;
 
-modal.show();
+  const originalHtml = btnDaftar.innerHTML;
+  btnDaftar.disabled = true;
+  btnDaftar.innerHTML = 'Menyimpan...';
 
-form.reset();
+  try{
+    const warnaAntrian = values.warna_antrian;
 
-// Reset tampilan supplier
-document.getElementById("supplierCard").style.display = "none";
-document.getElementById("nama_supplier").textContent = "-";
-document.getElementById("supplierStatus").innerHTML = "Ketik kode supplier.";
+    // Hitung nomor antrian: urut harian per warna antrian
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
+    const { count, error: countError } = await sb
+      .from('registrasi')
+      .select('id', { count: 'exact', head: true })
+      .eq('warna_antrian', warnaAntrian)
+      .gte('tanggal', startOfDay.toISOString());
+
+    if(countError) throw countError;
+
+    const nomorAntrian = String((count || 0) + 1).padStart(3, '0');
+
+    const { error: insertError } = await sb.from('registrasi').insert({
+      kode_supplier: verifiedSupplier.code,
+      nama_supplier: verifiedSupplier.name,
+      nomor_kendaraan: values.nomor_kendaraan,
+      nama_supir: values.nama_supir,
+      no_identitas: values.no_identitas,
+      no_hp: values.no_hp,
+      jenis_kendaraan: values.jenis_kendaraan,
+      warna_antrian: warnaAntrian,
+      nomor_antrian: nomorAntrian,
+    });
+
+    if(insertError) throw insertError;
+
+    // Isi & tampilkan modal tiket
+    document.getElementById('ticketWarna').textContent = warnaAntrian;
+    document.getElementById('ticketNomorAntrian').textContent = nomorAntrian;
+    document.getElementById('ticketKodeSupplier').textContent = verifiedSupplier.code;
+    document.getElementById('ticketNamaSupplier').textContent = verifiedSupplier.name;
+    document.getElementById('ticketNomorKendaraan').textContent = values.nomor_kendaraan;
+    document.getElementById('ticketJenisKendaraan').textContent = values.jenis_kendaraan;
+    document.getElementById('ticketNamaSupir').textContent = values.nama_supir;
+
+    const ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
+    ticketModal.show();
+
+    // Reset form setelah modal ditutup
+    document.getElementById('ticketModal').addEventListener('hidden.bs.modal', () => {
+      form.reset();
+      verifiedSupplier = null;
+      supplierCard.style.display = 'none';
+      setStatus('', 'Ketik kode supplier...');
+    }, { once: true });
+
+  }catch(err){
+    setStatus('error', 'Gagal menyimpan data. Coba lagi.');
+    console.error(err);
+  }finally{
+    btnDaftar.disabled = false;
+    btnDaftar.innerHTML = originalHtml;
+  }
 });
