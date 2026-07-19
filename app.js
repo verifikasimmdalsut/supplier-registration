@@ -174,11 +174,7 @@ form.addEventListener('submit', async (e) => {
 
     document.getElementById('ticketWarna').textContent = warnaAntrian;
     document.getElementById('ticketNomorAntrian').textContent = nomorAntrian;
-    document.getElementById('ticketKodeSupplier').textContent = verifiedSupplier.code;
     document.getElementById('ticketNamaSupplier').textContent = verifiedSupplier.name;
-    document.getElementById('ticketNomorKendaraan').textContent = values.nomor_kendaraan;
-    document.getElementById('ticketJenisKendaraan').textContent = values.jenis_kendaraan;
-    document.getElementById('ticketNamaSupir').textContent = values.nama_supir;
 
     const ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
     ticketModal.show();
