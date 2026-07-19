@@ -15,6 +15,15 @@ const btnDaftar = document.getElementById('btnDaftar');
 let verifiedSupplier = null;
 let searchTimer = null;
 
+// Mapping nilai warna_antrian ke class CSS tiket
+const TICKET_COLOR_CLASS = {
+  'MERAH': 'ticket-merah',
+  'KUNING': 'ticket-kuning',
+  'HIJAU': 'ticket-hijau',
+  'PUTIH': 'ticket-putih',
+  'EXPRESS': 'ticket-express',
+};
+
 // --- Pencarian supplier (live search, debounce 400ms) ---
 function setStatus(type, text){
   supplierStatus.className = 'status-text' + (type ? ' ' + type : '');
@@ -160,6 +169,9 @@ form.addEventListener('submit', async (e) => {
     if(insertError) throw insertError;
 
     // Isi & tampilkan modal tiket
+    const ticketContent = document.getElementById('ticketModalContent');
+    ticketContent.className = 'modal-content ticket-modal ' + (TICKET_COLOR_CLASS[warnaAntrian] || '');
+
     document.getElementById('ticketWarna').textContent = warnaAntrian;
     document.getElementById('ticketNomorAntrian').textContent = nomorAntrian;
     document.getElementById('ticketKodeSupplier').textContent = verifiedSupplier.code;
