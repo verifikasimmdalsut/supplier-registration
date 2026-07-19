@@ -13,67 +13,183 @@
 
 <div class="container mt-5">
 
-    <div class="card shadow p-4">
+    <div class="card shadow-lg border-0 rounded-4 p-4">
 
-        <h2 class="text-center mb-4">
-            Registrasi Supplier
+        <h2 class="text-center text-danger fw-bold mb-4">
+            🦋 Registrasi Supplier
         </h2>
 
         <form id="formRegistrasi">
 
+            <!-- KODE SUPPLIER -->
             <div class="mb-3">
-                <label>Kode Supplier</label>
-                <input type="text" id="kode_supplier" class="form-control">
+
+                <label class="form-label fw-bold">
+                    Kode Supplier
+                </label>
+
+                <input
+                    type="text"
+                    id="kode_supplier"
+                    class="form-control form-control-lg"
+                    placeholder="Masukkan Kode Supplier"
+                    autocomplete="off">
+
+                <small
+                    id="supplierStatus"
+                    class="text-muted">
+
+                    Ketik kode supplier.
+
+                </small>
+
             </div>
 
-            <div class="mb-3">
-                <label>Nama Supplier</label>
-                <input type="text" id="nama_supplier" class="form-control" readonly>
+            <!-- CARD SUPPLIER -->
+
+            <div
+                id="supplierCard"
+                class="card border-0 shadow-sm mb-4"
+                style="display:none;background:#FFF5FA;">
+
+                <div class="card-body">
+
+                    <div class="text-secondary small">
+                        Nama Supplier
+                    </div>
+
+                    <h4
+                        id="nama_supplier"
+                        class="fw-bold text-danger mb-1">
+
+                        -
+
+                    </h4>
+
+                    <small class="text-muted">
+
+                        Informasi supplier berasal dari database.
+
+                    </small>
+
+                </div>
+
             </div>
 
-            <div class="mb-3">
-                <label>Nomor Kendaraan</label>
-                <input type="text" id="nomor_kendaraan" class="form-control">
-            </div>
+            <!-- NOMOR KENDARAAN -->
 
             <div class="mb-3">
-                <label>Nama Supir</label>
-                <input type="text" id="nama_supir" class="form-control">
+
+                <label class="form-label fw-bold">
+                    Nomor Kendaraan
+                </label>
+
+                <input
+                    type="text"
+                    id="nomor_kendaraan"
+                    class="form-control form-control-lg"
+                    placeholder="Contoh : B1234ABC">
+
             </div>
 
-            <div class="mb-3">
-                <label>No Identitas</label>
-                <input type="text" id="no_identitas" class="form-control">
-            </div>
+            <!-- NAMA SUPIR -->
 
             <div class="mb-3">
-                <label>No HP</label>
-                <input type="text" id="no_hp" class="form-control">
+
+                <label class="form-label fw-bold">
+                    Nama Supir
+                </label>
+
+                <input
+                    type="text"
+                    id="nama_supir"
+                    class="form-control form-control-lg"
+                    placeholder="Masukkan Nama Supir">
+
             </div>
 
+            <!-- NO IDENTITAS -->
+
             <div class="mb-3">
-                <label>Jenis Kendaraan</label>
-                <select id="jenis_kendaraan" class="form-select">
+
+                <label class="form-label fw-bold">
+                    No Identitas
+                </label>
+
+                <input
+                    type="text"
+                    id="no_identitas"
+                    class="form-control form-control-lg"
+                    placeholder="Masukkan No Identitas">
+
+            </div>
+
+            <!-- NO HP -->
+
+            <div class="mb-3">
+
+                <label class="form-label fw-bold">
+                    No HP
+                </label>
+
+                <input
+                    type="text"
+                    id="no_hp"
+                    class="form-control form-control-lg"
+                    placeholder="08xxxxxxxxxx">
+
+            </div>
+
+            <!-- JENIS KENDARAAN -->
+
+            <div class="mb-3">
+
+                <label class="form-label fw-bold">
+                    Jenis Kendaraan
+                </label>
+
+                <select
+                    id="jenis_kendaraan"
+                    class="form-select form-select-lg">
+
+                    <option value="">Pilih Jenis Kendaraan</option>
                     <option>Box</option>
                     <option>Pickup</option>
                     <option>Motor</option>
                     <option>Tronton</option>
+
                 </select>
+
             </div>
 
+            <!-- WARNA ANTRIAN -->
+
             <div class="mb-4">
-                <label>Warna Antrian</label>
-                <select id="warna_antrian" class="form-select">
+
+                <label class="form-label fw-bold">
+                    Warna Antrian
+                </label>
+
+                <select
+                    id="warna_antrian"
+                    class="form-select form-select-lg">
+
                     <option>MERAH</option>
                     <option>KUNING</option>
                     <option>HIJAU</option>
                     <option>PUTIH</option>
                     <option>EXPRESS</option>
+
                 </select>
+
             </div>
 
-            <button type="submit" class="btn btn-danger w-100">
-                DAFTAR
+            <button
+                type="submit"
+                class="btn btn-danger btn-lg w-100 rounded-3">
+
+                DAFTARKAN
+
             </button>
 
         </form>
@@ -83,7 +199,7 @@
 </div>
 
 <!-- ========================= -->
-<!-- MODAL TIKET -->
+<!-- MODAL -->
 <!-- ========================= -->
 
 <div class="modal fade" id="ticketModal" tabindex="-1">
@@ -95,25 +211,28 @@
             <div class="modal-body text-center p-4">
 
                 <h3 class="fw-bold text-success mb-4">
+
                     REGISTRASI BERHASIL
+
                 </h3>
 
                 <div class="text-secondary fw-bold mb-2">
+
                     NOMOR ANTRIAN
+
                 </div>
 
                 <div
                     id="ticketNumber"
                     class="rounded-4 py-4 mb-3 fw-bold"
-                    style="
-                    font-size:72px;
-                    color:white;
-                    ">
+                    style="font-size:72px;color:white;">
+
                 </div>
 
                 <h3
                     id="ticketKategori"
                     class="fw-bold mb-4">
+
                 </h3>
 
                 <hr>
@@ -130,7 +249,9 @@
                 <hr>
 
                 <h5 class="fw-bold">
+
                     MMD AEON ALAM SUTERA
+
                 </h5>
 
                 <button
@@ -155,5 +276,6 @@
 
 <script src="supabase.js"></script>
 <script src="app.js"></script>
+
 </body>
 </html>
