@@ -38,10 +38,11 @@ kodeSupplier.addEventListener("input", function () {
     timer = setTimeout(async () => {
 
         const { data, error } = await db
-            .from("supplier")
-            .select("nama_supplier")
-            .eq("kode_supplier", kode)
-            .maybeSingle();
+    .from("supplier")
+    .select("*");
+
+console.log(data);
+console.log(error);
 console.log("Kode yang dicari:", kode);
 console.log("Data supplier:", data);
 console.log("Error:", error);
