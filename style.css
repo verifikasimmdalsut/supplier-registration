@@ -200,11 +200,32 @@ body{
 }
 
 /* ---------- Ticket modal ---------- */
-.ticket-modal{
-  border-radius:24px;
-  border:none;
-  overflow:hidden;
+.ticket-color-strip{
+  height:10px;
+  width:100%;
+  background:var(--pink-300);
 }
+
+/* Varian warna tiket berdasarkan warna antrian yang dipilih */
+.ticket-merah .ticket-color-strip{ background:#e02424; }
+.ticket-merah .queue-badge{ background:#fde2e2; color:#c81414; }
+.ticket-merah .queue-number{ color:#c81414; }
+
+.ticket-kuning .ticket-color-strip{ background:#f0b400; }
+.ticket-kuning .queue-badge{ background:#fff3d1; color:#a9720a; }
+.ticket-kuning .queue-number{ color:#a9720a; }
+
+.ticket-hijau .ticket-color-strip{ background:#1f9d6b; }
+.ticket-hijau .queue-badge{ background:#dcf5ea; color:#137a50; }
+.ticket-hijau .queue-number{ color:#137a50; }
+
+.ticket-putih .ticket-color-strip{ background:#c9c9c9; }
+.ticket-putih .queue-badge{ background:#f2f2f2; color:#555; border:1px solid #d8d8d8; }
+.ticket-putih .queue-number{ color:#333; }
+
+.ticket-express .ticket-color-strip{ background:linear-gradient(90deg, #1a1a1a, #c99a2e); }
+.ticket-express .queue-badge{ background:#1a1a1a; color:#e8c766; }
+.ticket-express .queue-number{ color:#1a1a1a; }
 .success-icon{
   font-size:44px;
   margin-bottom:8px;
