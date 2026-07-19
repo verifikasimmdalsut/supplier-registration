@@ -33,16 +33,17 @@ body{
 .butterfly,
 .butterfly2{
   position:fixed;
-  font-size:64px;
+  width:64px;
+  height:64px;
   opacity:0.25;
   pointer-events:none;
   z-index:0;
   animation:flutter 7s ease-in-out infinite;
 }
+.butterfly svg,
+.butterfly2 svg{ width:100%; height:100%; display:block; }
 .butterfly{ top:8%; left:4%; }
-.butterfly2{ top:72%; right:6%; animation-delay:1.5s; font-size:52px; }
-.butterfly::before{ content:"🦋"; }
-.butterfly2::before{ content:"🦋"; }
+.butterfly2{ top:72%; right:6%; left:auto; width:52px; height:52px; animation-delay:1.5s; }
 
 @keyframes flutter{
   0%,100%{ transform:translateY(0) rotate(-6deg); }
@@ -72,6 +73,53 @@ body{
   height:auto;
   margin:0 auto 14px;
   display:block;
+}
+
+/* ---------- Kupu-kupu terbang di sekitar logo ---------- */
+.logo-wrap{
+  position:relative;
+  display:inline-block;
+}
+.fly-butterfly{
+  position:absolute;
+  width:20px;
+  height:20px;
+  pointer-events:none;
+  z-index:2;
+  filter:drop-shadow(0 4px 8px rgba(155,20,104,0.25));
+}
+.fly-butterfly svg{ width:100%; height:100%; display:block; }
+.fly-1{
+  top:6px;
+  left:-6px;
+  animation:fly-loop-1 6s ease-in-out infinite;
+}
+.fly-2{
+  bottom:6px;
+  right:-10px;
+  width:16px;
+  height:16px;
+  animation:fly-loop-2 7.5s ease-in-out infinite;
+  animation-delay:1.2s;
+}
+
+@keyframes fly-loop-1{
+  0%{   transform:translate(0,0) rotate(-10deg) scale(1); }
+  20%{  transform:translate(34px,-24px) rotate(12deg) scale(1.08); }
+  40%{  transform:translate(64px,6px) rotate(-8deg) scale(0.92); }
+  60%{  transform:translate(30px,32px) rotate(10deg) scale(1.05); }
+  80%{  transform:translate(-12px,10px) rotate(-6deg) scale(0.96); }
+  100%{ transform:translate(0,0) rotate(-10deg) scale(1); }
+}
+@keyframes fly-loop-2{
+  0%{   transform:translate(0,0) rotate(8deg) scale(1); }
+  25%{  transform:translate(-38px,-16px) rotate(-14deg) scale(0.9); }
+  50%{  transform:translate(-64px,14px) rotate(12deg) scale(1.1); }
+  75%{  transform:translate(-20px,26px) rotate(-8deg) scale(0.95); }
+  100%{ transform:translate(0,0) rotate(8deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce){
+  .fly-butterfly{ animation:none; }
 }
 
 .title{
