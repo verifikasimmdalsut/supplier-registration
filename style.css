@@ -67,14 +67,11 @@ body{
   box-shadow:0 30px 60px -20px rgba(155,20,104,0.28), 0 8px 24px -8px rgba(155,20,104,0.15);
 }
 
-.logo-circle{
-  width:64px;height:64px;
+.aeon-header-logo{
+  width:120px;
+  height:auto;
   margin:0 auto 14px;
-  border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:28px;
-  background:radial-gradient(circle at 30% 30%, #fff0f7, #ffd7ea);
-  border:1px solid var(--pink-300);
+  display:block;
 }
 
 .title{
@@ -307,6 +304,20 @@ body{
 .ticket-modal .btn-register{
   background:linear-gradient(120deg, var(--tk-strong), var(--tk-text));
   box-shadow:0 12px 24px -8px color-mix(in srgb, var(--tk-strong) 60%, transparent);
+}
+
+.ticket-wait-msg{
+  font-size:13px;
+  line-height:1.6;
+  color:var(--tk-body-text);
+  background:var(--tk-soft);
+  border:1px dashed var(--tk-strong);
+  border-radius:12px;
+  padding:12px 14px;
+  margin-top:14px;
+  margin-bottom:0;
+  text-align:center;
+  font-weight:600;
 }
 
 @media (max-width:480px){
