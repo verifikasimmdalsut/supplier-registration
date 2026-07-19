@@ -9,42 +9,80 @@ const form = document.getElementById("formRegistrasi");
 // AUTO NAMA SUPPLIER
 // =====================================
 
-document
-.getElementById("kode_supplier")
-.addEventListener("change", async function () {
+const kodeSupplier = document.getElementById("kode_supplier");
+const supplierCard = document.getElementById("supplierCard");
+const supplierStatus = document.getElementById("supplierStatus");
+const namaSupplier = document.getElementById("nama_supplier");
+
+let timer;
+
+kodeSupplier.addEventListener("input", function () {
+
+    clearTimeout(timer);
 
     const kode = this.value.trim();
 
-    document.getElementById("nama_supplier").value = "";
+    if (kode == "") {
 
-    if(kode=="") return;
+        supplierCard.style.display = "none";
+        supplierStatus.innerHTML = "Ketik kode supplier.";
+        namaSupplier.textContent = "-";
 
-    const { data, error } = await db
-    .from("supplier")
-    .select("nama_supplier")
-    .eq("kode_supplier", kode)
-    .maybeSingle();
-
-    if(error){
-
-        console.log(error);
-        alert(error.message);
         return;
 
     }
 
-    if(!data){
+    supplierStatus.innerHTML = "🔄 Mencari supplier...";
 
-        alert("Kode Supplier tidak ditemukan");
-        return;
+    timer = setTimeout(async () => {
 
-    }
+        const { data, error } = await db
+            .from("supplier")
+            .select("nama_supplier")
+            .eq("kode_supplier", kode)
+            .maybeSingle();
 
-    document.getElementById("nama_supplier").value =
-    data.nama_supplier;
+        if (error) {
+
+            console.log(error);
+
+            supplierStatus.innerHTML =
+                "❌ Terjadi kesalahan.";
+
+            supplierCard.style.display = "none";
+
+            return;
+
+        }
+
+        if (!data) {
+
+            supplierStatus.innerHTML =
+                "❌ Supplier tidak ditemukan.";
+
+            supplierCard.style.display = "none";
+
+            namaSupplier.textContent = "-";
+
+            return;
+
+        }
+
+        namaSupplier.textContent =
+            data.nama_supplier;
+
+        supplierCard.style.display = "block";
+
+        supplierStatus.innerHTML =
+            "✅ Supplier ditemukan.";
+
+        document
+            .getElementById("nomor_kendaraan")
+            .focus();
+
+    }, 500);
 
 });
-
 // =====================================
 // SUBMIT
 // =====================================
@@ -56,8 +94,8 @@ form.addEventListener("submit", async function(e){
     const kode_supplier =
     document.getElementById("kode_supplier").value.trim();
 
-    const nama_supplier =
-    document.getElementById("nama_supplier").value.trim();
+   const nama_supplier =
+document.getElementById("nama_supplier").textContent.trim();
 
     const nomor_kendaraan =
     document.getElementById("nomor_kendaraan").value.trim();
@@ -269,5 +307,10 @@ const modal = new bootstrap.Modal(
 modal.show();
 
 form.reset();
+
+// Reset tampilan supplier
+document.getElementById("supplierCard").style.display = "none";
+document.getElementById("nama_supplier").textContent = "-";
+document.getElementById("supplierStatus").innerHTML = "Ketik kode supplier.";
 
 });
