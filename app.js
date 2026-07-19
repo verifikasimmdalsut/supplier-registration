@@ -41,7 +41,9 @@ kodeSupplier.addEventListener("input", function () {
             .select("nama_supplier")
             .eq("kode_supplier", kode)
             .maybeSingle();
-
+console.log("Kode yang dicari:", kode);
+console.log("Data supplier:", data);
+console.log("Error:", error);
         if (error) {
 
             console.log(error);
