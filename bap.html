@@ -70,6 +70,16 @@
                 <div class="field-error" id="err_no_return"></div>
             </div>
 
+            <!-- FOTO PEMUSNAHAN -->
+            <div class="mb-4">
+                <label class="form-label">Foto Pemusnahan Barang Return (maks 3 foto)</label>
+                <input type="file" id="foto_pemusnahan" class="form-control modern-input"
+                    accept="image/*" multiple>
+                <div id="fotoStatus" class="status-text">Belum ada foto dipilih</div>
+                <div id="fotoPreview" class="foto-preview-row"></div>
+                <div class="field-error" id="err_foto"></div>
+            </div>
+
             <button type="submit" class="btn btn-register" id="btnGenerate">
                 📄 GENERATE BAP (PDF)
             </button>
@@ -100,11 +110,15 @@ const supplierStatus = document.getElementById('supplierStatus');
 const supplierCard = document.getElementById('supplierCard');
 const namaSupplierEl = document.getElementById('nama_supplier');
 const noReturnInput = document.getElementById('no_return');
+const fotoInput = document.getElementById('foto_pemusnahan');
+const fotoStatus = document.getElementById('fotoStatus');
+const fotoPreview = document.getElementById('fotoPreview');
 const form = document.getElementById('formBAP');
 const btnGenerate = document.getElementById('btnGenerate');
 
 let verifiedSupplier = null;
 let searchTimer = null;
+let selectedFotos = []; // array of File
 
 // --- Cari supplier (live search, debounce 400ms) ---
 function setStatus(type, text){
@@ -167,6 +181,69 @@ noReturnInput.addEventListener('input', () => {
   document.getElementById('err_no_return').textContent = '';
 });
 
+// --- Pilih & preview foto pemusnahan (maks 3) ---
+function renderFotoPreview(){
+  fotoPreview.innerHTML = '';
+  selectedFotos.forEach((file, idx) => {
+    const url = URL.createObjectURL(file);
+    const item = document.createElement('div');
+    item.className = 'foto-preview-item';
+    item.innerHTML = `<img src="${url}" alt="Foto ${idx + 1}">
+      <button type="button" class="foto-remove" data-idx="${idx}">×</button>`;
+    fotoPreview.appendChild(item);
+  });
+
+  fotoStatus.textContent = selectedFotos.length
+    ? `${selectedFotos.length} foto dipilih`
+    : 'Belum ada foto dipilih';
+
+  fotoPreview.querySelectorAll('.foto-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.idx);
+      selectedFotos.splice(idx, 1);
+      renderFotoPreview();
+    });
+  });
+}
+
+fotoInput.addEventListener('change', () => {
+  const newFiles = Array.from(fotoInput.files || []);
+  const combined = [...selectedFotos, ...newFiles].slice(0, 3);
+  selectedFotos = combined;
+  fotoInput.value = ''; // reset supaya bisa pilih file yang sama lagi kalau perlu
+  document.getElementById('err_foto').textContent = '';
+  renderFotoPreview();
+});
+
+// Ubah 1 file foto jadi data URL JPEG yang sudah dikecilkan (biar PDF tidak kebesaran)
+function resizeImageToDataURL(file, maxDim = 1000, quality = 0.72){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if(width >= height && width > maxDim){
+          height = Math.round(height * (maxDim / width));
+          width = maxDim;
+        } else if(height > maxDim){
+          width = Math.round(width * (maxDim / height));
+          height = maxDim;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), width, height });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // --- Konfigurasi Google Apps Script (Web App URL) ---
 // PENTING: Ganti URL di bawah ini dengan Web App URL hasil deploy
 // Apps Script kamu (lihat instruksi di file google-apps-script-bap.gs)
@@ -194,7 +271,7 @@ async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn }){
 
 // --- Konstanta tetap sesuai template surat (gampang diubah di sini) ---
 const SURAT_FROM = 'MMD ALS';
-const SURAT_CC = 'ALIYAH';
+const SURAT_CC = 'Aliyah Risqiana / Tari Lestari';
 const SURAT_HAL = 'DISPOSAL RETURN';
 const SURAT_ALAMAT = [
   'Jl. Jalur Sutera Bar No Kav. 16  RT. 002/RW. 003',
@@ -203,7 +280,7 @@ const SURAT_ALAMAT = [
 ];
 
 // --- Generate PDF pakai jsPDF, replika Berita Acara AEON ---
-function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn }){
+function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -259,15 +336,30 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn }){
   const rightColonColX = pageWidth / 2 + 28;
   const rightValueColX = pageWidth / 2 + 32;
 
+  function fitText(text, maxWidth, baseSize){
+    let size = baseSize;
+    doc.setFontSize(size);
+    while(doc.getTextWidth(text) > maxWidth && size > 6){
+      size -= 0.5;
+      doc.setFontSize(size);
+    }
+    return size;
+  }
+
   function infoRow(leftLabel, leftValue, rightLabel, rightValue){
+    doc.setFontSize(10);
     doc.text(leftLabel, labelColX, y);
     doc.text(':', colonColX, y);
+    const leftSize = fitText(String(leftValue), rightLabelColX - valueColX - 4, 10);
     doc.text(String(leftValue), valueColX, y);
+    doc.setFontSize(10);
 
     if(rightLabel){
       doc.text(rightLabel, rightLabelColX, y);
       doc.text(':', rightColonColX, y);
+      const rightSize = fitText(String(rightValue), rightX - rightValueColX, 10);
       doc.text(String(rightValue), rightValueColX, y);
+      doc.setFontSize(10);
     }
     y += 6;
   }
@@ -362,7 +454,50 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn }){
   y += 5;
   doc.text('2. Bukti Lampiran Dokumen Return', marginX, y);
   y += 5;
-  doc.text('3. Bukti Foto Pemusnahan Barang Return', marginX, y);
+  const fotoNoteSuffix = (fotos && fotos.length) ? ' (terlampir)' : '';
+  doc.text(`3. Bukti Foto Pemusnahan Barang Return${fotoNoteSuffix}`, marginX, y);
+
+  // --- Halaman lampiran foto pemusnahan ---
+  if(fotos && fotos.length){
+    doc.addPage();
+    let fy = 20;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(20, 20, 20);
+    doc.text('Lampiran: Bukti Foto Pemusnahan Barang Return', pageWidth / 2, fy, { align: 'center' });
+    fy += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Nomor BAP: ${nomorBap}`, pageWidth / 2, fy, { align: 'center' });
+    fy += 10;
+
+    const maxW = rightX - marginX;
+    const maxH = 78;
+    const gap = 10;
+
+    fotos.forEach((foto, idx) => {
+      const ratio = Math.min(maxW / foto.width, maxH / foto.height);
+      const w = foto.width * ratio;
+      const h = foto.height * ratio;
+
+      if(fy + h + 12 > 280){
+        doc.addPage();
+        fy = 20;
+      }
+
+      const x = marginX + (maxW - w) / 2;
+      doc.addImage(foto.dataUrl, 'JPEG', x, fy, w, h);
+      fy += h + 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Foto ${idx + 1}`, pageWidth / 2, fy, { align: 'center' });
+      fy += gap;
+    });
+  }
 
   doc.save(`${nomorBap.replace(/\//g, '-')}.pdf`);
 }
@@ -390,23 +525,43 @@ form.addEventListener('submit', async (e) => {
 
   const originalHtml = btnGenerate.innerHTML;
   btnGenerate.disabled = true;
-  btnGenerate.innerHTML = 'Membuat PDF...';
+  btnGenerate.innerHTML = 'Memproses foto...';
 
   try{
+    // Kecilkan & konversi semua foto jadi data URL dulu sebelum generate PDF
+    const fotos = [];
+    for(const file of selectedFotos){
+      const resized = await resizeImageToDataURL(file);
+      fotos.push(resized);
+    }
+
+    btnGenerate.innerHTML = 'Menyimpan data...';
+
     const result = await simpanKeGoogleSheets({
       kodeSupplier: verifiedSupplier.code,
       namaSupplier: verifiedSupplier.name,
       noReturn: noReturn,
     });
 
+    btnGenerate.innerHTML = 'Membuat PDF...';
+
     generatePDF({
       nomorBap: result.nomorBap,
       kodeSupplier: verifiedSupplier.code,
       namaSupplier: verifiedSupplier.name,
       noReturn: noReturn,
+      fotos: fotos,
     });
 
     setStatus('success', `BAP ${result.nomorBap} berhasil dibuat.`);
+
+    // Reset form untuk BAP berikutnya
+    noReturnInput.value = '';
+    selectedFotos = [];
+    renderFotoPreview();
+    supplierCard.style.display = 'none';
+    verifiedSupplier = null;
+    kodeInput.value = '';
 
   }catch(err){
     setStatus('error', 'Gagal membuat BAP. Coba lagi.');
