@@ -65,9 +65,28 @@
             <!-- DEPARTEMEN -->
             <div class="mb-4">
                 <label class="form-label">Departemen / Kategori Produk</label>
-                <input type="text" id="departemen" class="form-control modern-input"
-                    placeholder="Contoh: DAILY & DAIRY" style="text-transform:uppercase;">
-                <div class="status-text">Dipakai untuk nomor surat, contoh: DAILY & DAIRY, GROCERY, FRESH</div>
+                <select id="departemen" class="form-select modern-input">
+                    <option value="" disabled selected>Pilih Departemen</option>
+                    <option value="DAILY & DAIRY">Daily & Dairy</option>
+                    <option value="FISH">Fish</option>
+                    <option value="MEAT">Meat</option>
+                    <option value="PRODUCE">Produce</option>
+                    <option value="BAKERY">Bakery</option>
+                    <option value="GROCERY">Grocery</option>
+                    <option value="NONFOODS&HBC">Nonfoods & HBC</option>
+                    <option value="BEDDING OUTRIGHT">Bedding Outright</option>
+                    <option value="INTERIOR DECORATION">Interior Decoration</option>
+                    <option value="HOME FURNITURE">Home Furniture</option>
+                    <option value="HOME STORAGE">Home Storage</option>
+                    <option value="DINING">Dining</option>
+                    <option value="KITCHEN">Kitchen</option>
+                    <option value="LAUNDRY & CLEANING">Laundry & Cleaning</option>
+                    <option value="BABY NEEDS">Baby Needs</option>
+                    <option value="BABY HEALTH CARES & ACC">Baby Health Cares & Acc</option>
+                    <option value="LAINNYA">Lainnya (tulis manual)</option>
+                </select>
+                <input type="text" id="departemen_manual" class="form-control modern-input mt-2"
+                    placeholder="Tulis nama departemen" style="display:none; text-transform:uppercase;">
                 <div class="field-error" id="err_departemen"></div>
             </div>
 
@@ -120,6 +139,7 @@ const supplierCard = document.getElementById('supplierCard');
 const namaSupplierEl = document.getElementById('nama_supplier');
 const noReturnInput = document.getElementById('no_return');
 const departemenInput = document.getElementById('departemen');
+const departemenManualInput = document.getElementById('departemen_manual');
 const fotoInput = document.getElementById('foto_pemusnahan');
 const fotoStatus = document.getElementById('fotoStatus');
 const fotoPreview = document.getElementById('fotoPreview');
@@ -191,8 +211,21 @@ noReturnInput.addEventListener('input', () => {
   document.getElementById('err_no_return').textContent = '';
 });
 
-departemenInput.addEventListener('input', () => {
+departemenInput.addEventListener('change', () => {
   departemenInput.classList.remove('is-invalid');
+  document.getElementById('err_departemen').textContent = '';
+
+  if(departemenInput.value === 'LAINNYA'){
+    departemenManualInput.style.display = 'block';
+    departemenManualInput.focus();
+  } else {
+    departemenManualInput.style.display = 'none';
+    departemenManualInput.value = '';
+  }
+});
+
+departemenManualInput.addEventListener('input', () => {
+  departemenManualInput.classList.remove('is-invalid');
   document.getElementById('err_departemen').textContent = '';
 });
 
@@ -529,9 +562,12 @@ form.addEventListener('submit', async (e) => {
     valid = false;
   }
 
-  const departemen = departemenInput.value.trim().toUpperCase();
+  const departemen = (departemenInput.value === 'LAINNYA'
+    ? departemenManualInput.value.trim()
+    : departemenInput.value.trim()
+  ).toUpperCase();
   if(!departemen){
-    departemenInput.classList.add('is-invalid');
+    (departemenInput.value === 'LAINNYA' ? departemenManualInput : departemenInput).classList.add('is-invalid');
     document.getElementById('err_departemen').textContent = 'Departemen wajib diisi.';
     valid = false;
   }
@@ -581,6 +617,8 @@ form.addEventListener('submit', async (e) => {
     // Reset form untuk BAP berikutnya
     noReturnInput.value = '';
     departemenInput.value = '';
+    departemenManualInput.value = '';
+    departemenManualInput.style.display = 'none';
     selectedFotos = [];
     renderFotoPreview();
     supplierCard.style.display = 'none';
