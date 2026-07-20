@@ -513,7 +513,8 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
     });
   }
 
-  doc.save(`${nomorBap.replace(/\//g, '-')}.pdf`);
+  const namaFileAman = namaSupplier.replace(/[\\/:*?"<>|]/g, '-').trim();
+  doc.save(`${namaFileAman}.pdf`);
 }
 
 // --- Submit form ---
