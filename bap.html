@@ -62,6 +62,15 @@
                 </div>
             </div>
 
+            <!-- DEPARTEMEN -->
+            <div class="mb-4">
+                <label class="form-label">Departemen / Kategori Produk</label>
+                <input type="text" id="departemen" class="form-control modern-input"
+                    placeholder="Contoh: DAILY & DAIRY" style="text-transform:uppercase;">
+                <div class="status-text">Dipakai untuk nomor surat, contoh: DAILY & DAIRY, GROCERY, FRESH</div>
+                <div class="field-error" id="err_departemen"></div>
+            </div>
+
             <!-- NO RETURN -->
             <div class="mb-4">
                 <label class="form-label">No Return</label>
@@ -110,6 +119,7 @@ const supplierStatus = document.getElementById('supplierStatus');
 const supplierCard = document.getElementById('supplierCard');
 const namaSupplierEl = document.getElementById('nama_supplier');
 const noReturnInput = document.getElementById('no_return');
+const departemenInput = document.getElementById('departemen');
 const fotoInput = document.getElementById('foto_pemusnahan');
 const fotoStatus = document.getElementById('fotoStatus');
 const fotoPreview = document.getElementById('fotoPreview');
@@ -181,6 +191,11 @@ noReturnInput.addEventListener('input', () => {
   document.getElementById('err_no_return').textContent = '';
 });
 
+departemenInput.addEventListener('input', () => {
+  departemenInput.classList.remove('is-invalid');
+  document.getElementById('err_departemen').textContent = '';
+});
+
 // --- Pilih & preview foto pemusnahan (maks 3) ---
 function renderFotoPreview(){
   fotoPreview.innerHTML = '';
@@ -250,11 +265,11 @@ function resizeImageToDataURL(file, maxDim = 1000, quality = 0.72){
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxE-Ms3c1dKXw9yJpRxZhJeWjHRu46hu1iDRqHk2VKaPAExYKGji3evzP00zQj-a1eC4Q/exec';
 
 // --- Kirim data ke Google Sheets via Apps Script, dapat nomor BAP balik ---
-async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn }){
+async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn, departemen }){
   const response = await fetch(GOOGLE_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
-    body: JSON.stringify({ kodeSupplier, namaSupplier, noReturn }),
+    body: JSON.stringify({ kodeSupplier, namaSupplier, noReturn, departemen }),
   });
 
   if(!response.ok){
@@ -270,8 +285,8 @@ async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn }){
 }
 
 // --- Konstanta tetap sesuai template surat (gampang diubah di sini) ---
-const SURAT_FROM = 'MMD ALS';
-const SURAT_CC = 'Aliyah Risqiana / Tari Lestari';
+const SURAT_FROM = 'MMD ALAM SUTERA';
+const SURAT_CC = 'Aliyah Risqiana & Tari Lestari';
 const SURAT_HAL = 'DISPOSAL RETURN';
 const SURAT_ALAMAT = [
   'Jl. Jalur Sutera Bar No Kav. 16  RT. 002/RW. 003',
@@ -364,10 +379,10 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
     y += 6;
   }
 
-  infoRow('NO', nomorBap, 'DATE', tanggalPendek);
-  infoRow('TO', namaSupplier, 'CC', SURAT_CC);
-  infoRow('FROM', SURAT_FROM, '', '');
-  infoRow('HAL', SURAT_HAL, '', '');
+  infoRow('No', nomorBap, 'Date', tanggalPendek);
+  infoRow('To', namaSupplier, 'CC', SURAT_CC);
+  infoRow('From', SURAT_FROM, '', '');
+  infoRow('Hal', SURAT_HAL, '', '');
 
   y += 1;
   doc.line(marginX, y, rightX, y);
@@ -428,19 +443,18 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
 
   // --- Tanda tangan ---
   y += 16;
-  const colW = (rightX - marginX) / 3;
+  const colW4 = (rightX - marginX) / 4;
 
   doc.text('Hormat kami,', marginX, y);
-  doc.text('Disaksikan Oleh,', marginX + colW, y);
-  doc.text('Mengetahui,', marginX + colW * 2, y);
+  doc.text('Disaksikan Oleh,', marginX + colW4, y);
+  doc.text('Mengetahui,', marginX + colW4 * 3, y);
 
   y += 26;
   doc.setFontSize(9.5);
   doc.text('Staff line', marginX, y);
-  doc.text('Security', marginX + colW, y);
-  doc.text('Supplier (Jika ada)', marginX + colW * 2 - 14, y);
-  y += 5;
-  doc.text('MMD', marginX + colW * 2 + 26, y);
+  doc.text('Security', marginX + colW4, y);
+  doc.text('Supplier (Jika ada)', marginX + colW4 * 2, y);
+  doc.text('MMD', marginX + colW4 * 3, y);
 
   // --- Catatan lampiran ---
   y += 14;
@@ -514,6 +528,13 @@ form.addEventListener('submit', async (e) => {
     valid = false;
   }
 
+  const departemen = departemenInput.value.trim().toUpperCase();
+  if(!departemen){
+    departemenInput.classList.add('is-invalid');
+    document.getElementById('err_departemen').textContent = 'Departemen wajib diisi.';
+    valid = false;
+  }
+
   const noReturn = noReturnInput.value.trim();
   if(!noReturn){
     noReturnInput.classList.add('is-invalid');
@@ -541,6 +562,7 @@ form.addEventListener('submit', async (e) => {
       kodeSupplier: verifiedSupplier.code,
       namaSupplier: verifiedSupplier.name,
       noReturn: noReturn,
+      departemen: departemen,
     });
 
     btnGenerate.innerHTML = 'Membuat PDF...';
@@ -557,6 +579,7 @@ form.addEventListener('submit', async (e) => {
 
     // Reset form untuk BAP berikutnya
     noReturnInput.value = '';
+    departemenInput.value = '';
     selectedFotos = [];
     renderFotoPreview();
     supplierCard.style.display = 'none';
