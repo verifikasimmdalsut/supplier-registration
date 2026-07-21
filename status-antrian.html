@@ -48,6 +48,11 @@
             background: var(--pink-100);
             color: var(--magenta);
         }
+        .antrian-badge.badge-merah{ background:#fbcaca; color:#c81414; }
+        .antrian-badge.badge-kuning{ background:#fbe4a3; color:#8a6200; }
+        .antrian-badge.badge-hijau{ background:#b9ecd4; color:#0e6b47; }
+        .antrian-badge.badge-putih{ background:#e6e6e6; color:#4a4a4a; }
+        .antrian-badge.badge-express{ background:#fbcae7; color:#a3106d; }
         .antrian-info{ flex:1; min-width:0; }
         .antrian-nama{
             font-weight:700;
@@ -104,7 +109,7 @@
                 <span class="fly-butterfly fly-2"><img src="kupu-kupu.gif" alt=""></span>
             </div>
             <h2 class="title">Status Antrian</h2>
-            <p class="subtitle">AEON Alam Sutera</p>
+            <p class="subtitle" id="subtitleWarna">AEON Alam Sutera</p>
         </div>
 
         <div class="text-center mb-3" style="font-size:12.5px; color:var(--ink-soft);">
@@ -126,19 +131,36 @@ const STATUS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6RBKQu_XrNk
 const params = new URLSearchParams(window.location.search);
 const myNoAntrian = (params.get('no') || '').trim().toUpperCase();
 
+function extractWarna(noAntrian){
+    const match = String(noAntrian || '').trim().toUpperCase().match(/[A-Z]+$/);
+    return match ? match[0] : '';
+}
+
+const myWarna = extractWarna(myNoAntrian);
+
+if(myWarna){
+    document.getElementById('subtitleWarna').textContent = 'Antrian Warna ' + myWarna;
+}
+
 const listEl = document.getElementById('antrianList');
 
 function renderList(data){
-    if(!data || data.length === 0){
-        listEl.innerHTML = '<div class="empty-state">Tidak ada antrian yang sedang berjalan saat ini.</div>';
+    // Kalau ada info warna sendiri (dari tiket), cuma tampilin antrian warna yang sama
+    const filtered = myWarna
+        ? data.filter(item => extractWarna(item.noAntrian) === myWarna)
+        : data;
+
+    if(!filtered || filtered.length === 0){
+        listEl.innerHTML = '<div class="empty-state">Tidak ada antrian warna ' + (myWarna || 'ini') + ' yang sedang berjalan saat ini.</div>';
         return;
     }
 
-    listEl.innerHTML = data.map(item => {
+    listEl.innerHTML = filtered.map(item => {
         const isMine = item.noAntrian.trim().toUpperCase() === myNoAntrian && myNoAntrian !== '';
+        const warnaClass = 'badge-' + extractWarna(item.noAntrian).toLowerCase();
         return `
             <div class="antrian-row ${isMine ? 'mine' : ''}">
-                <div class="antrian-badge">${item.noAntrian}</div>
+                <div class="antrian-badge ${warnaClass}">${item.noAntrian}</div>
                 <div class="antrian-info">
                     <div class="antrian-nama">${item.namaSupplier}</div>
                     <div class="antrian-tahap">${item.tahap}${isMine ? ' · Ini kendaraan kamu' : ''}</div>
