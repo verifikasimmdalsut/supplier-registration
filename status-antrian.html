@@ -147,7 +147,7 @@ const listEl = document.getElementById('antrianList');
 function renderList(data){
     // Kalau ada info warna sendiri (dari tiket), cuma tampilin antrian warna yang sama
     const filtered = myWarna
-        ? data.filter(item => extractWarna(item.noAntrian) === myWarna)
+        ? data.filter(item => (item.warna || '').toUpperCase() === myWarna)
         : data;
 
     if(!filtered || filtered.length === 0){
@@ -157,7 +157,7 @@ function renderList(data){
 
     listEl.innerHTML = filtered.map(item => {
         const isMine = item.noAntrian.trim().toUpperCase() === myNoAntrian && myNoAntrian !== '';
-        const warnaClass = 'badge-' + extractWarna(item.noAntrian).toLowerCase();
+        const warnaClass = 'badge-' + (item.warna || '').toLowerCase();
         return `
             <div class="antrian-row ${isMine ? 'mine' : ''}">
                 <div class="antrian-badge ${warnaClass}">${item.noAntrian}</div>
