@@ -176,6 +176,10 @@ form.addEventListener('submit', async (e) => {
     document.getElementById('ticketNomorAntrian').textContent = nomorAntrian;
     document.getElementById('ticketNamaSupplier').textContent = verifiedSupplier.name;
 
+    // Format nomor antrian sesuai sheet checker: gabung angka (tanpa nol depan) + warna, contoh "5MERAH"
+    const noAntrianSheet = String(parseInt(nomorAntrian, 10)) + warnaAntrian;
+    document.getElementById('btnCekStatus').href = 'status-antrian.html?no=' + encodeURIComponent(noAntrianSheet);
+
     const ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
     ticketModal.show();
 
