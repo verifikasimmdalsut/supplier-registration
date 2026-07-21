@@ -8,119 +8,276 @@
 
     <title>Status Antrian — AEON</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        .antrian-list{
-            max-width: 520px;
-            margin: 0 auto;
+        :root{
+            --merah:#ff5c5c;
+            --kuning:#ffd23f;
+            --hijau:#34d399;
+            --putih:#e8e8e8;
+            --express:#ff6fb5;
+            --bg-0:#0a0a0d;
+            --bg-1:#121218;
+            --bg-2:#1a1a22;
+            --line:#26262f;
+            --ink:#f2f2f5;
+            --ink-soft:#9494a3;
+            --ink-faint:#5c5c6b;
         }
-        .antrian-row{
+
+        *{ box-sizing:border-box; }
+        html,body{ margin:0; padding:0; }
+
+        body{
+            min-height:100vh;
+            background: radial-gradient(circle at 20% 0%, #17171f 0%, var(--bg-0) 55%);
+            font-family:'Inter', system-ui, sans-serif;
+            color:var(--ink);
+            padding: 28px 16px 60px;
+        }
+
+        .wrap{ max-width:480px; margin:0 auto; }
+
+        .header-row{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:20px;
+        }
+        .brand{
+            font-family:'Poppins', sans-serif;
+            font-weight:800;
+            font-size:15px;
+            letter-spacing:1px;
+        }
+        .brand span{ color:var(--express); }
+        .brand small{
+            display:block;
+            font-family:'Inter',sans-serif;
+            font-weight:500;
+            font-size:10.5px;
+            letter-spacing:1.5px;
+            color:var(--ink-faint);
+            margin-top:2px;
+        }
+        .live-pill{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            font-size:11px;
+            font-weight:700;
+            letter-spacing:1px;
+            color:var(--hijau);
+        }
+        .live-dot{
+            width:7px; height:7px;
+            border-radius:50%;
+            background:var(--hijau);
+            animation: pulse-dot 1.4s ease-in-out infinite;
+        }
+        @keyframes pulse-dot{
+            0%,100%{ opacity:1; box-shadow:0 0 0 0 rgba(52,211,153,.5); }
+            50%{ opacity:0.4; }
+        }
+
+        /* ---------- Kartu status saya ---------- */
+        .my-card{
+            background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
+            border:1px solid var(--line);
+            border-radius:20px;
+            padding:22px;
+            margin-bottom:22px;
+        }
+        .my-card .label{
+            font-size:11px;
+            letter-spacing:1.5px;
+            color:var(--ink-faint);
+            font-weight:700;
+            margin-bottom:12px;
+        }
+        .my-card .row{
+            display:flex;
+            align-items:center;
+            gap:16px;
+        }
+        .my-num{
+            font-family:'Poppins', sans-serif;
+            font-weight:800;
+            font-size:44px;
+            line-height:1;
+        }
+        .my-info .nama{ font-weight:700; font-size:15px; }
+        .my-info .warna{
+            font-size:11.5px;
+            font-weight:700;
+            letter-spacing:0.5px;
+            margin-top:3px;
+        }
+        .ahead-box{
+            margin-top:16px;
+            background: var(--bg-0);
+            border:1px solid var(--line);
+            border-radius:14px;
+            padding:12px 16px;
+        }
+        .ahead-box .n{
+            font-family:'Poppins', sans-serif;
+            font-weight:800;
+            font-size:20px;
+        }
+        .ahead-box .t{
+            font-size:11px;
+            color:var(--ink-faint);
+            letter-spacing:0.5px;
+            margin-top:2px;
+        }
+        .done-msg{
+            font-size:13.5px;
+            color:var(--hijau);
+            font-weight:600;
+            margin-top:14px;
+        }
+
+        /* ---------- Section header ---------- */
+        .section-head{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin: 22px 0 10px;
+        }
+        .section-title{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            font-size:11.5px;
+            font-weight:700;
+            letter-spacing:1.2px;
+            color:var(--ink-soft);
+        }
+        .section-title .dot{
+            width:7px; height:7px;
+            border-radius:50%;
+        }
+        .section-title.bongkar .dot{ background:var(--hijau); }
+        .section-title.tunggu .dot{ background:var(--ink-faint); }
+        .section-count{
+            font-size:11px;
+            color:var(--ink-faint);
+            background:var(--bg-2);
+            border:1px solid var(--line);
+            padding:3px 10px;
+            border-radius:999px;
+        }
+
+        /* ---------- Item antrian ---------- */
+        .q-item{
             display:flex;
             align-items:center;
             gap:14px;
-            background:#fff;
-            border:1.5px solid var(--pink-100);
+            background:var(--bg-1);
+            border:1px solid var(--line);
             border-radius:14px;
-            padding:12px 16px;
-            margin-bottom:10px;
-            transition: background .2s ease, border-color .2s ease, transform .2s ease;
+            padding:12px 14px;
+            margin-bottom:8px;
         }
-        .antrian-row.mine{
-            background: linear-gradient(135deg, var(--pink-100), var(--pink-50));
-            border-color: var(--magenta-bright);
-            box-shadow: 0 8px 20px -8px rgba(155,20,104,0.3);
-            transform: scale(1.02);
+        .q-item.mine{
+            border-color: currentColor;
+            background: var(--bg-2);
         }
-        .antrian-badge{
-            flex-shrink:0;
-            min-width:64px;
-            text-align:center;
+        .q-badge{
             font-family:'Poppins', sans-serif;
-            font-weight:700;
-            font-size:14px;
-            padding:8px 10px;
-            border-radius:10px;
-            background: var(--pink-100);
-            color: var(--magenta);
+            font-weight:800;
+            font-size:17px;
+            min-width:30px;
         }
-        .antrian-badge.badge-merah{ background:#fbcaca; color:#c81414; }
-        .antrian-badge.badge-kuning{ background:#fbe4a3; color:#8a6200; }
-        .antrian-badge.badge-hijau{ background:#b9ecd4; color:#0e6b47; }
-        .antrian-badge.badge-putih{ background:#e6e6e6; color:#4a4a4a; }
-        .antrian-badge.badge-express{ background:#fbcae7; color:#a3106d; }
-        .antrian-info{ flex:1; min-width:0; }
-        .antrian-nama{
-            font-weight:700;
-            font-size:14px;
-            color:var(--ink);
+        .q-info{ flex:1; min-width:0; }
+        .q-nama{
+            font-size:13.5px;
+            font-weight:600;
             white-space:nowrap;
             overflow:hidden;
             text-overflow:ellipsis;
         }
-        .antrian-tahap{
-            font-size:12px;
-            color:var(--ink-soft);
-            margin-top:2px;
+        .q-status-tag{
+            font-size:9.5px;
+            font-weight:700;
+            letter-spacing:0.5px;
+            padding:3px 9px;
+            border-radius:999px;
+            border:1px solid currentColor;
+            flex-shrink:0;
         }
-        .antrian-row.mine .antrian-tahap{
-            color: var(--magenta);
-            font-weight:600;
+        .q-anda-tag{
+            font-size:9.5px;
+            font-weight:700;
+            letter-spacing:0.5px;
+            padding:3px 9px;
+            border-radius:999px;
+            background: var(--express);
+            color:#1a0a14;
+            flex-shrink:0;
         }
+
         .empty-state{
             text-align:center;
-            padding: 40px 20px;
-            color: var(--ink-soft);
+            padding: 28px 10px;
+            color: var(--ink-faint);
+            font-size:13px;
         }
-        .live-dot{
-            display:inline-block;
-            width:8px;
-            height:8px;
-            border-radius:50%;
-            background:#1f9d6b;
-            margin-right:6px;
-            animation: pulse-dot 1.5s ease-in-out infinite;
-        }
-        @keyframes pulse-dot{
-            0%,100%{ opacity:1; }
-            50%{ opacity:0.3; }
-        }
+
+        /* Warna per kategori antrian */
+        .c-merah{ color:var(--merah); }
+        .c-kuning{ color:var(--kuning); }
+        .c-hijau{ color:var(--hijau); }
+        .c-putih{ color:var(--putih); }
+        .c-express{ color:var(--express); }
     </style>
 
 </head>
 
 <body>
 
-<div class="butterfly"><img src="kupu-kupu.gif" alt=""></div>
-<div class="butterfly butterfly2"><img src="kupu-kupu.gif" alt=""></div>
+<div class="wrap">
 
-<div class="container py-5">
-
-    <div class="register-card" style="max-width:560px;">
-
-        <div class="text-center mb-4">
-            <div class="logo-wrap">
-                <img src="aeon-logo.png" alt="AEON" class="aeon-header-logo">
-                <span class="fly-butterfly fly-1"><img src="kupu-kupu.gif" alt=""></span>
-                <span class="fly-butterfly fly-2"><img src="kupu-kupu.gif" alt=""></span>
-            </div>
-            <h2 class="title">Status Antrian</h2>
-            <p class="subtitle" id="subtitleWarna">AEON Alam Sutera</p>
+    <div class="header-row">
+        <div class="brand">
+            GUDANG<span>QUEUE</span>
+            <small>AEON ALAM SUTERA</small>
         </div>
-
-        <div class="text-center mb-3" style="font-size:12.5px; color:var(--ink-soft);">
-            <span class="live-dot"></span>Update otomatis tiap 8 detik
-        </div>
-
-        <div id="antrianList" class="antrian-list">
-            <div class="empty-state">Memuat data antrian...</div>
-        </div>
-
+        <div class="live-pill"><span class="live-dot"></span>LIVE</div>
     </div>
+
+    <div class="my-card" id="myCard">
+        <div class="label">STATUS REGISTRASI ANDA</div>
+        <div class="row">
+            <div class="my-num" id="myNum">-</div>
+            <div class="my-info">
+                <div class="nama" id="myNama">-</div>
+                <div class="warna" id="myWarnaLabel">-</div>
+            </div>
+        </div>
+        <div class="ahead-box" id="aheadBox" style="display:none;">
+            <div class="n" id="aheadCount">-</div>
+            <div class="t">SUPPLIER DI DEPAN ANDA</div>
+        </div>
+        <div class="done-msg" id="doneMsg" style="display:none;">
+            ✓ Registrasi Anda sudah selesai diproses. Terima kasih!
+        </div>
+    </div>
+
+    <div class="section-head">
+        <div class="section-title bongkar"><span class="dot"></span>SEDANG DIPROSES</div>
+        <div class="section-count" id="countBongkar">0 dok aktif</div>
+    </div>
+    <div id="listBongkar"><div class="empty-state">Belum ada yang diproses.</div></div>
+
+    <div class="section-head">
+        <div class="section-title tunggu"><span class="dot"></span>MENUNGGU BONGKAR</div>
+        <div class="section-count" id="countTunggu">0 dalam antrian</div>
+    </div>
+    <div id="listTunggu"><div class="empty-state">Tidak ada yang menunggu.</div></div>
 
 </div>
 
@@ -130,44 +287,76 @@ const STATUS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6RBKQu_XrNk
 
 const params = new URLSearchParams(window.location.search);
 const myNoAntrian = (params.get('no') || '').trim().toUpperCase();
+const myNamaFromUrl = (params.get('nama') || '').trim();
 
 function extractWarna(noAntrian){
     const match = String(noAntrian || '').trim().toUpperCase().match(/[A-Z]+$/);
     return match ? match[0] : '';
 }
-
 const myWarna = extractWarna(myNoAntrian);
+const warnaClass = 'c-' + myWarna.toLowerCase();
 
-if(myWarna){
-    document.getElementById('subtitleWarna').textContent = 'Antrian Warna ' + myWarna;
+// Isi kartu status awal (sebelum data kefetch)
+if(myNoAntrian){
+    document.getElementById('myNum').textContent = myNoAntrian.replace(/[A-Z]+$/, '');
+    document.getElementById('myNum').className = 'my-num ' + warnaClass;
+    document.getElementById('myNama').textContent = myNamaFromUrl || '-';
+    document.getElementById('myWarnaLabel').textContent = 'ANTRIAN ' + myWarna;
+    document.getElementById('myWarnaLabel').className = 'warna ' + warnaClass;
 }
 
-const listEl = document.getElementById('antrianList');
+const BONGKAR_STAGES = ['Sedang Bongkar', 'Menunggu Administrasi', 'Proses Administrasi'];
+
+function renderItem(item){
+    const cls = 'c-' + (item.warna || '').toLowerCase();
+    const isMine = item.noAntrian.trim().toUpperCase() === myNoAntrian && myNoAntrian !== '';
+    return `
+        <div class="q-item ${isMine ? 'mine ' + cls : ''}">
+            <div class="q-badge ${cls}">${item.noAntrian}</div>
+            <div class="q-info">
+                <div class="q-nama">${item.namaSupplier}</div>
+            </div>
+            ${isMine ? '<div class="q-anda-tag">ANDA</div>' : `<div class="q-status-tag ${cls}">${item.tahap.toUpperCase()}</div>`}
+        </div>
+    `;
+}
 
 function renderList(data){
-    // Kalau ada info warna sendiri (dari tiket), cuma tampilin antrian warna yang sama
-    const filtered = myWarna
-        ? data.filter(item => (item.warna || '').toUpperCase() === myWarna)
-        : data;
+    // Filter cuma warna yang sama kayak punya sendiri
+    const filtered = myWarna ? data.filter(item => (item.warna || '').toUpperCase() === myWarna) : data;
 
-    if(!filtered || filtered.length === 0){
-        listEl.innerHTML = '<div class="empty-state">Tidak ada antrian warna ' + (myWarna || 'ini') + ' yang sedang berjalan saat ini.</div>';
-        return;
+    const bongkar = filtered.filter(item => BONGKAR_STAGES.indexOf(item.tahap) !== -1);
+    const tunggu = filtered.filter(item => BONGKAR_STAGES.indexOf(item.tahap) === -1);
+
+    document.getElementById('countBongkar').textContent = bongkar.length + ' dok aktif';
+    document.getElementById('countTunggu').textContent = tunggu.length + ' dalam antrian';
+
+    document.getElementById('listBongkar').innerHTML = bongkar.length
+        ? bongkar.map(renderItem).join('')
+        : '<div class="empty-state">Belum ada yang diproses.</div>';
+
+    document.getElementById('listTunggu').innerHTML = tunggu.length
+        ? tunggu.map(renderItem).join('')
+        : '<div class="empty-state">Tidak ada yang menunggu.</div>';
+
+    // Update kartu status saya: posisi & apakah sudah selesai
+    const myIndex = filtered.findIndex(item => item.noAntrian.trim().toUpperCase() === myNoAntrian);
+    const aheadBox = document.getElementById('aheadBox');
+    const doneMsg = document.getElementById('doneMsg');
+
+    if(!myNoAntrian){
+        aheadBox.style.display = 'none';
+        doneMsg.style.display = 'none';
+    } else if(myIndex === -1){
+        // Nggak ketemu di daftar aktif = kemungkinan sudah DONE
+        aheadBox.style.display = 'none';
+        doneMsg.style.display = 'block';
+    } else {
+        doneMsg.style.display = 'none';
+        aheadBox.style.display = 'block';
+        document.getElementById('aheadCount').textContent = myIndex;
+        document.getElementById('myNama').textContent = filtered[myIndex].namaSupplier;
     }
-
-    listEl.innerHTML = filtered.map(item => {
-        const isMine = item.noAntrian.trim().toUpperCase() === myNoAntrian && myNoAntrian !== '';
-        const warnaClass = 'badge-' + (item.warna || '').toLowerCase();
-        return `
-            <div class="antrian-row ${isMine ? 'mine' : ''}">
-                <div class="antrian-badge ${warnaClass}">${item.noAntrian}</div>
-                <div class="antrian-info">
-                    <div class="antrian-nama">${item.namaSupplier}</div>
-                    <div class="antrian-tahap">${item.tahap}${isMine ? ' · Ini kendaraan kamu' : ''}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
 }
 
 async function loadStatus(){
@@ -176,12 +365,9 @@ async function loadStatus(){
         const result = await response.json();
         if(result.success){
             renderList(result.data);
-        } else {
-            listEl.innerHTML = '<div class="empty-state">Gagal memuat data. Coba lagi sebentar.</div>';
         }
     }catch(err){
         console.error(err);
-        listEl.innerHTML = '<div class="empty-state">Gagal terhubung ke server. Coba lagi sebentar.</div>';
     }
 }
 
