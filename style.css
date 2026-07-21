@@ -285,18 +285,7 @@ body{
 .ticket-hijau{ --tk-strong:#1f9d6b; --tk-soft:#b9ecd4; --tk-text:#0e6b47; --tk-bg:#effaf4; }
 .ticket-putih{ --tk-strong:#8a8a8a; --tk-soft:#e6e6e6; --tk-text:#4a4a4a; --tk-bg:#fafafa; }
 
-.ticket-express{
-  --tk-strong:#e8c766;
-  --tk-soft:#2a2a2a;
-  --tk-text:#e8c766;
-  --tk-bg:#141414;
-  --tk-body-text:#f2f2f2;
-  --tk-subtitle-text:#b8b8b8;
-}
-.ticket-express .ticket-color-strip{ background:linear-gradient(90deg, #e8c766, #1a1a1a, #e8c766); }
-.ticket-express .ticket-details{ border-color:#3a3a3a; }
-.ticket-express .ticket-row span:first-child{ color:#a8a8a8; }
-.ticket-express .ticket-row span:last-child{ color:#f2f2f2; }
+.ticket-express{ --tk-strong:#c81e7a; --tk-soft:#fbcae7; --tk-text:#a3106d; --tk-bg:#fff2fa; }
 
 .success-icon{
   font-size:44px;
