@@ -114,7 +114,13 @@
 
                 <div class="sig-block" data-sig-key="staff">
                     <div class="sig-label">Staff Line <span class="req">*</span></div>
-                    <canvas class="sig-canvas" id="sig_staff"></canvas>
+                    <div class="sig-wrap">
+                        <canvas class="sig-canvas" id="sig_staff"></canvas>
+                        <div class="sig-overlay" data-target="staff">
+                            <span class="sig-overlay-icon">✍️</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
+                        </div>
+                    </div>
                     <div class="sig-actions">
                         <button type="button" class="sig-clear" data-target="sig_staff">Hapus</button>
                     </div>
@@ -123,7 +129,13 @@
 
                 <div class="sig-block" data-sig-key="security">
                     <div class="sig-label">Security <span class="req">*</span></div>
-                    <canvas class="sig-canvas" id="sig_security"></canvas>
+                    <div class="sig-wrap">
+                        <canvas class="sig-canvas" id="sig_security"></canvas>
+                        <div class="sig-overlay" data-target="security">
+                            <span class="sig-overlay-icon">✍️</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
+                        </div>
+                    </div>
                     <div class="sig-actions">
                         <button type="button" class="sig-clear" data-target="sig_security">Hapus</button>
                     </div>
@@ -132,7 +144,13 @@
 
                 <div class="sig-block" data-sig-key="mmd">
                     <div class="sig-label">MMD (Mengetahui) <span class="req">*</span></div>
-                    <canvas class="sig-canvas" id="sig_mmd"></canvas>
+                    <div class="sig-wrap">
+                        <canvas class="sig-canvas" id="sig_mmd"></canvas>
+                        <div class="sig-overlay" data-target="mmd">
+                            <span class="sig-overlay-icon">✍️</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
+                        </div>
+                    </div>
                     <div class="sig-actions">
                         <button type="button" class="sig-clear" data-target="sig_mmd">Hapus</button>
                     </div>
@@ -141,7 +159,13 @@
 
                 <div class="sig-block" data-sig-key="supplier">
                     <div class="sig-label">Supplier <span class="sig-optional">(opsional, jika ada)</span></div>
-                    <canvas class="sig-canvas" id="sig_supplier"></canvas>
+                    <div class="sig-wrap">
+                        <canvas class="sig-canvas" id="sig_supplier"></canvas>
+                        <div class="sig-overlay" data-target="supplier">
+                            <span class="sig-overlay-icon">✍️</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
+                        </div>
+                    </div>
                     <div class="sig-actions">
                         <button type="button" class="sig-clear" data-target="sig_supplier">Hapus</button>
                         <button type="button" class="sig-skip" data-target="sig_supplier">Tidak Ada</button>
@@ -385,6 +409,7 @@ function setupSignaturePad(key){
   }
 
   function start(evt){
+    if(!signaturePads[key].active) return; // belum diketuk overlay, biarkan scroll normal
     evt.preventDefault();
     drawing = true;
     const pos = getPos(evt);
@@ -393,6 +418,7 @@ function setupSignaturePad(key){
   }
 
   function move(evt){
+    if(!signaturePads[key].active) return;
     if(!drawing) return;
     evt.preventDefault();
     const pos = getPos(evt);
@@ -417,10 +443,35 @@ function setupSignaturePad(key){
   canvas.addEventListener('touchmove', move, { passive: false });
   canvas.addEventListener('touchend', end);
 
-  signaturePads[key] = { canvas, ctx, hasDrawn: false, skipped: false };
+  signaturePads[key] = { canvas, ctx, hasDrawn: false, skipped: false, active: false };
 }
 
 SIGNATURE_KEYS.forEach(setupSignaturePad);
+
+// Overlay "Ketuk untuk mulai tanda tangan" - canvas baru bisa digambar
+// (dan baru nge-block scroll halaman) setelah overlay ini diketuk. Sebelum
+// diketuk, area itu tetap bisa di-scroll seperti bagian lain.
+function activateSignaturePad(key){
+  const pad = signaturePads[key];
+  pad.active = true;
+  pad.canvas.classList.add('sig-active');
+  const overlay = document.querySelector(`.sig-overlay[data-target="${key}"]`);
+  if(overlay) overlay.classList.add('hidden');
+}
+
+function deactivateSignaturePad(key){
+  const pad = signaturePads[key];
+  pad.active = false;
+  pad.canvas.classList.remove('sig-active');
+  const overlay = document.querySelector(`.sig-overlay[data-target="${key}"]`);
+  if(overlay) overlay.classList.remove('hidden');
+}
+
+document.querySelectorAll('.sig-overlay').forEach(overlay => {
+  overlay.addEventListener('click', () => {
+    activateSignaturePad(overlay.dataset.target);
+  });
+});
 
 function clearSignature(key){
   const pad = signaturePads[key];
@@ -434,6 +485,7 @@ document.querySelectorAll('.sig-clear').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.dataset.target.replace('sig_', '');
     clearSignature(key);
+    deactivateSignaturePad(key); // wajib ketuk lagi sebelum gambar ulang, biar aman dari kecoret
     // Batalkan status "Tidak Ada" kalau sebelumnya di-skip lalu mau gambar ulang
     const block = btn.closest('.sig-block');
     block.classList.remove('skipped');
@@ -449,8 +501,13 @@ document.querySelectorAll('.sig-skip').forEach(btn => {
     const block = btn.closest('.sig-block');
     const isSkipped = block.classList.toggle('skipped');
     signaturePads[key].skipped = isSkipped;
+    const overlay = document.querySelector(`.sig-overlay[data-target="${key}"]`);
     if(isSkipped){
       clearSignature(key);
+      deactivateSignaturePad(key);
+      if(overlay) overlay.classList.add('hidden'); // area di-skip, overlay tidak perlu tampil
+    } else if(overlay){
+      overlay.classList.remove('hidden');
     }
   });
 });
@@ -486,6 +543,9 @@ function loadSignatureImageInto(key, dataUrl){
     pad.ctx.drawImage(img, 0, 0, rect.width, rect.height);
     pad.hasDrawn = true;
     pad.canvas.classList.add('has-signed');
+    // Tanda tangan sudah terisi otomatis dari cache, tidak perlu ketuk overlay lagi
+    const overlay = document.querySelector(`.sig-overlay[data-target="${key}"]`);
+    if(overlay) overlay.classList.add('hidden');
   };
   img.src = dataUrl;
 }
@@ -500,6 +560,7 @@ function applyCachedSignaturesForCurrentDepartemen(){
 
     if(!departemen){
       clearSignature(role);
+      deactivateSignaturePad(role);
       return;
     }
 
@@ -512,6 +573,7 @@ function applyCachedSignaturesForCurrentDepartemen(){
       block.appendChild(note);
     } else {
       clearSignature(role);
+      deactivateSignaturePad(role);
     }
   });
 }
@@ -952,6 +1014,7 @@ form.addEventListener('submit', async (e) => {
     // terkunci untuk departemen yang sama hari ini). Supplier direset karena
     // orangnya beda-beda tiap transaksi.
     clearSignature('supplier');
+    deactivateSignaturePad('supplier');
     document.querySelector('.sig-block[data-sig-key="supplier"]').classList.remove('skipped');
     signaturePads.supplier.skipped = false;
 
