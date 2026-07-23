@@ -552,10 +552,25 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
     const rows = Math.ceil(fotos.length / cols);
     const cellH = (availableH - cellGap * (rows - 1)) / rows;
 
+    // Hitung berapa foto di baris terakhir, buat nentuin apakah baris itu
+    // perlu ditengahkan (misal 3 foto dalam grid 2 kolom -> baris terakhir cuma 1 foto)
+    const itemsInLastRow = fotos.length - (rows - 1) * cols;
+    const lastRowIsCentered = cols > 1 && itemsInLastRow < cols;
+
     fotos.forEach((foto, idx) => {
       const col = idx % cols;
       const row = Math.floor(idx / cols);
-      const cellX = marginX + col * (cellW + cellGap);
+      const isLastRow = row === rows - 1;
+
+      let cellX;
+      if(isLastRow && lastRowIsCentered){
+        // Tengahkan baris terakhir yang jumlah fotonya kurang dari jumlah kolom
+        const rowWidth = itemsInLastRow * cellW + (itemsInLastRow - 1) * cellGap;
+        const rowStartX = marginX + (availableW - rowWidth) / 2;
+        cellX = rowStartX + col * (cellW + cellGap);
+      } else {
+        cellX = marginX + col * (cellW + cellGap);
+      }
       const cellY = fy + row * (cellH + cellGap);
 
       const ratio = Math.min(cellW / foto.width, (cellH - 8) / foto.height);
