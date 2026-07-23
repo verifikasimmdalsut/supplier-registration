@@ -650,7 +650,7 @@ async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn, depa
 
 // --- Konstanta tetap sesuai template surat (gampang diubah di sini) ---
 const SURAT_FROM = 'MMD ALAM SUTERA';
-const SURAT_CC = 'Aliyah Risqiana & Sri Lestari';
+const SURAT_CC = 'Aliyah Risqiana & Tari Lestari';
 const SURAT_HAL = 'DISPOSAL RETURN';
 const SURAT_ALAMAT = [
   'Jl. Jalur Sutera Bar No Kav. 16  RT. 002/RW. 003',
@@ -811,11 +811,16 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   const sigImgW = 32;
   const sigImgH = 16;
 
+  function colCenter(colIndex){
+    return marginX + colW4 * colIndex + colW4 / 2;
+  }
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10.5);
-  doc.text('Hormat kami,', marginX, y);
-  doc.text('Disaksikan Oleh,', marginX + colW4, y);
-  doc.text('Mengetahui,', marginX + colW4 * 3, y);
+  doc.setTextColor(20, 20, 20);
+  doc.text('Hormat kami,', colCenter(0), y, { align: 'center' });
+  doc.text('Disaksikan Oleh,', colCenter(1), y, { align: 'center' });
+  doc.text('Mengetahui,', colCenter(3), y, { align: 'center' });
 
   y += 6;
 
@@ -823,8 +828,7 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   function placeSignatureImage(role, colIndex){
     const dataUrl = signatures && signatures[role];
     if(!dataUrl) return;
-    const cx = marginX + colW4 * colIndex + colW4 / 2;
-    doc.addImage(dataUrl, 'PNG', cx - sigImgW / 2, y, sigImgW, sigImgH);
+    doc.addImage(dataUrl, 'PNG', colCenter(colIndex) - sigImgW / 2, y, sigImgW, sigImgH);
   }
   placeSignatureImage('staff', 0);
   placeSignatureImage('security', 1);
@@ -833,10 +837,21 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
 
   y += sigImgH + 5;
 
-  // Nama penanda tangan (tebal), digarisbawahi tipis biar rapi kayak kolom TTD asli
+  // Label jabatan (Staff line / Security / Supplier / MMD) - rata tengah kolom
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Staff line', colCenter(0), y, { align: 'center' });
+  doc.text('Security', colCenter(1), y, { align: 'center' });
+  doc.text('Supplier (Jika ada)', colCenter(2), y, { align: 'center' });
+  doc.text('MMD', colCenter(3), y, { align: 'center' });
+
+  y += 7;
+
+  // Nama penanda tangan (tebal), tampil di bawah label jabatan
   function placeSignatureName(role, colIndex, fallback){
     const name = (signatureNames && signatureNames[role]) || '';
-    const cx = marginX + colW4 * colIndex + colW4 / 2;
+    const cx = colCenter(colIndex);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
     doc.setTextColor(20, 20, 20);
@@ -846,15 +861,6 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   placeSignatureName('security', 1, '(.....................)');
   placeSignatureName('supplier', 2, '(.....................)');
   placeSignatureName('mmd', 3, '(.....................)');
-
-  y += 12;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Staff line', marginX, y);
-  doc.text('Security', marginX + colW4, y);
-  doc.text('Supplier (Jika ada)', marginX + colW4 * 2, y);
-  doc.text('MMD', marginX + colW4 * 3, y);
 
   // --- Catatan lampiran ---
   y += 14;
