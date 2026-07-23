@@ -393,6 +393,79 @@ body{
   padding:0;
 }
 
+/* ---------- Tanda tangan digital ---------- */
+.sig-block{
+  margin-top:14px;
+}
+.sig-block:first-of-type{
+  margin-top:10px;
+}
+.sig-label{
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:6px;
+}
+.sig-label .req{ color:var(--danger); margin-left:2px; }
+.sig-optional{
+  font-weight:500;
+  color:var(--ink-soft);
+  font-size:11.5px;
+}
+.sig-canvas{
+  width:100%;
+  height:130px;
+  display:block;
+  background:#fff;
+  border:1.5px dashed var(--pink-300);
+  border-radius:14px;
+  touch-action:none;
+  cursor:crosshair;
+}
+.sig-canvas.is-invalid{
+  border-color:var(--danger);
+}
+.sig-canvas.has-signed{
+  border-style:solid;
+  border-color:var(--pink-300);
+}
+.sig-actions{
+  display:flex;
+  gap:8px;
+  margin-top:6px;
+}
+.sig-clear,
+.sig-skip{
+  font-size:11.5px;
+  font-weight:700;
+  padding:6px 12px;
+  border-radius:8px;
+  border:1.5px solid var(--pink-300);
+  background:#fff;
+  color:var(--magenta);
+  cursor:pointer;
+}
+.sig-clear:hover,
+.sig-skip:hover{
+  background:var(--pink-50);
+}
+.sig-block.skipped .sig-canvas{
+  opacity:0.4;
+  pointer-events:none;
+}
+.sig-block.skipped .sig-skip{
+  background:var(--magenta);
+  color:#fff;
+  border-color:var(--magenta);
+}
+.sig-lock-note{
+  font-size:11px;
+  color:var(--magenta);
+  font-weight:600;
+  margin-top:6px;
+  line-height:1.4;
+}
+
 @media (max-width:480px){
   .register-card{ padding:28px 20px 24px; border-radius:22px; }
 }
