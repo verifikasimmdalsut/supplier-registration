@@ -412,15 +412,21 @@ body{
   color:var(--ink-soft);
   font-size:11.5px;
 }
+.sig-wrap{
+  position:relative;
+}
 .sig-canvas{
   width:100%;
-  height:130px;
+  height:210px;
   display:block;
   background:#fff;
   border:1.5px dashed var(--pink-300);
   border-radius:14px;
-  touch-action:none;
+  touch-action:auto;
   cursor:crosshair;
+}
+.sig-canvas.sig-active{
+  touch-action:none;
 }
 .sig-canvas.is-invalid{
   border-color:var(--danger);
@@ -428,6 +434,30 @@ body{
 .sig-canvas.has-signed{
   border-style:solid;
   border-color:var(--pink-300);
+}
+.sig-overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  background:rgba(255,255,255,0.9);
+  border-radius:14px;
+  color:var(--magenta);
+  font-size:12.5px;
+  font-weight:700;
+  text-align:center;
+  cursor:pointer;
+  padding:10px;
+  transition:opacity .15s ease;
+}
+.sig-overlay-icon{
+  font-size:24px;
+}
+.sig-overlay.hidden{
+  display:none;
 }
 .sig-actions{
   display:flex;
