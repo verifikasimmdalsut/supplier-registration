@@ -504,6 +504,24 @@ document.querySelectorAll('.sig-clear').forEach(btn => {
     const key = btn.dataset.target.replace('sig_', '');
     clearSignature(key);
     deactivateSignaturePad(key); // wajib ketuk lagi sebelum gambar ulang, biar aman dari kecoret
+
+    // Kosongkan nama juga, biar bener-bener bersih (bukan cuma tanda tangannya)
+    const namaInput = document.getElementById('nama_sig_' + key);
+    if(namaInput){
+      namaInput.value = '';
+      namaInput.classList.remove('is-invalid');
+    }
+
+    // Hapus juga cache tersimpan (localStorage), supaya tanda tangan yang
+    // salah/keliru TIDAK muncul lagi otomatis kalau nanti ganti departemen
+    // bolak-balik atau reload halaman sebelum sempat tanda tangan ulang.
+    if(LOCKED_SIGNATURE_KEYS.includes(key)){
+      const departemen = getCurrentDepartemenValue();
+      if(departemen){
+        localStorage.removeItem(sigCacheKey(key, departemen));
+      }
+    }
+
     // Batalkan status "Tidak Ada" kalau sebelumnya di-skip lalu mau gambar ulang
     const block = btn.closest('.sig-block');
     block.classList.remove('skipped');
@@ -650,7 +668,7 @@ async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn, depa
 
 // --- Konstanta tetap sesuai template surat (gampang diubah di sini) ---
 const SURAT_FROM = 'MMD ALAM SUTERA';
-const SURAT_CC = 'Aliyah Risqiana & Tari Lestari';
+const SURAT_CC = 'Aliyah Risqiana & Sri Lestari';
 const SURAT_HAL = 'DISPOSAL RETURN';
 const SURAT_ALAMAT = [
   'Jl. Jalur Sutera Bar No Kav. 16  RT. 002/RW. 003',
@@ -837,18 +855,7 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
 
   y += sigImgH + 5;
 
-  // Label jabatan (Staff line / Security / Supplier / MMD) - rata tengah kolom
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Staff line', colCenter(0), y, { align: 'center' });
-  doc.text('Security', colCenter(1), y, { align: 'center' });
-  doc.text('Supplier (Jika ada)', colCenter(2), y, { align: 'center' });
-  doc.text('MMD', colCenter(3), y, { align: 'center' });
-
-  y += 7;
-
-  // Nama penanda tangan (tebal), tampil di bawah label jabatan
+  // Nama penanda tangan (tebal), tampil di atas label jabatan
   function placeSignatureName(role, colIndex, fallback){
     const name = (signatureNames && signatureNames[role]) || '';
     const cx = colCenter(colIndex);
@@ -861,6 +868,17 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   placeSignatureName('security', 1, '(.....................)');
   placeSignatureName('supplier', 2, '(.....................)');
   placeSignatureName('mmd', 3, '(.....................)');
+
+  y += 5;
+
+  // Label jabatan (Staff line / Security / Supplier / MMD) - rata tengah kolom, jarak rapat dari nama
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Staff line', colCenter(0), y, { align: 'center' });
+  doc.text('Security', colCenter(1), y, { align: 'center' });
+  doc.text('Supplier (Jika ada)', colCenter(2), y, { align: 'center' });
+  doc.text('MMD', colCenter(3), y, { align: 'center' });
 
   // --- Catatan lampiran ---
   y += 14;
