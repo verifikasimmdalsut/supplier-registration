@@ -194,8 +194,9 @@
         /* ---------- Item antrian ---------- */
         .q-item{
             display:flex;
+            flex-wrap:wrap;
             align-items:center;
-            gap:14px;
+            gap:8px 14px;
             background:var(--bg-1);
             border:1px solid var(--line);
             border-radius:14px;
@@ -206,11 +207,18 @@
             border-color: currentColor;
             background: var(--bg-2);
         }
+        .q-top{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            flex:1;
+            min-width:0;
+        }
         .q-badge{
             font-family:'Poppins', sans-serif;
             font-weight:800;
             font-size:17px;
-            min-width:30px;
+            flex-shrink:0;
         }
         .q-info{ flex:1; min-width:0; }
         .q-nama{
@@ -224,20 +232,24 @@
             font-size:9.5px;
             font-weight:700;
             letter-spacing:0.5px;
-            padding:3px 9px;
+            padding:4px 10px;
             border-radius:999px;
             border:1px solid currentColor;
             flex-shrink:0;
+            white-space:nowrap;
+            margin-left:auto;
         }
         .q-anda-tag{
             font-size:9.5px;
             font-weight:700;
             letter-spacing:0.5px;
-            padding:3px 9px;
+            padding:4px 10px;
             border-radius:999px;
             background: var(--express);
             color:#1a0a14;
             flex-shrink:0;
+            white-space:nowrap;
+            margin-left:auto;
         }
 
         .empty-state{
@@ -333,9 +345,11 @@ function renderItem(item){
     const isMine = item.noAntrian.trim().toUpperCase() === myNoAntrian && myNoAntrian !== '';
     return `
         <div class="q-item ${isMine ? 'mine ' + cls : ''}">
-            <div class="q-badge ${cls}">${item.noAntrian}</div>
-            <div class="q-info">
-                <div class="q-nama">${item.namaSupplier}</div>
+            <div class="q-top">
+                <div class="q-badge ${cls}">${item.noAntrian}</div>
+                <div class="q-info">
+                    <div class="q-nama">${item.namaSupplier}</div>
+                </div>
             </div>
             ${isMine ? '<div class="q-anda-tag">ANDA</div>' : `<div class="q-status-tag ${cls}">${item.tahap.toUpperCase()}</div>`}
         </div>
@@ -385,7 +399,7 @@ function renderList(data){
         aheadBox.style.display = 'none';
         stageMsg.style.display = 'inline-flex';
         stageMsg.className = 'stage-msg ' + warnaClass;
-        stageMsg.textContent = 'MENUNGGU STAFF UNTUK PROSES BONGKAR';
+        stageMsg.textContent = 'MENUNGGU BONGKAR';
         return;
     }
 
