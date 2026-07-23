@@ -502,47 +502,74 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
   doc.text('2. Bukti Lampiran Dokumen Return', marginX, y);
   y += 5;
   const fotoNoteSuffix = (fotos && fotos.length) ? ' (terlampir)' : '';
-  doc.text(`3. Bukti Foto Pemusnahan Barang Return${fotoNoteSuffix}`, marginX, y);
+  doc.text(`3. Report Dokumentasi Disposal Return${fotoNoteSuffix}`, marginX, y);
 
-  // --- Halaman lampiran foto pemusnahan ---
+  // --- Halaman dokumentasi disposal return (1 halaman, grid foto) ---
   if(fotos && fotos.length){
     doc.addPage();
     let fy = 20;
 
+    // Judul report
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(15);
     doc.setTextColor(20, 20, 20);
-    doc.text('Lampiran: Bukti Foto Pemusnahan Barang Return', pageWidth / 2, fy, { align: 'center' });
-    fy += 6;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Nomor BAP: ${nomorBap}`, pageWidth / 2, fy, { align: 'center' });
-    fy += 10;
+    doc.text('REPORT DOKUMENTASI DISPOSAL RETURN', pageWidth / 2, fy, { align: 'center' });
+    fy += 9;
 
-    const maxW = rightX - marginX;
-    const maxH = 78;
-    const gap = 10;
+    // Nama supplier
+    doc.setFontSize(12);
+    doc.setTextColor(60, 60, 60);
+    doc.text(namaSupplier, pageWidth / 2, fy, { align: 'center' });
+    fy += 7;
+
+    // Tanggal pemusnahan
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const tanggalPemusnahan = new Date().toLocaleDateString('id-ID', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+    doc.text(`Tanggal Pemusnahan: ${tanggalPemusnahan}`, pageWidth / 2, fy, { align: 'center' });
+    fy += 5;
+
+    doc.setFontSize(9);
+    doc.setTextColor(140, 140, 140);
+    doc.text(`Nomor BAP: ${nomorBap}`, pageWidth / 2, fy, { align: 'center' });
+    fy += 6;
+
+    doc.setDrawColor(200, 30, 122);
+    doc.setLineWidth(0.5);
+    doc.line(marginX, fy, rightX, fy);
+    fy += 12;
+
+    // Grid foto: 1 kolom kalau cuma 1 foto, 2 kolom kalau lebih dari 1
+    // (biar 3 foto tetap muat proporsional dalam 1 halaman)
+    const availableW = rightX - marginX;
+    const availableH = 270 - fy;
+    const cols = fotos.length === 1 ? 1 : 2;
+    const cellGap = 8;
+    const cellW = (availableW - cellGap * (cols - 1)) / cols;
+    const rows = Math.ceil(fotos.length / cols);
+    const cellH = (availableH - cellGap * (rows - 1)) / rows;
 
     fotos.forEach((foto, idx) => {
-      const ratio = Math.min(maxW / foto.width, maxH / foto.height);
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const cellX = marginX + col * (cellW + cellGap);
+      const cellY = fy + row * (cellH + cellGap);
+
+      const ratio = Math.min(cellW / foto.width, (cellH - 8) / foto.height);
       const w = foto.width * ratio;
       const h = foto.height * ratio;
+      const imgX = cellX + (cellW - w) / 2;
+      const imgY = cellY + (cellH - 8 - h) / 2;
 
-      if(fy + h + 12 > 280){
-        doc.addPage();
-        fy = 20;
-      }
-
-      const x = marginX + (maxW - w) / 2;
-      doc.addImage(foto.dataUrl, 'JPEG', x, fy, w, h);
-      fy += h + 5;
+      doc.addImage(foto.dataUrl, 'JPEG', imgX, imgY, w, h);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(60, 60, 60);
-      doc.text(`Foto ${idx + 1}`, pageWidth / 2, fy, { align: 'center' });
-      fy += gap;
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Foto ${idx + 1}`, cellX + cellW / 2, cellY + cellH - 2, { align: 'center' });
     });
   }
 
