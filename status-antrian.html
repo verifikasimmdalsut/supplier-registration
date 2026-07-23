@@ -139,6 +139,26 @@
             font-weight:600;
             margin-top:14px;
         }
+        .stage-msg{
+            display:inline-flex;
+            align-items:center;
+            gap:7px;
+            font-size:12.5px;
+            font-weight:700;
+            letter-spacing:0.3px;
+            margin-top:16px;
+            padding:9px 14px;
+            border-radius:10px;
+            background: var(--bg-0);
+            border:1px solid currentColor;
+        }
+        .stage-msg::before{
+            content:'';
+            width:7px; height:7px;
+            border-radius:50%;
+            background: currentColor;
+            flex-shrink:0;
+        }
 
         /* ---------- Section header ---------- */
         .section-head{
@@ -243,14 +263,14 @@
 
     <div class="header-row">
         <div class="brand">
-            GUDANG<span>QUEUE</span>
+            DAFTAR<span> ANTRIAN</span>
             <small>AEON ALAM SUTERA</small>
         </div>
         <div class="live-pill"><span class="live-dot"></span>LIVE</div>
     </div>
 
     <div class="my-card" id="myCard">
-        <div class="label">STATUS REGISTRASI ANDA</div>
+        <div class="label">STATUS ANDA</div>
         <div class="row">
             <div class="my-num" id="myNum">-</div>
             <div class="my-info">
@@ -258,12 +278,13 @@
                 <div class="warna" id="myWarnaLabel">-</div>
             </div>
         </div>
+        <div class="stage-msg" id="stageMsg" style="display:none;"></div>
         <div class="ahead-box" id="aheadBox" style="display:none;">
             <div class="n" id="aheadCount">-</div>
             <div class="t">SUPPLIER DI DEPAN ANDA</div>
         </div>
         <div class="done-msg" id="doneMsg" style="display:none;">
-            ✓ Registrasi Anda sudah selesai diproses. Terima kasih!
+            ✓ Proses Anda sudah selesai. Terima kasih!
         </div>
     </div>
 
@@ -305,7 +326,7 @@ if(myNoAntrian){
     document.getElementById('myWarnaLabel').className = 'warna ' + warnaClass;
 }
 
-const BONGKAR_STAGES = ['Sedang Bongkar', 'Bongkar Selesai'];
+const BONGKAR_STAGES = ['Sedang Bongkar', 'Menunggu Surat Jalan Diproses'];
 
 function renderItem(item){
     const cls = 'c-' + (item.warna || '').toLowerCase();
@@ -323,10 +344,14 @@ function renderItem(item){
 
 function renderList(data){
     // Filter cuma warna yang sama kayak punya sendiri
-    const filtered = myWarna ? data.filter(item => (item.warna || '').toUpperCase() === myWarna) : data;
+    const allMine = myWarna ? data.filter(item => (item.warna || '').toUpperCase() === myWarna) : data;
 
-    const bongkar = filtered.filter(item => BONGKAR_STAGES.indexOf(item.tahap) !== -1);
-    const tunggu = filtered.filter(item => BONGKAR_STAGES.indexOf(item.tahap) === -1);
+    // Yang sudah DONE tidak usah ditampilkan di 2 daftar (tapi tetap dipakai
+    // untuk mencari status pribadi di bawah)
+    const active = allMine.filter(item => !item.done);
+
+    const bongkar = active.filter(item => BONGKAR_STAGES.indexOf(item.tahap) !== -1);
+    const tunggu = active.filter(item => BONGKAR_STAGES.indexOf(item.tahap) === -1);
 
     document.getElementById('countBongkar').textContent = bongkar.length + ' dok aktif';
     document.getElementById('countTunggu').textContent = tunggu.length + ' dalam antrian';
@@ -339,23 +364,51 @@ function renderList(data){
         ? tunggu.map(renderItem).join('')
         : '<div class="empty-state">Tidak ada yang menunggu.</div>';
 
-    // Update kartu status saya: posisi & apakah sudah selesai
-    const myIndex = filtered.findIndex(item => item.noAntrian.trim().toUpperCase() === myNoAntrian);
+    // ---------- Update kartu "Status Anda" ----------
+    const stageMsg = document.getElementById('stageMsg');
     const aheadBox = document.getElementById('aheadBox');
     const doneMsg = document.getElementById('doneMsg');
 
     if(!myNoAntrian){
+        stageMsg.style.display = 'none';
         aheadBox.style.display = 'none';
         doneMsg.style.display = 'none';
-    } else if(myIndex === -1){
-        // Nggak ketemu di daftar aktif = kemungkinan sudah DONE
+        return;
+    }
+
+    const myItem = allMine.find(item => item.noAntrian.trim().toUpperCase() === myNoAntrian);
+
+    if(!myItem){
+        // Belum ada baris untuk nomor ini sama sekali di sheet checker ->
+        // anggap checker belum mulai proses apa-apa
+        doneMsg.style.display = 'none';
+        aheadBox.style.display = 'none';
+        stageMsg.style.display = 'inline-flex';
+        stageMsg.className = 'stage-msg ' + warnaClass;
+        stageMsg.textContent = 'MENUNGGU STAFF UNTUK PROSES BONGKAR';
+        return;
+    }
+
+    document.getElementById('myNama').textContent = myItem.namaSupplier;
+
+    if(myItem.done){
+        stageMsg.style.display = 'none';
         aheadBox.style.display = 'none';
         doneMsg.style.display = 'block';
-    } else {
-        doneMsg.style.display = 'none';
+        return;
+    }
+
+    doneMsg.style.display = 'none';
+    stageMsg.style.display = 'inline-flex';
+    stageMsg.className = 'stage-msg ' + warnaClass;
+    stageMsg.textContent = myItem.tahap.toUpperCase();
+
+    const myIndex = active.findIndex(item => item.noAntrian.trim().toUpperCase() === myNoAntrian);
+    if(myIndex > 0){
         aheadBox.style.display = 'block';
         document.getElementById('aheadCount').textContent = myIndex;
-        document.getElementById('myNama').textContent = filtered[myIndex].namaSupplier;
+    } else {
+        aheadBox.style.display = 'none';
     }
 }
 
