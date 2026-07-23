@@ -415,6 +415,9 @@ body{
 .sig-wrap{
   position:relative;
 }
+.sig-name-input{
+  margin-bottom:8px !important;
+}
 .sig-canvas{
   width:100%;
   height:210px;
