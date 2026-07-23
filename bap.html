@@ -114,11 +114,13 @@
 
                 <div class="sig-block" data-sig-key="staff">
                     <div class="sig-label">Staff Line <span class="req">*</span></div>
+                    <input type="text" class="form-control modern-input sig-name-input" id="nama_sig_staff" placeholder="Nama Staff Line">
+                    <div class="field-error" id="err_nama_sig_staff"></div>
                     <div class="sig-wrap">
                         <canvas class="sig-canvas" id="sig_staff"></canvas>
                         <div class="sig-overlay" data-target="staff">
                             <span class="sig-overlay-icon">✍️</span>
-                            <span>tekan untuk mulai tanda tangan</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
                         </div>
                     </div>
                     <div class="sig-actions">
@@ -129,11 +131,13 @@
 
                 <div class="sig-block" data-sig-key="security">
                     <div class="sig-label">Security <span class="req">*</span></div>
+                    <input type="text" class="form-control modern-input sig-name-input" id="nama_sig_security" placeholder="Nama Security">
+                    <div class="field-error" id="err_nama_sig_security"></div>
                     <div class="sig-wrap">
                         <canvas class="sig-canvas" id="sig_security"></canvas>
                         <div class="sig-overlay" data-target="security">
                             <span class="sig-overlay-icon">✍️</span>
-                            <span>tekan untuk mulai tanda tangan</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
                         </div>
                     </div>
                     <div class="sig-actions">
@@ -144,11 +148,13 @@
 
                 <div class="sig-block" data-sig-key="mmd">
                     <div class="sig-label">MMD (Mengetahui) <span class="req">*</span></div>
+                    <input type="text" class="form-control modern-input sig-name-input" id="nama_sig_mmd" placeholder="Nama MMD">
+                    <div class="field-error" id="err_nama_sig_mmd"></div>
                     <div class="sig-wrap">
                         <canvas class="sig-canvas" id="sig_mmd"></canvas>
                         <div class="sig-overlay" data-target="mmd">
                             <span class="sig-overlay-icon">✍️</span>
-                            <span>tekan untuk mulai tanda tangan</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
                         </div>
                     </div>
                     <div class="sig-actions">
@@ -159,11 +165,12 @@
 
                 <div class="sig-block" data-sig-key="supplier">
                     <div class="sig-label">Supplier <span class="sig-optional">(opsional, jika ada)</span></div>
+                    <input type="text" class="form-control modern-input sig-name-input" id="nama_sig_supplier" placeholder="Nama Perwakilan Supplier (opsional)">
                     <div class="sig-wrap">
                         <canvas class="sig-canvas" id="sig_supplier"></canvas>
                         <div class="sig-overlay" data-target="supplier">
                             <span class="sig-overlay-icon">✍️</span>
-                            <span>tekan untuk mulai tanda tangan</span>
+                            <span>Ketuk untuk mulai tanda tangan</span>
                         </div>
                     </div>
                     <div class="sig-actions">
@@ -448,6 +455,17 @@ function setupSignaturePad(key){
 
 SIGNATURE_KEYS.forEach(setupSignaturePad);
 
+// Bersihkan error saat nama tanda tangan diisi
+SIGNATURE_KEYS.forEach(key => {
+  const input = document.getElementById('nama_sig_' + key);
+  if(!input) return;
+  input.addEventListener('input', () => {
+    input.classList.remove('is-invalid');
+    const err = document.getElementById('err_nama_sig_' + key);
+    if(err) err.textContent = '';
+  });
+});
+
 // Overlay "Ketuk untuk mulai tanda tangan" - canvas baru bisa digambar
 // (dan baru nge-block scroll halaman) setelah overlay ini diketuk. Sebelum
 // diketuk, area itu tetap bisa di-scroll seperti bagian lain.
@@ -557,23 +575,33 @@ function applyCachedSignaturesForCurrentDepartemen(){
     const block = document.querySelector(`.sig-block[data-sig-key="${role}"]`);
     const lockNote = block.querySelector('.sig-lock-note');
     if(lockNote) lockNote.remove();
+    const namaInput = document.getElementById('nama_sig_' + role);
 
     if(!departemen){
       clearSignature(role);
       deactivateSignaturePad(role);
+      if(namaInput) namaInput.value = '';
       return;
     }
 
-    const cached = localStorage.getItem(sigCacheKey(role, departemen));
-    if(cached){
-      loadSignatureImageInto(role, cached);
-      const note = document.createElement('div');
-      note.className = 'sig-lock-note';
-      note.textContent = '🔒 Sudah ditandatangani untuk departemen ini hari ini. Klik "Hapus" untuk tanda tangan ulang.';
-      block.appendChild(note);
+    const cachedRaw = localStorage.getItem(sigCacheKey(role, departemen));
+    if(cachedRaw){
+      try{
+        const cached = JSON.parse(cachedRaw);
+        loadSignatureImageInto(role, cached.dataUrl);
+        if(namaInput) namaInput.value = cached.name || '';
+        const note = document.createElement('div');
+        note.className = 'sig-lock-note';
+        note.textContent = '🔒 Sudah ditandatangani untuk departemen ini hari ini. Klik "Hapus" untuk tanda tangan ulang.';
+        block.appendChild(note);
+      }catch(err){
+        clearSignature(role);
+        deactivateSignaturePad(role);
+      }
     } else {
       clearSignature(role);
       deactivateSignaturePad(role);
+      if(namaInput) namaInput.value = '';
     }
   });
 }
@@ -585,8 +613,12 @@ function saveSignaturesToCache(){
   LOCKED_SIGNATURE_KEYS.forEach(role => {
     const pad = signaturePads[role];
     if(pad.hasDrawn){
-      const rect = pad.canvas.getBoundingClientRect();
-      localStorage.setItem(sigCacheKey(role, departemen), pad.canvas.toDataURL('image/png'));
+      const namaInput = document.getElementById('nama_sig_' + role);
+      const payload = JSON.stringify({
+        name: namaInput ? namaInput.value.trim() : '',
+        dataUrl: pad.canvas.toDataURL('image/png'),
+      });
+      localStorage.setItem(sigCacheKey(role, departemen), payload);
     }
   });
 }
@@ -627,7 +659,7 @@ const SURAT_ALAMAT = [
 ];
 
 // --- Generate PDF pakai jsPDF, replika Berita Acara AEON ---
-function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, signatures }){
+function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, signatures, signatureNames }){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -779,7 +811,15 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   const sigImgW = 32;
   const sigImgH = 16;
 
-  // Tempelkan gambar tanda tangan (kalau ada) tepat di atas garis label
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.text('Hormat kami,', marginX, y);
+  doc.text('Disaksikan Oleh,', marginX + colW4, y);
+  doc.text('Mengetahui,', marginX + colW4 * 3, y);
+
+  y += 6;
+
+  // Tempelkan gambar tanda tangan (kalau ada) di bawah header "Hormat kami," dst
   function placeSignatureImage(role, colIndex){
     const dataUrl = signatures && signatures[role];
     if(!dataUrl) return;
@@ -791,16 +831,26 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   placeSignatureImage('supplier', 2);
   placeSignatureImage('mmd', 3);
 
-  y += sigImgH + 6;
+  y += sigImgH + 5;
 
+  // Nama penanda tangan (tebal), digarisbawahi tipis biar rapi kayak kolom TTD asli
+  function placeSignatureName(role, colIndex, fallback){
+    const name = (signatureNames && signatureNames[role]) || '';
+    const cx = marginX + colW4 * colIndex + colW4 / 2;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(20, 20, 20);
+    doc.text(name || fallback, cx, y, { align: 'center' });
+  }
+  placeSignatureName('staff', 0, '(.....................)');
+  placeSignatureName('security', 1, '(.....................)');
+  placeSignatureName('supplier', 2, '(.....................)');
+  placeSignatureName('mmd', 3, '(.....................)');
+
+  y += 12;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10.5);
-  doc.text('Hormat kami,', marginX, y);
-  doc.text('Disaksikan Oleh,', marginX + colW4, y);
-  doc.text('Mengetahui,', marginX + colW4 * 3, y);
-
-  y += 16;
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
   doc.text('Staff line', marginX, y);
   doc.text('Security', marginX + colW4, y);
   doc.text('Supplier (Jika ada)', marginX + colW4 * 2, y);
@@ -810,6 +860,7 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   y += 14;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
+  doc.setTextColor(20, 20, 20);
   doc.text('Note:', marginX, y);
   y += 5;
   doc.setFont('helvetica', 'normal');
@@ -941,6 +992,15 @@ form.addEventListener('submit', async (e) => {
   // Validasi tanda tangan wajib (Staff Line, Security, MMD) - Supplier opsional
   SIGNATURE_KEYS.forEach(key => {
     if(!SIGNATURE_REQUIRED[key]) return; // supplier opsional, skip
+
+    const namaInput = document.getElementById('nama_sig_' + key);
+    if(namaInput && !namaInput.value.trim()){
+      namaInput.classList.add('is-invalid');
+      const errNama = document.getElementById('err_nama_sig_' + key);
+      if(errNama) errNama.textContent = 'Nama wajib diisi.';
+      valid = false;
+    }
+
     const pad = signaturePads[key];
     if(!pad.hasDrawn){
       pad.canvas.classList.add('is-invalid');
@@ -977,10 +1037,13 @@ form.addEventListener('submit', async (e) => {
 
     // Kumpulkan gambar tanda tangan yang sudah digambar (skip yang kosong/di-skip)
     const signatures = {};
+    const signatureNames = {};
     SIGNATURE_KEYS.forEach(key => {
       const pad = signaturePads[key];
       if(pad.hasDrawn){
         signatures[key] = pad.canvas.toDataURL('image/png');
+        const namaInput = document.getElementById('nama_sig_' + key);
+        signatureNames[key] = namaInput ? namaInput.value.trim() : '';
       }
     });
 
@@ -991,6 +1054,7 @@ form.addEventListener('submit', async (e) => {
       noReturn: noReturn,
       fotos: fotos,
       signatures: signatures,
+      signatureNames: signatureNames,
     });
 
     // Kunci tanda tangan Staff Line/Security/MMD untuk departemen ini hari ini,
