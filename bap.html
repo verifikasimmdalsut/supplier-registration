@@ -108,6 +108,47 @@
                 <div class="field-error" id="err_foto"></div>
             </div>
 
+            <!-- TANDA TANGAN -->
+            <div class="mb-4">
+                <label class="form-label">Tanda Tangan Digital</label>
+
+                <div class="sig-block" data-sig-key="staff">
+                    <div class="sig-label">Staff Line <span class="req">*</span></div>
+                    <canvas class="sig-canvas" id="sig_staff"></canvas>
+                    <div class="sig-actions">
+                        <button type="button" class="sig-clear" data-target="sig_staff">Hapus</button>
+                    </div>
+                    <div class="field-error" id="err_sig_staff"></div>
+                </div>
+
+                <div class="sig-block" data-sig-key="security">
+                    <div class="sig-label">Security <span class="req">*</span></div>
+                    <canvas class="sig-canvas" id="sig_security"></canvas>
+                    <div class="sig-actions">
+                        <button type="button" class="sig-clear" data-target="sig_security">Hapus</button>
+                    </div>
+                    <div class="field-error" id="err_sig_security"></div>
+                </div>
+
+                <div class="sig-block" data-sig-key="mmd">
+                    <div class="sig-label">MMD (Mengetahui) <span class="req">*</span></div>
+                    <canvas class="sig-canvas" id="sig_mmd"></canvas>
+                    <div class="sig-actions">
+                        <button type="button" class="sig-clear" data-target="sig_mmd">Hapus</button>
+                    </div>
+                    <div class="field-error" id="err_sig_mmd"></div>
+                </div>
+
+                <div class="sig-block" data-sig-key="supplier">
+                    <div class="sig-label">Supplier <span class="sig-optional">(opsional, jika ada)</span></div>
+                    <canvas class="sig-canvas" id="sig_supplier"></canvas>
+                    <div class="sig-actions">
+                        <button type="button" class="sig-clear" data-target="sig_supplier">Hapus</button>
+                        <button type="button" class="sig-skip" data-target="sig_supplier">Tidak Ada</button>
+                    </div>
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-register" id="btnGenerate">
                 📄 GENERATE BAP (PDF)
             </button>
@@ -149,6 +190,11 @@ const btnGenerate = document.getElementById('btnGenerate');
 let verifiedSupplier = null;
 let searchTimer = null;
 let selectedFotos = []; // array of File
+
+// --- Tanda tangan digital ---
+const SIGNATURE_KEYS = ['staff', 'security', 'mmd', 'supplier'];
+const SIGNATURE_REQUIRED = { staff: true, security: true, mmd: true, supplier: false };
+const signaturePads = {}; // key -> { canvas, ctx, hasDrawn, skipped }
 
 // --- Cari supplier (live search, debounce 400ms) ---
 function setStatus(type, text){
@@ -222,11 +268,17 @@ departemenInput.addEventListener('change', () => {
     departemenManualInput.style.display = 'none';
     departemenManualInput.value = '';
   }
+
+  applyCachedSignaturesForCurrentDepartemen();
 });
 
+let departemenManualDebounce = null;
 departemenManualInput.addEventListener('input', () => {
   departemenManualInput.classList.remove('is-invalid');
   document.getElementById('err_departemen').textContent = '';
+
+  clearTimeout(departemenManualDebounce);
+  departemenManualDebounce = setTimeout(applyCachedSignaturesForCurrentDepartemen, 400);
 });
 
 // --- Pilih & preview foto pemusnahan (maks 3) ---
@@ -292,6 +344,191 @@ function resizeImageToDataURL(file, maxDim = 1000, quality = 0.72){
   });
 }
 
+// --- Setup canvas tanda tangan (mendukung mouse & sentuhan layar) ---
+function setupSignaturePad(key){
+  const canvas = document.getElementById('sig_' + key);
+  const ctx = canvas.getContext('2d');
+
+  // Set resolusi internal canvas sesuai ukuran tampilnya (biar tidak buram)
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const prevDrawing = signaturePads[key] && signaturePads[key].hasDrawn
+      ? canvas.toDataURL()
+      : null;
+
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a0a14';
+
+    // Kalau sebelumnya sudah ada coretan, gambar ulang biar tidak hilang
+    // saat resize (misal orientasi layar HP berubah)
+    if(prevDrawing){
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      img.src = prevDrawing;
+    }
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  let drawing = false;
+
+  function getPos(evt){
+    const rect = canvas.getBoundingClientRect();
+    const point = evt.touches ? evt.touches[0] : evt;
+    return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+  }
+
+  function start(evt){
+    evt.preventDefault();
+    drawing = true;
+    const pos = getPos(evt);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+
+  function move(evt){
+    if(!drawing) return;
+    evt.preventDefault();
+    const pos = getPos(evt);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    signaturePads[key].hasDrawn = true;
+    canvas.classList.add('has-signed');
+    canvas.classList.remove('is-invalid');
+    const err = document.getElementById('err_sig_' + key);
+    if(err) err.textContent = '';
+  }
+
+  function end(){
+    drawing = false;
+  }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+
+  signaturePads[key] = { canvas, ctx, hasDrawn: false, skipped: false };
+}
+
+SIGNATURE_KEYS.forEach(setupSignaturePad);
+
+function clearSignature(key){
+  const pad = signaturePads[key];
+  const rect = pad.canvas.getBoundingClientRect();
+  pad.ctx.clearRect(0, 0, rect.width, rect.height);
+  pad.hasDrawn = false;
+  pad.canvas.classList.remove('has-signed');
+}
+
+document.querySelectorAll('.sig-clear').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.target.replace('sig_', '');
+    clearSignature(key);
+    // Batalkan status "Tidak Ada" kalau sebelumnya di-skip lalu mau gambar ulang
+    const block = btn.closest('.sig-block');
+    block.classList.remove('skipped');
+    signaturePads[key].skipped = false;
+    const lockNote = block.querySelector('.sig-lock-note');
+    if(lockNote) lockNote.remove();
+  });
+});
+
+document.querySelectorAll('.sig-skip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.target.replace('sig_', '');
+    const block = btn.closest('.sig-block');
+    const isSkipped = block.classList.toggle('skipped');
+    signaturePads[key].skipped = isSkipped;
+    if(isSkipped){
+      clearSignature(key);
+    }
+  });
+});
+
+// --- Kunci tanda tangan Staff Line / Security / MMD per departemen + hari ini ---
+// Supplier TIDAK dikunci karena orangnya beda-beda tiap transaksi.
+// Sekali tanda tangan untuk 1 departemen di hari itu, BAP berikutnya untuk
+// departemen yang sama otomatis pakai tanda tangan yang sama (tidak perlu
+// tanda tangan ulang tiap slip return).
+const LOCKED_SIGNATURE_KEYS = ['staff', 'security', 'mmd'];
+
+function todayDateString(){
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+}
+
+function getCurrentDepartemenValue(){
+  return departemenInput.value === 'LAINNYA'
+    ? departemenManualInput.value.trim().toUpperCase()
+    : departemenInput.value.trim().toUpperCase();
+}
+
+function sigCacheKey(role, departemen){
+  return 'bap_sig_' + todayDateString() + '_' + departemen + '_' + role;
+}
+
+function loadSignatureImageInto(key, dataUrl){
+  const pad = signaturePads[key];
+  const rect = pad.canvas.getBoundingClientRect();
+  const img = new Image();
+  img.onload = () => {
+    pad.ctx.clearRect(0, 0, rect.width, rect.height);
+    pad.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+    pad.hasDrawn = true;
+    pad.canvas.classList.add('has-signed');
+  };
+  img.src = dataUrl;
+}
+
+function applyCachedSignaturesForCurrentDepartemen(){
+  const departemen = getCurrentDepartemenValue();
+
+  LOCKED_SIGNATURE_KEYS.forEach(role => {
+    const block = document.querySelector(`.sig-block[data-sig-key="${role}"]`);
+    const lockNote = block.querySelector('.sig-lock-note');
+    if(lockNote) lockNote.remove();
+
+    if(!departemen){
+      clearSignature(role);
+      return;
+    }
+
+    const cached = localStorage.getItem(sigCacheKey(role, departemen));
+    if(cached){
+      loadSignatureImageInto(role, cached);
+      const note = document.createElement('div');
+      note.className = 'sig-lock-note';
+      note.textContent = '🔒 Sudah ditandatangani untuk departemen ini hari ini. Klik "Hapus" untuk tanda tangan ulang.';
+      block.appendChild(note);
+    } else {
+      clearSignature(role);
+    }
+  });
+}
+
+function saveSignaturesToCache(){
+  const departemen = getCurrentDepartemenValue();
+  if(!departemen) return;
+
+  LOCKED_SIGNATURE_KEYS.forEach(role => {
+    const pad = signaturePads[role];
+    if(pad.hasDrawn){
+      const rect = pad.canvas.getBoundingClientRect();
+      localStorage.setItem(sigCacheKey(role, departemen), pad.canvas.toDataURL('image/png'));
+    }
+  });
+}
+
 // --- Konfigurasi Google Apps Script (Web App URL) ---
 // PENTING: Ganti URL di bawah ini dengan Web App URL hasil deploy
 // Apps Script kamu (lihat instruksi di file google-apps-script-bap.gs)
@@ -319,7 +556,7 @@ async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn, depa
 
 // --- Konstanta tetap sesuai template surat (gampang diubah di sini) ---
 const SURAT_FROM = 'MMD ALAM SUTERA';
-const SURAT_CC = 'Aliyah Risqiana & Sri Lestari';
+const SURAT_CC = 'Aliyah Risqiana & Tari Lestari';
 const SURAT_HAL = 'DISPOSAL RETURN';
 const SURAT_ALAMAT = [
   'Jl. Jalur Sutera Bar No Kav. 16  RT. 002/RW. 003',
@@ -328,7 +565,7 @@ const SURAT_ALAMAT = [
 ];
 
 // --- Generate PDF pakai jsPDF, replika Berita Acara AEON ---
-function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
+function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, signatures }){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -463,8 +700,8 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
     doc.text(String(value), marginX + 42, y);
     y += 6;
   }
-  dataRow('No Return', noReturn);
-  dataRow('kode Supplier', kodeSupplier);
+  dataRow('Nomer Return', noReturn);
+  dataRow('Code Supplier', kodeSupplier);
   dataRow('Nama Supplier', namaSupplier);
 
   y += 4;
@@ -475,14 +712,32 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos }){
   paragraph(['Atas perhatian dan kerja samanya, kami ucapkan terima kasih.']);
 
   // --- Tanda tangan ---
-  y += 16;
+  y += 10;
   const colW4 = (rightX - marginX) / 4;
+  const sigImgW = 32;
+  const sigImgH = 16;
 
+  // Tempelkan gambar tanda tangan (kalau ada) tepat di atas garis label
+  function placeSignatureImage(role, colIndex){
+    const dataUrl = signatures && signatures[role];
+    if(!dataUrl) return;
+    const cx = marginX + colW4 * colIndex + colW4 / 2;
+    doc.addImage(dataUrl, 'PNG', cx - sigImgW / 2, y, sigImgW, sigImgH);
+  }
+  placeSignatureImage('staff', 0);
+  placeSignatureImage('security', 1);
+  placeSignatureImage('supplier', 2);
+  placeSignatureImage('mmd', 3);
+
+  y += sigImgH + 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
   doc.text('Hormat kami,', marginX, y);
   doc.text('Disaksikan Oleh,', marginX + colW4, y);
   doc.text('Mengetahui,', marginX + colW4 * 3, y);
 
-  y += 26;
+  y += 16;
   doc.setFontSize(9.5);
   doc.text('Staff line', marginX, y);
   doc.text('Security', marginX + colW4, y);
@@ -621,6 +876,18 @@ form.addEventListener('submit', async (e) => {
     valid = false;
   }
 
+  // Validasi tanda tangan wajib (Staff Line, Security, MMD) - Supplier opsional
+  SIGNATURE_KEYS.forEach(key => {
+    if(!SIGNATURE_REQUIRED[key]) return; // supplier opsional, skip
+    const pad = signaturePads[key];
+    if(!pad.hasDrawn){
+      pad.canvas.classList.add('is-invalid');
+      const err = document.getElementById('err_sig_' + key);
+      if(err) err.textContent = 'Tanda tangan wajib diisi.';
+      valid = false;
+    }
+  });
+
   if(!valid) return;
 
   const originalHtml = btnGenerate.innerHTML;
@@ -646,13 +913,27 @@ form.addEventListener('submit', async (e) => {
 
     btnGenerate.innerHTML = 'Membuat PDF...';
 
+    // Kumpulkan gambar tanda tangan yang sudah digambar (skip yang kosong/di-skip)
+    const signatures = {};
+    SIGNATURE_KEYS.forEach(key => {
+      const pad = signaturePads[key];
+      if(pad.hasDrawn){
+        signatures[key] = pad.canvas.toDataURL('image/png');
+      }
+    });
+
     generatePDF({
       nomorBap: result.nomorBap,
       kodeSupplier: verifiedSupplier.code,
       namaSupplier: verifiedSupplier.name,
       noReturn: noReturn,
       fotos: fotos,
+      signatures: signatures,
     });
+
+    // Kunci tanda tangan Staff Line/Security/MMD untuk departemen ini hari ini,
+    // supaya BAP berikutnya dengan departemen sama tidak perlu tanda tangan ulang
+    saveSignaturesToCache();
 
     setStatus('success', `BAP ${result.nomorBap} berhasil dibuat.`);
 
@@ -666,6 +947,13 @@ form.addEventListener('submit', async (e) => {
     supplierCard.style.display = 'none';
     verifiedSupplier = null;
     kodeInput.value = '';
+
+    // Tanda tangan Staff Line/Security/MMD SENGAJA TIDAK direset (tetap
+    // terkunci untuk departemen yang sama hari ini). Supplier direset karena
+    // orangnya beda-beda tiap transaksi.
+    clearSignature('supplier');
+    document.querySelector('.sig-block[data-sig-key="supplier"]').classList.remove('skipped');
+    signaturePads.supplier.skipped = false;
 
   }catch(err){
     setStatus('error', 'Gagal membuat BAP. Coba lagi.');
