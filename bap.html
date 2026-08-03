@@ -18,6 +18,20 @@
 
 <body>
 
+<!-- ===== PASSWORD GATE ===== -->
+<div id="passwordGate" style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg, #fbdcea 0%, #fcebf2 55%, #fef6fa 100%); padding:20px;">
+    <div style="background:#fff; border-radius:24px; padding:36px 28px; max-width:360px; width:100%; box-shadow:0 30px 60px -20px rgba(155,20,104,0.28); text-align:center;">
+        <div style="font-size:40px; margin-bottom:12px;">🔒</div>
+        <h2 style="font-family:'Poppins',sans-serif; font-weight:700; color:#9c1468; font-size:20px; margin-bottom:6px;">Akses Terbatas</h2>
+        <p style="color:#8a6478; font-size:13px; margin-bottom:20px;">Halaman ini khusus staff internal. Masukkan password untuk melanjutkan.</p>
+        <input type="password" id="gatePasswordInput" placeholder="Masukkan password" class="form-control modern-input" style="margin-bottom:10px; text-align:center;">
+        <div id="gateError" style="color:#e0245e; font-size:12.5px; font-weight:600; min-height:18px; margin-bottom:10px;"></div>
+        <button type="button" id="gateSubmitBtn" class="btn btn-register" style="width:100%;">Masuk</button>
+    </div>
+</div>
+
+<div id="bapContent" style="display:none;">
+
 <div class="butterfly">
     <img src="kupu-kupu.gif" alt="">
 </div>
@@ -98,13 +112,40 @@
                 <div class="field-error" id="err_no_return"></div>
             </div>
 
-            <!-- FOTO PEMUSNAHAN -->
+            <!-- FOTO DOKUMENTASI DISPOSAL (5 slot dengan judul masing-masing) -->
             <div class="mb-4">
-                <label class="form-label">Foto Pemusnahan Barang Return (maks 3 foto)</label>
-                <input type="file" id="foto_pemusnahan" class="form-control modern-input"
-                    accept="image/*" multiple>
-                <div id="fotoStatus" class="status-text">Belum ada foto dipilih</div>
-                <div id="fotoPreview" class="foto-preview-row"></div>
+                <label class="form-label">Foto Dokumentasi Disposal Return</label>
+
+                <div class="foto-slot" data-foto-key="barcode">
+                    <div class="foto-slot-label">1. Foto Barcode Barang</div>
+                    <input type="file" class="form-control modern-input foto-slot-input" data-foto-key="barcode" accept="image/*">
+                    <div class="foto-slot-preview" id="preview_foto_barcode"></div>
+                </div>
+
+                <div class="foto-slot" data-foto-key="kemasan">
+                    <div class="foto-slot-label">2. Foto Kemasan Barang</div>
+                    <input type="file" class="form-control modern-input foto-slot-input" data-foto-key="kemasan" accept="image/*">
+                    <div class="foto-slot-preview" id="preview_foto_kemasan"></div>
+                </div>
+
+                <div class="foto-slot" data-foto-key="fungsional">
+                    <div class="foto-slot-label">3. Bukti Barang Sudah Dihilangkan Fungsinya</div>
+                    <input type="file" class="form-control modern-input foto-slot-input" data-foto-key="fungsional" accept="image/*">
+                    <div class="foto-slot-preview" id="preview_foto_fungsional"></div>
+                </div>
+
+                <div class="foto-slot" data-foto-key="pic">
+                    <div class="foto-slot-label">4. PIC Disposal</div>
+                    <input type="file" class="form-control modern-input foto-slot-input" data-foto-key="pic" accept="image/*">
+                    <div class="foto-slot-preview" id="preview_foto_pic"></div>
+                </div>
+
+                <div class="foto-slot" data-foto-key="proses">
+                    <div class="foto-slot-label">5. Proses Pemusnahan Barang</div>
+                    <input type="file" class="form-control modern-input foto-slot-input" data-foto-key="proses" accept="image/*">
+                    <div class="foto-slot-preview" id="preview_foto_proses"></div>
+                </div>
+
                 <div class="field-error" id="err_foto"></div>
             </div>
 
@@ -212,15 +253,21 @@ const namaSupplierEl = document.getElementById('nama_supplier');
 const noReturnInput = document.getElementById('no_return');
 const departemenInput = document.getElementById('departemen');
 const departemenManualInput = document.getElementById('departemen_manual');
-const fotoInput = document.getElementById('foto_pemusnahan');
-const fotoStatus = document.getElementById('fotoStatus');
-const fotoPreview = document.getElementById('fotoPreview');
 const form = document.getElementById('formBAP');
 const btnGenerate = document.getElementById('btnGenerate');
 
 let verifiedSupplier = null;
 let searchTimer = null;
-let selectedFotos = []; // array of File
+
+// --- 5 slot foto dokumentasi disposal, masing-masing punya judul sendiri ---
+const FOTO_SLOTS = [
+  { key: 'barcode', label: 'Foto Barcode Barang' },
+  { key: 'kemasan', label: 'Foto Kemasan Barang' },
+  { key: 'fungsional', label: 'Bukti Barang Sudah Dihilangkan Fungsinya' },
+  { key: 'pic', label: 'PIC Disposal' },
+  { key: 'proses', label: 'Proses Pemusnahan Barang' },
+];
+const selectedFotos = {}; // key -> File
 
 // --- Tanda tangan digital ---
 const SIGNATURE_KEYS = ['staff', 'security', 'mmd', 'supplier'];
@@ -312,38 +359,45 @@ departemenManualInput.addEventListener('input', () => {
   departemenManualDebounce = setTimeout(applyCachedSignaturesForCurrentDepartemen, 400);
 });
 
-// --- Pilih & preview foto pemusnahan (maks 3) ---
-function renderFotoPreview(){
-  fotoPreview.innerHTML = '';
-  selectedFotos.forEach((file, idx) => {
-    const url = URL.createObjectURL(file);
-    const item = document.createElement('div');
-    item.className = 'foto-preview-item';
-    item.innerHTML = `<img src="${url}" alt="Foto ${idx + 1}">
-      <button type="button" class="foto-remove" data-idx="${idx}">×</button>`;
-    fotoPreview.appendChild(item);
-  });
+// --- Pilih & preview foto per slot ---
+function renderFotoSlotPreview(key){
+  const previewEl = document.getElementById('preview_foto_' + key);
+  const file = selectedFotos[key];
+  previewEl.innerHTML = '';
 
-  fotoStatus.textContent = selectedFotos.length
-    ? `${selectedFotos.length} foto dipilih`
-    : 'Belum ada foto dipilih';
+  if(!file) return;
 
-  fotoPreview.querySelectorAll('.foto-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.idx);
-      selectedFotos.splice(idx, 1);
-      renderFotoPreview();
-    });
+  const url = URL.createObjectURL(file);
+  const item = document.createElement('div');
+  item.className = 'foto-preview-item';
+  item.innerHTML = `<img src="${url}" alt="${key}">
+    <button type="button" class="foto-remove" data-key="${key}">×</button>`;
+  previewEl.appendChild(item);
+
+  item.querySelector('.foto-remove').addEventListener('click', () => {
+    delete selectedFotos[key];
+    renderFotoSlotPreview(key);
+    const input = document.querySelector(`.foto-slot-input[data-foto-key="${key}"]`);
+    if(input) input.value = '';
   });
 }
 
-fotoInput.addEventListener('change', () => {
-  const newFiles = Array.from(fotoInput.files || []);
-  const combined = [...selectedFotos, ...newFiles].slice(0, 3);
-  selectedFotos = combined;
-  fotoInput.value = ''; // reset supaya bisa pilih file yang sama lagi kalau perlu
-  document.getElementById('err_foto').textContent = '';
-  renderFotoPreview();
+function renderFotoPreview(){
+  FOTO_SLOTS.forEach(slot => renderFotoSlotPreview(slot.key));
+}
+
+document.querySelectorAll('.foto-slot-input').forEach(input => {
+  input.addEventListener('change', () => {
+    const key = input.dataset.fotoKey;
+    const file = input.files && input.files[0];
+    if(file){
+      selectedFotos[key] = file;
+    } else {
+      delete selectedFotos[key];
+    }
+    document.getElementById('err_foto').textContent = '';
+    renderFotoSlotPreview(key);
+  });
 });
 
 // Ubah 1 file foto jadi data URL JPEG yang sudah dikecilkan (biar PDF tidak kebesaran)
@@ -668,7 +722,7 @@ async function simpanKeGoogleSheets({ kodeSupplier, namaSupplier, noReturn, depa
 
 // --- Konstanta tetap sesuai template surat (gampang diubah di sini) ---
 const SURAT_FROM = 'MMD ALAM SUTERA';
-const SURAT_CC = 'Aliyah Risqiana & Sri Lestari';
+const SURAT_CC = 'Aliyah Risqiana & Tari Lestari';
 const SURAT_HAL = 'DISPOSAL RETURN';
 const SURAT_ALAMAT = [
   'Jl. Jalur Sutera Bar No Kav. 16  RT. 002/RW. 003',
@@ -1041,11 +1095,13 @@ form.addEventListener('submit', async (e) => {
   btnGenerate.innerHTML = 'Memproses foto...';
 
   try{
-    // Kecilkan & konversi semua foto jadi data URL dulu sebelum generate PDF
+    // Kecilkan & konversi foto yang diisi jadi data URL, sertakan judul spesifiknya
     const fotos = [];
-    for(const file of selectedFotos){
+    for(const slot of FOTO_SLOTS){
+      const file = selectedFotos[slot.key];
+      if(!file) continue;
       const resized = await resizeImageToDataURL(file);
-      fotos.push(resized);
+      fotos.push({ ...resized, label: slot.label });
     }
 
     btnGenerate.innerHTML = 'Menyimpan data...';
@@ -1115,6 +1171,49 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
+</script>
+
+</div><!-- /#bapContent -->
+
+<script>
+// --- Password gate (proteksi dasar, khusus akses internal) ---
+// GANTI password di bawah ini kapan aja kalau perlu.
+const BAP_PASSWORD = 'aeonals2026';
+
+const gate = document.getElementById('passwordGate');
+const content = document.getElementById('bapContent');
+const gateInput = document.getElementById('gatePasswordInput');
+const gateError = document.getElementById('gateError');
+const gateBtn = document.getElementById('gateSubmitBtn');
+
+function tryUnlock(){
+  if(gateInput.value === BAP_PASSWORD){
+    sessionStorage.setItem('bap_unlocked', '1');
+    gate.style.display = 'none';
+    content.style.display = 'block';
+    // Canvas tanda tangan disetup saat masih tersembunyi (ukurannya 0),
+    // trigger resize supaya dihitung ulang sekarang setelah kelihatan
+    window.dispatchEvent(new Event('resize'));
+  } else {
+    gateError.textContent = 'Password salah, coba lagi.';
+    gateInput.value = '';
+    gateInput.focus();
+  }
+}
+
+gateBtn.addEventListener('click', tryUnlock);
+gateInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') tryUnlock();
+});
+
+// Kalau di sesi browser ini sudah pernah berhasil buka, tidak perlu masukin ulang
+if(sessionStorage.getItem('bap_unlocked') === '1'){
+  gate.style.display = 'none';
+  content.style.display = 'block';
+  window.dispatchEvent(new Event('resize'));
+} else {
+  gateInput.focus();
+}
 </script>
 
 </body>
