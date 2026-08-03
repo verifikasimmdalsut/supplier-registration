@@ -951,7 +951,8 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
   doc.text(`3. Report Dokumentasi Disposal Return${fotoNoteSuffix}`, marginX, y);
 
   // --- Halaman dokumentasi disposal return (1 halaman, grid foto) ---
-  if(fotos && fotos.length){
+  const adaFotoTerupload = fotos && fotos.some(f => f.dataUrl);
+  if(adaFotoTerupload){
     doc.addPage();
     let fy = 20;
 
@@ -988,8 +989,8 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
     doc.line(marginX, fy, rightX, fy);
     fy += 12;
 
-    // Grid foto: 1 kolom kalau cuma 1 foto, 2 kolom kalau lebih dari 1
-    // (biar 3 foto tetap muat proporsional dalam 1 halaman)
+    // Grid foto: selalu 2 kolom (5 slot -> 2 kolom x 3 baris, baris terakhir
+    // yang cuma 1 foto otomatis ditengahkan)
     const availableW = rightX - marginX;
     const availableH = 270 - fy;
     const cols = fotos.length === 1 ? 1 : 2;
@@ -997,9 +998,10 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
     const cellW = (availableW - cellGap * (cols - 1)) / cols;
     const rows = Math.ceil(fotos.length / cols);
     const cellH = (availableH - cellGap * (rows - 1)) / rows;
+    const bannerH = 8; // tinggi banner label hitam di atas tiap sel
 
     // Hitung berapa foto di baris terakhir, buat nentuin apakah baris itu
-    // perlu ditengahkan (misal 3 foto dalam grid 2 kolom -> baris terakhir cuma 1 foto)
+    // perlu ditengahkan (misal 5 foto dalam grid 2 kolom -> baris terakhir cuma 1 foto)
     const itemsInLastRow = fotos.length - (rows - 1) * cols;
     const lastRowIsCentered = cols > 1 && itemsInLastRow < cols;
 
@@ -1019,18 +1021,34 @@ function generatePDF({ nomorBap, kodeSupplier, namaSupplier, noReturn, fotos, si
       }
       const cellY = fy + row * (cellH + cellGap);
 
-      const ratio = Math.min(cellW / foto.width, (cellH - 8) / foto.height);
-      const w = foto.width * ratio;
-      const h = foto.height * ratio;
-      const imgX = cellX + (cellW - w) / 2;
-      const imgY = cellY + (cellH - 8 - h) / 2;
-
-      doc.addImage(foto.dataUrl, 'JPEG', imgX, imgY, w, h);
-
+      // Banner hitam berisi label foto (selalu tampil, terisi atau tidak)
+      doc.setFillColor(20, 20, 20);
+      doc.rect(cellX, cellY, cellW, bannerH, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(80, 80, 80);
-      doc.text(`Foto ${idx + 1}`, cellX + cellW / 2, cellY + cellH - 2, { align: 'center' });
+      doc.setFontSize(8.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text(foto.label.toUpperCase(), cellX + cellW / 2, cellY + bannerH / 2 + 1.3, { align: 'center' });
+
+      // Kotak putih di bawah banner: isi foto kalau ada, "#N/A" kalau kosong
+      const boxY = cellY + bannerH;
+      const boxH = cellH - bannerH;
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.3);
+      doc.rect(cellX, boxY, cellW, boxH);
+
+      if(foto.dataUrl){
+        const ratio = Math.min((cellW - 4) / foto.width, (boxH - 4) / foto.height);
+        const w = foto.width * ratio;
+        const h = foto.height * ratio;
+        const imgX = cellX + (cellW - w) / 2;
+        const imgY = boxY + (boxH - h) / 2;
+        doc.addImage(foto.dataUrl, 'JPEG', imgX, imgY, w, h);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(200, 90, 130);
+        doc.text('#N/A', cellX + cellW / 2, boxY + boxH / 2 + 1.5, { align: 'center' });
+      }
     });
   }
 
@@ -1095,13 +1113,17 @@ form.addEventListener('submit', async (e) => {
   btnGenerate.innerHTML = 'Memproses foto...';
 
   try{
-    // Kecilkan & konversi foto yang diisi jadi data URL, sertakan judul spesifiknya
+    // Selalu sertakan SEMUA 5 slot (kalau kosong, dataUrl-nya null -> nanti
+    // tampil "#N/A" di PDF, biar formatnya konsisten kayak laporan lama)
     const fotos = [];
     for(const slot of FOTO_SLOTS){
       const file = selectedFotos[slot.key];
-      if(!file) continue;
-      const resized = await resizeImageToDataURL(file);
-      fotos.push({ ...resized, label: slot.label });
+      if(file){
+        const resized = await resizeImageToDataURL(file);
+        fotos.push({ ...resized, label: slot.label });
+      } else {
+        fotos.push({ dataUrl: null, width: 0, height: 0, label: slot.label });
+      }
     }
 
     btnGenerate.innerHTML = 'Menyimpan data...';
