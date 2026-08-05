@@ -6,445 +6,396 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Status Antrian — AEON</title>
+    <title>Registrasi Supplier</title>
 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        :root{
-            --merah:#ff5c5c;
-            --kuning:#ffd23f;
-            --hijau:#34d399;
-            --putih:#e8e8e8;
-            --express:#ff6fb5;
-            --bg-0:#0a0a0d;
-            --bg-1:#121218;
-            --bg-2:#1a1a22;
-            --line:#26262f;
-            --ink:#f2f2f5;
-            --ink-soft:#9494a3;
-            --ink-faint:#5c5c6b;
-        }
-
-        *{ box-sizing:border-box; }
-        html,body{ margin:0; padding:0; }
-
-        body{
-            min-height:100vh;
-            background: radial-gradient(circle at 20% 0%, #17171f 0%, var(--bg-0) 55%);
-            font-family:'Inter', system-ui, sans-serif;
-            color:var(--ink);
-            padding: 28px 16px 60px;
-        }
-
-        .wrap{ max-width:480px; margin:0 auto; }
-
-        .header-row{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin-bottom:20px;
-        }
-        .brand{
-            font-family:'Poppins', sans-serif;
-            font-weight:800;
-            font-size:15px;
-            letter-spacing:1px;
-        }
-        .brand span{ color:var(--express); }
-        .brand small{
-            display:block;
-            font-family:'Inter',sans-serif;
-            font-weight:500;
-            font-size:10.5px;
-            letter-spacing:1.5px;
-            color:var(--ink-faint);
-            margin-top:2px;
-        }
-        .live-pill{
-            display:flex;
-            align-items:center;
-            gap:6px;
-            font-size:11px;
-            font-weight:700;
-            letter-spacing:1px;
-            color:var(--hijau);
-        }
-        .live-dot{
-            width:7px; height:7px;
-            border-radius:50%;
-            background:var(--hijau);
-            animation: pulse-dot 1.4s ease-in-out infinite;
-        }
-        @keyframes pulse-dot{
-            0%,100%{ opacity:1; box-shadow:0 0 0 0 rgba(52,211,153,.5); }
-            50%{ opacity:0.4; }
-        }
-
-        /* ---------- Kartu status saya ---------- */
-        .my-card{
-            background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
-            border:1px solid var(--line);
-            border-radius:20px;
-            padding:22px;
-            margin-bottom:22px;
-        }
-        .my-card .label{
-            font-size:11px;
-            letter-spacing:1.5px;
-            color:var(--ink-faint);
-            font-weight:700;
-            margin-bottom:12px;
-        }
-        .my-card .row{
-            display:flex;
-            align-items:center;
-            gap:16px;
-        }
-        .my-num{
-            font-family:'Poppins', sans-serif;
-            font-weight:800;
-            font-size:44px;
-            line-height:1;
-        }
-        .my-info .nama{ font-weight:700; font-size:15px; }
-        .my-info .warna{
-            font-size:11.5px;
-            font-weight:700;
-            letter-spacing:0.5px;
-            margin-top:3px;
-        }
-        .ahead-box{
-            margin-top:16px;
-            background: var(--bg-0);
-            border:1px solid var(--line);
-            border-radius:14px;
-            padding:12px 16px;
-        }
-        .ahead-box .n{
-            font-family:'Poppins', sans-serif;
-            font-weight:800;
-            font-size:20px;
-        }
-        .ahead-box .t{
-            font-size:11px;
-            color:var(--ink-faint);
-            letter-spacing:0.5px;
-            margin-top:2px;
-        }
-        .done-msg{
-            font-size:13.5px;
-            color:var(--hijau);
-            font-weight:600;
-            margin-top:14px;
-        }
-        .stage-msg{
-            display:inline-flex;
-            align-items:center;
-            gap:7px;
-            font-size:12.5px;
-            font-weight:700;
-            letter-spacing:0.3px;
-            margin-top:16px;
-            padding:9px 14px;
-            border-radius:10px;
-            background: var(--bg-0);
-            border:1px solid currentColor;
-        }
-        .stage-msg::before{
-            content:'';
-            width:7px; height:7px;
-            border-radius:50%;
-            background: currentColor;
-            flex-shrink:0;
-        }
-
-        /* ---------- Section header ---------- */
-        .section-head{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin: 22px 0 10px;
-        }
-        .section-title{
-            display:flex;
-            align-items:center;
-            gap:8px;
-            font-size:11.5px;
-            font-weight:700;
-            letter-spacing:1.2px;
-            color:var(--ink-soft);
-        }
-        .section-title .dot{
-            width:7px; height:7px;
-            border-radius:50%;
-        }
-        .section-title.bongkar .dot{ background:var(--hijau); }
-        .section-title.tunggu .dot{ background:var(--ink-faint); }
-        .section-count{
-            font-size:11px;
-            color:var(--ink-faint);
-            background:var(--bg-2);
-            border:1px solid var(--line);
-            padding:3px 10px;
-            border-radius:999px;
-        }
-
-        /* ---------- Item antrian ---------- */
-        .q-item{
-            display:flex;
-            flex-wrap:wrap;
-            align-items:center;
-            gap:8px 14px;
-            background:var(--bg-1);
-            border:1px solid var(--line);
-            border-radius:14px;
-            padding:12px 14px;
-            margin-bottom:8px;
-        }
-        .q-item.mine{
-            border-color: currentColor;
-            background: var(--bg-2);
-        }
-        .q-top{
-            display:flex;
-            align-items:center;
-            gap:10px;
-            flex:1;
-            min-width:0;
-            width:100%;
-        }
-        .q-badge{
-            font-family:'Poppins', sans-serif;
-            font-weight:800;
-            font-size:15px;
-            flex-shrink:0;
-        }
-        .q-info{ flex:1; min-width:0; }
-        .q-nama{
-            font-size:12px;
-            font-weight:600;
-            white-space:normal;
-            overflow-wrap:break-word;
-            line-height:1.3;
-        }
-        .q-status-tag{
-            font-size:9px;
-            font-weight:700;
-            letter-spacing:0.3px;
-            padding:5px 10px;
-            border-radius:999px;
-            border:1px solid currentColor;
-            white-space:normal;
-            text-align:center;
-            line-height:1.3;
-            width:100%;
-            box-sizing:border-box;
-        }
-        .q-anda-tag{
-            font-size:9px;
-            font-weight:700;
-            letter-spacing:0.3px;
-            padding:5px 10px;
-            border-radius:999px;
-            background: var(--express);
-            color:#1a0a14;
-            white-space:nowrap;
-            text-align:center;
-            width:100%;
-            box-sizing:border-box;
-        }
-
-        .empty-state{
-            text-align:center;
-            padding: 28px 10px;
-            color: var(--ink-faint);
-            font-size:13px;
-        }
-
-        /* Warna per kategori antrian */
-        .c-merah{ color:var(--merah); }
-        .c-kuning{ color:var(--kuning); }
-        .c-hijau{ color:var(--hijau); }
-        .c-putih{ color:var(--putih); }
-        .c-express{ color:var(--express); }
-    </style>
+    <link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
-<div class="wrap">
+<div class="butterfly">
+    <img src="kupu-kupu.gif" alt="">
+</div>
+<div class="butterfly butterfly2">
+    <img src="kupu-kupu.gif" alt="">
+</div>
 
-    <div class="header-row">
-        <div class="brand">
-            DAFTAR<span> ANTRIAN</span>
-            <small>AEON ALAM SUTERA</small>
-        </div>
-        <div class="live-pill"><span class="live-dot"></span>LIVE</div>
-    </div>
+<div class="container py-5">
 
-    <div class="my-card" id="myCard">
-        <div class="label">STATUS ANDA</div>
-        <div class="row">
-            <div class="my-num" id="myNum">-</div>
-            <div class="my-info">
-                <div class="nama" id="myNama">-</div>
-                <div class="warna" id="myWarnaLabel">-</div>
+    <div class="register-card">
+
+        <div class="text-center mb-4">
+
+            <div class="logo-wrap">
+
+                <span class="fly-butterfly fly-1">
+                    <img src="kupu-kupu.gif" alt="">
+                </span>
+                <span class="fly-butterfly fly-2">
+                    <img src="kupu-kupu.gif" alt="">
+                </span>
             </div>
-        </div>
-        <div class="stage-msg" id="stageMsg" style="display:none;"></div>
-        <div class="ahead-box" id="aheadBox" style="display:none;">
-            <div class="n" id="aheadCount">-</div>
-            <div class="t">SUPPLIER DI DEPAN ANDA</div>
-        </div>
-        <div class="done-msg" id="doneMsg" style="display:none;">
-            ✓ Proses Anda sudah selesai. Terima kasih!
-        </div>
-    </div>
 
-    <div class="section-head">
-        <div class="section-title bongkar"><span class="dot"></span>SEDANG DIPROSES</div>
-        <div class="section-count" id="countBongkar">-</div>
-    </div>
-    <div id="listBongkar"><div class="empty-state">⏳ Memuat data antrian, mohon tunggu hingga 30 detik...</div></div>
+            <h2 class="title">
 
-    <div class="section-head">
-        <div class="section-title tunggu"><span class="dot"></span>MENUNGGU BONGKAR</div>
-        <div class="section-count" id="countTunggu">-</div>
+                Registrasi Supplier
+
+            </h2>
+
+            <p class="subtitle">
+
+                MMD Alam Sutera
+                </p>
+Website ini digukanan untuk mempermudah registrasi supplier 
+            </p>
+
+        </div>
+
+        <form id="formRegistrasi" novalidate>
+
+            <!-- =============================== -->
+            <!-- KODE SUPPLIER -->
+            <!-- =============================== -->
+
+            <div class="mb-4">
+
+                <label class="form-label">
+
+                    Kode Supplier
+
+                </label>
+
+                <input
+
+                    type="text"
+
+                    id="kode_supplier"
+
+                    class="form-control modern-input"
+
+                    placeholder="Masukkan kode supplier"
+
+                    autocomplete="off">
+
+                <div
+
+                    id="supplierStatus"
+
+                    class="status-text">
+
+                    Ketik kode supplier...
+
+                </div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- CARD SUPPLIER -->
+            <!-- =============================== -->
+
+            <div
+
+                id="supplierCard"
+
+                class="supplier-card"
+
+                style="display:none;">
+
+                <div class="supplier-icon">
+
+                    🏢
+
+                </div>
+
+                <div class="supplier-content">
+
+                    <div class="supplier-label">
+
+                        Nama Supplier
+
+                    </div>
+
+                    <div
+
+                        id="nama_supplier"
+
+                        class="supplier-name">
+
+                        -
+
+                    </div>
+
+                    <small>
+
+                        Data supplier otomatis dari database
+
+                    </small>
+
+                </div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- NOMOR KENDARAAN -->
+            <!-- =============================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Nomor Kendaraan
+
+                </label>
+
+                <input
+                    type="text"
+                    id="nomor_kendaraan"
+                    class="form-control modern-input"
+                    placeholder="Contoh : B1234ABC">
+
+                <div class="field-error" id="err_nomor_kendaraan"></div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- NAMA SUPIR -->
+            <!-- =============================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Nama Supir
+
+                </label>
+
+                <input
+                    type="text"
+                    id="nama_supir"
+                    class="form-control modern-input"
+                    placeholder="Masukkan nama supir">
+
+                <div class="field-error" id="err_nama_supir"></div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- NO IDENTITAS -->
+            <!-- =============================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Nomor Identitas
+
+                </label>
+
+                <input
+                    type="text"
+                    id="no_identitas"
+                    class="form-control modern-input"
+                    placeholder="Masukkan nomor identitas">
+
+                <div class="field-error" id="err_no_identitas"></div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- NO HP -->
+            <!-- =============================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Nomor HP
+
+                </label>
+
+                <input
+                    type="text"
+                    id="no_hp"
+                    class="form-control modern-input"
+                    placeholder="08xxxxxxxxxx">
+
+                <div class="field-error" id="err_no_hp"></div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- JENIS KENDARAAN -->
+            <!-- =============================== -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Jenis Kendaraan
+
+                </label>
+
+                <select
+                    id="jenis_kendaraan"
+                    class="form-select modern-input">
+
+                    <option value="">Pilih Jenis Kendaraan</option>
+
+                    <option>Motor</option>
+
+                    <option>Mobil Pribadi</option>
+
+                    <option>Box Dry/Pick Up</option>
+
+                    <option>Reefer Box</option>
+
+                    <option>Dry Container</option>
+
+                </select>
+
+                <div class="field-error" id="err_jenis_kendaraan"></div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- WARNA ANTRIAN -->
+            <!-- =============================== -->
+
+            <div class="mb-4">
+
+                <label class="form-label">
+
+                    Warna Antrian
+
+                </label>
+
+                <select
+                    id="warna_antrian"
+                    class="form-select modern-input">
+
+                    <option value="">Pilih Warna Antrian</option>
+
+                    <option>MERAH</option>
+
+                    <option>KUNING</option>
+
+                    <option>HIJAU</option>
+
+                    <option>PUTIH</option>
+
+                    <option>EXPRESS</option>
+
+                </select>
+
+                <div class="field-error" id="err_warna_antrian"></div>
+
+            </div>
+
+            <!-- =============================== -->
+            <!-- BUTTON -->
+            <!-- =============================== -->
+
+            <button
+                type="submit"
+                class="btn btn-register"
+                id="btnDaftar">
+
+                🦋 DAFTARKAN
+
+            </button>
+
+        </form>
+
     </div>
-    <div id="listTunggu"><div class="empty-state">⏳ Memuat data antrian, mohon tunggu hingga 30 detik...</div></div>
 
 </div>
 
-<script>
-// GANTI dengan Web App URL hasil deploy google-apps-script-status-antrian.gs
-const STATUS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6RBKQu_XrNkzFzDa5zG-iYIuEUrNgFZxaThLWB--xkxMl_Mr7nkDft8wmoqWj9hU/exec';
+<!-- ========================================= -->
+<!-- MODAL TIKET -->
+<!-- ========================================= -->
 
-const params = new URLSearchParams(window.location.search);
-const myNoAntrian = (params.get('no') || '').trim().toUpperCase();
-const myNamaFromUrl = (params.get('nama') || '').trim();
+<div
+    class="modal fade"
+    id="ticketModal"
+    tabindex="-1"
+    aria-labelledby="ticketModalLabel"
+    aria-hidden="true">
 
-function extractWarna(noAntrian){
-    const match = String(noAntrian || '').trim().toUpperCase().match(/[A-Z]+$/);
-    return match ? match[0] : '';
-}
-const myWarna = extractWarna(myNoAntrian);
-const warnaClass = 'c-' + myWarna.toLowerCase();
+    <div class="modal-dialog modal-dialog-centered">
 
-// Isi kartu status awal (sebelum data kefetch)
-if(myNoAntrian){
-    document.getElementById('myNum').textContent = myNoAntrian.replace(/[A-Z]+$/, '');
-    document.getElementById('myNum').className = 'my-num ' + warnaClass;
-    document.getElementById('myNama').textContent = myNamaFromUrl || '-';
-    document.getElementById('myWarnaLabel').textContent = 'ANTRIAN ' + myWarna;
-    document.getElementById('myWarnaLabel').className = 'warna ' + warnaClass;
-}
+        <div class="modal-content ticket-modal" id="ticketModalContent">
 
-const BONGKAR_STAGES = ['Menunggu Staff Untuk Proses Bongkar', 'Sedang Bongkar', 'Menunggu Surat Jalan Diproses'];
+            <div class="ticket-color-strip" id="ticketColorStrip"></div>
 
-function renderItem(item){
-    const cls = 'c-' + (item.warna || '').toLowerCase();
-    const isMine = item.noAntrian.trim().toUpperCase() === myNoAntrian && myNoAntrian !== '';
-    return `
-        <div class="q-item ${isMine ? 'mine ' + cls : ''}">
-            <div class="q-top">
-                <div class="q-badge ${cls}">${item.noAntrian}</div>
-                <div class="q-info">
-                    <div class="q-nama">${item.namaSupplier}</div>
-                </div>
+            <div class="ticket-brand">
+                AEON
+    
+                <span>ALAM SUTERA</span>
             </div>
-            ${isMine ? '<div class="q-anda-tag">ANDA</div>' : `<div class="q-status-tag ${cls}">${item.tahap.toUpperCase()}</div>`}
+
+            <div class="modal-body text-center p-4">
+
+                <div class="success-icon">
+                    ✅
+                </div>
+
+                <h4 class="ticket-title" id="ticketModalLabel">
+                    Registrasi Berhasil
+                </h4>
+
+                <p class="ticket-subtitle">
+                    Silakan screenshot tiket ini dan tunjukkan ke security
+                </p>
+
+                <div class="queue-badge" id="ticketWarnaBadge">
+                    <span id="ticketWarna">-</span>
+                </div>
+
+                <div class="queue-number" id="ticketNomorAntrian">
+                    -
+                </div>
+
+                <div class="ticket-details text-start">
+
+                    <div class="ticket-row">
+                        <span>Nama Supplier</span>
+                        <span id="ticketNamaSupplier">-</span>
+                    </div>
+
+                </div>
+
+                <p class="ticket-wait-msg">
+                    Harap menunggu di area tunggu hingga nomor antrian Anda dipanggil oleh checker untuk proses bongkar.
+                </p>
+
+                <a
+                    href="#"
+                    id="btnCekStatus"
+                    target="_blank"
+                    class="btn btn-register w-100 mt-3"
+                    style="text-decoration:none; display:block; box-sizing:border-box;">
+
+                    📡 Cek Status Antrian
+
+                </a>
+
+            </div>
+
         </div>
-    `;
-}
 
-function renderList(data){
-    // Filter cuma warna yang sama kayak punya sendiri
-    const allMine = myWarna ? data.filter(item => (item.warna || '').toUpperCase() === myWarna) : data;
+    </div>
 
-    // Yang sudah DONE tidak usah ditampilkan di 2 daftar (tapi tetap dipakai
-    // untuk mencari status pribadi di bawah)
-    const active = allMine.filter(item => !item.done);
+</div>
 
-    const bongkar = active.filter(item => BONGKAR_STAGES.indexOf(item.tahap) !== -1);
-    const tunggu = active.filter(item => BONGKAR_STAGES.indexOf(item.tahap) === -1);
-
-    document.getElementById('countBongkar').textContent = bongkar.length + ' dok aktif';
-    document.getElementById('countTunggu').textContent = tunggu.length + ' dalam antrian';
-
-    document.getElementById('listBongkar').innerHTML = bongkar.length
-        ? bongkar.map(renderItem).join('')
-        : '<div class="empty-state">Belum ada yang diproses.</div>';
-
-    document.getElementById('listTunggu').innerHTML = tunggu.length
-        ? tunggu.map(renderItem).join('')
-        : '<div class="empty-state">Tidak ada yang menunggu.</div>';
-
-    // ---------- Update kartu "Status Anda" ----------
-    const stageMsg = document.getElementById('stageMsg');
-    const aheadBox = document.getElementById('aheadBox');
-    const doneMsg = document.getElementById('doneMsg');
-
-    if(!myNoAntrian){
-        stageMsg.style.display = 'none';
-        aheadBox.style.display = 'none';
-        doneMsg.style.display = 'none';
-        return;
-    }
-
-    const myItem = allMine.find(item => item.noAntrian.trim().toUpperCase() === myNoAntrian);
-
-    if(!myItem){
-        // Belum ada baris untuk nomor ini sama sekali di sheet checker ->
-        // anggap checker belum mulai proses apa-apa
-        doneMsg.style.display = 'none';
-        aheadBox.style.display = 'none';
-        stageMsg.style.display = 'inline-flex';
-        stageMsg.className = 'stage-msg ' + warnaClass;
-        stageMsg.textContent = 'MENUNGGU BONGKAR';
-        return;
-    }
-
-    document.getElementById('myNama').textContent = myItem.namaSupplier;
-
-    if(myItem.done){
-        stageMsg.style.display = 'none';
-        aheadBox.style.display = 'none';
-        doneMsg.style.display = 'block';
-        return;
-    }
-
-    doneMsg.style.display = 'none';
-    stageMsg.style.display = 'inline-flex';
-    stageMsg.className = 'stage-msg ' + warnaClass;
-    stageMsg.textContent = myItem.tahap.toUpperCase();
-
-    const myIndex = active.findIndex(item => item.noAntrian.trim().toUpperCase() === myNoAntrian);
-    if(myIndex > 0){
-        aheadBox.style.display = 'block';
-        document.getElementById('aheadCount').textContent = myIndex;
-    } else {
-        aheadBox.style.display = 'none';
-    }
-}
-
-async function loadStatus(){
-    try{
-        const response = await fetch(STATUS_SCRIPT_URL);
-        const result = await response.json();
-        if(result.success){
-            renderList(result.data);
-        }
-    }catch(err){
-        console.error(err);
-    }
-}
-
-loadStatus();
-setInterval(loadStatus, 8000);
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
 
 </body>
 
