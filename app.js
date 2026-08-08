@@ -141,18 +141,28 @@ form.addEventListener('submit', async (e) => {
     const warnaAntrian = values.warna_antrian;
 
     // Hitung nomor antrian: urut harian per warna antrian
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+   const startOfDay = new Date();
+startOfDay.setHours(0, 0, 0, 0);
 
-    const { count, error: countError } = await sb
-      .from('registrasi')
-      .select('id', { count: 'exact', head: true })
-      .eq('warna_antrian', warnaAntrian)
-      .gte('tanggal', startOfDay.toISOString());
+const { data: lastQueue, error: queueError } = await sb
+  .from('registrasi')
+  .select('nomor_antrian')
+  .eq('warna_antrian', warnaAntrian)
+  .gte('tanggal', startOfDay.toISOString())
+  .order('nomor_antrian', { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
-    if(countError) throw countError;
+if(queueError) throw queueError;
 
-    const nomorAntrian = String((count || 0) + 1).padStart(3, '0');
+let nomorAntrian;
+
+if(lastQueue && lastQueue.nomor_antrian){
+  const nomorTerakhir = parseInt(lastQueue.nomor_antrian, 10) || 0;
+  nomorAntrian = String(nomorTerakhir + 1).padStart(3, '0');
+} else {
+  nomorAntrian = '001';
+}
 
     const { error: insertError } = await sb.from('registrasi').insert({
       kode_supplier: verifiedSupplier.code,
