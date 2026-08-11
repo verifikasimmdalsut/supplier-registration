@@ -1,13 +1,3 @@
-/* =========================================================
-   RETURN SUPPLIER - AEON ALAM SUTERA
-   STEP 1
-   Data sementara untuk testing tampilan.
-
-   Nanti bagian RETURN_DATA akan diganti
-   dengan data dari Google Spreadsheet / Apps Script.
-========================================================= */
-
-
 const RETURN_DATA = [
 
   {
@@ -321,9 +311,9 @@ const RETURN_DATA = [
 ];
 
 
-/* =========================================================
+/* =========================
    ELEMENT
-========================================================= */
+========================= */
 
 const supplierSection =
   document.getElementById("supplierSection");
@@ -340,16 +330,10 @@ const supplierCount =
 const searchInput =
   document.getElementById("searchSupplier");
 
-const detailSupplier =
-  document.getElementById("detailSupplier");
 
-const detailCode =
-  document.getElementById("detailCode");
-
-
-/* =========================================================
+/* =========================
    GROUP SUPPLIER
-========================================================= */
+========================= */
 
 function groupBySupplier(data){
 
@@ -378,22 +362,22 @@ function groupBySupplier(data){
 }
 
 
-/* =========================================================
-   HITUNG JUMLAH SLIP
-========================================================= */
+/* =========================
+   HITUNG SLIP
+========================= */
 
 function countSlip(rows){
 
   return new Set(
-    rows.map(row => row.returnNo)
+    rows.map(row => String(row.returnNo))
   ).size;
 
 }
 
 
-/* =========================================================
-   RENDER SUPPLIER
-========================================================= */
+/* =========================
+   TAMPIL SUPPLIER
+========================= */
 
 function renderSuppliers(data){
 
@@ -402,27 +386,6 @@ function renderSuppliers(data){
 
   supplierCount.textContent =
     suppliers.length + " Supplier";
-
-
-  if(suppliers.length === 0){
-
-    supplierList.innerHTML = `
-      <div style="
-        grid-column:1/-1;
-        background:white;
-        border:1px solid #ddd;
-        border-radius:10px;
-        padding:25px;
-        text-align:center;
-        color:#777;
-      ">
-        Supplier tidak ditemukan.
-      </div>
-    `;
-
-    return;
-
-  }
 
 
   supplierList.innerHTML =
@@ -467,9 +430,9 @@ function renderSuppliers(data){
 }
 
 
-/* =========================================================
+/* =========================
    GROUP SLIP
-========================================================= */
+========================= */
 
 function groupBySlip(rows){
 
@@ -481,9 +444,7 @@ function groupBySlip(rows){
       String(row.returnNo);
 
     if(!result[slip]){
-
       result[slip] = [];
-
     }
 
     result[slip].push(row);
@@ -495,9 +456,9 @@ function groupBySlip(rows){
 }
 
 
-/* =========================================================
-   STATUS BADGE
-========================================================= */
+/* =========================
+   STATUS
+========================= */
 
 function statusBadge(status){
 
@@ -520,48 +481,36 @@ function statusBadge(status){
 }
 
 
-/* =========================================================
-   OPEN SUPPLIER
-========================================================= */
+/* =========================
+   BUKA DETAIL SUPPLIER
+========================= */
 
 function openSupplier(code){
 
   const supplier =
     groupBySupplier(RETURN_DATA)
-      .find(item => item.code === String(code));
+      .find(item =>
+        item.code === String(code)
+      );
 
 
   if(!supplier){
 
+    alert("Supplier tidak ditemukan");
+
     return;
 
   }
-
-
-  detailSupplier.textContent =
-    supplier.name;
-
-  detailCode.textContent =
-    "Kode Supplier: " + supplier.code;
 
 
   const slipGroups =
     groupBySlip(supplier.rows);
 
 
-function openSupplier(code){
-
-  const supplier = groupBySupplier(RETURN_DATA)
-    .find(item => item.code === String(code));
-
-  if(!supplier){
-    return;
-  }
-
-  const slipGroups = groupBySlip(supplier.rows);
-
   let html = `
+
     <div class="slip-title">
+
       DAFTAR SLIP RETURN
 
       <span style="
@@ -572,114 +521,122 @@ function openSupplier(code){
       ">
         ${Object.keys(slipGroups).length} Slip
       </span>
+
     </div>
+
   `;
 
-  Object.entries(slipGroups).forEach(([slipNo, items], index) => {
 
-    const first = items[0];
+  Object.entries(slipGroups)
+    .forEach(([slipNo, items]) => {
 
-    html += `
-      <div class="slip-card">
+      const first =
+        items[0];
 
-        <div
-          class="slip-head"
-          onclick="toggleSlip(this)"
-        >
 
-          <div class="slip-no">
-            No. Slip: ${slipNo}
+      html += `
+
+        <div class="slip-card">
+
+          <div
+            class="slip-head"
+            onclick="toggleSlip(this)"
+          >
+
+            <div class="slip-no">
+              No. Slip: ${slipNo}
+            </div>
+
+            <div class="meta">
+              Tanggal
+              <strong>
+                ${first.date}
+              </strong>
+            </div>
+
+            <div class="meta">
+              Status
+              <strong>
+                ${statusBadge(first.status)}
+              </strong>
+            </div>
+
+            <div class="meta">
+              Jumlah Item
+              <strong>
+                ${items.length} Item
+              </strong>
+            </div>
+
+            <div class="slip-arrow">
+              ⌄
+            </div>
+
           </div>
 
-          <div class="meta">
-            Tanggal
-            <strong>
-              ${first.date}
-            </strong>
-          </div>
 
-          <div class="meta">
-            Status
-            <strong>
-              ${statusBadge(first.status)}
-            </strong>
-          </div>
+          <div class="items">
 
-          <div class="meta">
-            Jumlah Item
-            <strong>
-              ${items.length} Item
-            </strong>
-          </div>
+            <table>
 
-          <div class="slip-arrow">
-            ⌄
-          </div>
-
-        </div>
-
-
-        <div class="items">
-
-          <table>
-
-            <thead>
-              <tr>
-                <th>No</th>
-                <th>Item Description</th>
-                <th>Short SKU</th>
-                <th>Qty Return</th>
-                <th>Aging Day</th>
-                <th>Dept.</th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              ${items.map((item, i) => `
+              <thead>
 
                 <tr>
-
-                  <td>
-                    ${i + 1}
-                  </td>
-
-                  <td>
-                    ${item.itemDesc}
-                  </td>
-
-                  <td>
-                    ${item.shortSku}
-                  </td>
-
-                  <td>
-                    ${Number(item.qty).toFixed(2)}
-                  </td>
-
-                  <td>
-                    <span class="aging">
-                      ${item.aging}
-                    </span>
-                  </td>
-
-                  <td>
-                    ${item.department}
-                  </td>
-
+                  <th>No</th>
+                  <th>Item Description</th>
+                  <th>Short SKU</th>
+                  <th>Qty Return</th>
+                  <th>Aging Day</th>
+                  <th>Dept.</th>
                 </tr>
 
-              `).join("")}
+              </thead>
 
-            </tbody>
+              <tbody>
 
-          </table>
+                ${items.map((item, index) => `
+
+                  <tr>
+
+                    <td>
+                      ${index + 1}
+                    </td>
+
+                    <td>
+                      ${item.itemDesc}
+                    </td>
+
+                    <td>
+                      ${item.shortSku}
+                    </td>
+
+                    <td>
+                      ${Number(item.qty).toFixed(2)}
+                    </td>
+
+                    <td>
+                      ${item.aging}
+                    </td>
+
+                    <td>
+                      ${item.department}
+                    </td>
+
+                  </tr>
+
+                `).join("")}
+
+              </tbody>
+
+            </table>
+
+          </div>
 
         </div>
 
-      </div>
-    `;
+      `;
 
-  });
+    });
 
 
   detailSection.innerHTML = `
@@ -722,184 +679,6 @@ function openSupplier(code){
 
   detailSection.style.display = "block";
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-}
-
-
-  let html = `
-    <div class="slip-title">
-      DAFTAR SLIP RETURN
-      <span style="
-        float:right;
-        color:#777;
-        font-weight:normal;
-        font-size:11px;
-      ">
-        ${Object.keys(slipGroups).length} Slip
-      </span>
-    </div>
-  `;
-
-
-  Object.entries(slipGroups)
-    .forEach(([slipNo, items], index) => {
-
-      const first =
-        items[0];
-
-      html += `
-
-        <div class="slip-card ${index === 0 ? "open" : ""}">
-
-          <div
-            class="slip-head"
-            onclick="toggleSlip(this)"
-          >
-
-            <div class="slip-no">
-              No. Slip: ${slipNo}
-            </div>
-
-            <div class="meta">
-              Tanggal
-              <strong>
-                ${first.date}
-              </strong>
-            </div>
-
-            <div class="meta">
-              Status
-              <strong>
-                ${statusBadge(first.status)}
-              </strong>
-            </div>
-
-            <div class="meta">
-              Jumlah Item
-              <strong>
-                ${items.length} Item
-              </strong>
-            </div>
-
-            <div>
-              ${index === 0 ? "⌃" : "⌄"}
-            </div>
-
-          </div>
-
-
-          <div class="items">
-
-            <table>
-
-              <thead>
-
-                <tr>
-                  <th>No</th>
-                  <th>Item Description</th>
-                  <th>Short SKU</th>
-                  <th>Qty Return</th>
-                  <th>Aging Day</th>
-                  <th>Dept.</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                ${items.map((item, i) => `
-
-                  <tr>
-
-                    <td>
-                      ${i + 1}
-                    </td>
-
-                    <td>
-                      ${item.itemDesc}
-                    </td>
-
-                    <td>
-                      ${item.shortSku}
-                    </td>
-
-                    <td>
-                      ${Number(item.qty).toFixed(2)}
-                    </td>
-
-                    <td>
-                      <span class="aging">
-                        ${item.aging}
-                      </span>
-                    </td>
-
-                    <td>
-                      ${item.department}
-                    </td>
-
-                  </tr>
-
-                `).join("")}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </div>
-
-      `;
-
-    });
-
-
-  detailSection.innerHTML = `
-
-    <button
-      class="back-button"
-      onclick="backToSupplier()"
-    >
-      ← Kembali ke daftar supplier
-    </button>
-
-
-    <div class="supplier-header">
-
-      <div>
-
-        <h2 id="detailSupplier">
-          ${supplier.name}
-        </h2>
-
-        <p id="detailCode">
-          Kode Supplier: ${supplier.code}
-        </p>
-
-      </div>
-
-      <div class="return-badge">
-        ADA RETURN
-      </div>
-
-    </div>
-
-
-    ${html}
-
-  `;
-
-
-  supplierSection.style.display =
-    "none";
-
-  detailSection.style.display =
-    "block";
-
 
   window.scrollTo({
     top: 0,
@@ -909,9 +688,9 @@ function openSupplier(code){
 }
 
 
-/* =========================================================
-   BACK
-========================================================= */
+/* =========================
+   KEMBALI
+========================= */
 
 function backToSupplier(){
 
@@ -929,30 +708,37 @@ function backToSupplier(){
 }
 
 
-/* =========================================================
-   TOGGLE SLIP
-========================================================= */
+/* =========================
+   BUKA / TUTUP SLIP
+========================= */
 
 function toggleSlip(element){
 
-  const card = element.parentElement;
+  const card =
+    element.parentElement;
 
   card.classList.toggle("open");
+
 
   const arrow =
     element.querySelector(".slip-arrow");
 
-  if(card.classList.contains("open")){
-    arrow.textContent = "⌃";
-  }else{
-    arrow.textContent = "⌄";
+
+  if(arrow){
+
+    arrow.textContent =
+      card.classList.contains("open")
+        ? "⌃"
+        : "⌄";
+
   }
 
 }
 
-/* =========================================================
-   SEARCH SUPPLIER
-========================================================= */
+
+/* =========================
+   SEARCH
+========================= */
 
 function searchSupplier(){
 
@@ -974,7 +760,6 @@ function searchSupplier(){
         ||
 
         String(row.supplierCode)
-          .toLowerCase()
           .includes(keyword)
 
       );
@@ -987,10 +772,6 @@ function searchSupplier(){
 }
 
 
-/* =========================================================
-   EVENT SEARCH
-========================================================= */
-
 if(searchInput){
 
   searchInput.addEventListener(
@@ -1001,8 +782,8 @@ if(searchInput){
 }
 
 
-/* =========================================================
-   INITIAL LOAD
-========================================================= */
+/* =========================
+   START
+========================= */
 
 renderSuppliers(RETURN_DATA);
