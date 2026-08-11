@@ -549,15 +549,185 @@ function openSupplier(code){
     groupBySlip(supplier.rows);
 
 
-  const slipContainer =
-    document.querySelector(".detail .slip-title");
+function openSupplier(code){
 
+  const supplier = groupBySupplier(RETURN_DATA)
+    .find(item => item.code === String(code));
 
-  if(!slipContainer){
-
+  if(!supplier){
     return;
-
   }
+
+  const slipGroups = groupBySlip(supplier.rows);
+
+  let html = `
+    <div class="slip-title">
+      DAFTAR SLIP RETURN
+
+      <span style="
+        float:right;
+        color:#777;
+        font-weight:normal;
+        font-size:11px;
+      ">
+        ${Object.keys(slipGroups).length} Slip
+      </span>
+    </div>
+  `;
+
+  Object.entries(slipGroups).forEach(([slipNo, items], index) => {
+
+    const first = items[0];
+
+    html += `
+      <div class="slip-card">
+
+        <div
+          class="slip-head"
+          onclick="toggleSlip(this)"
+        >
+
+          <div class="slip-no">
+            No. Slip: ${slipNo}
+          </div>
+
+          <div class="meta">
+            Tanggal
+            <strong>
+              ${first.date}
+            </strong>
+          </div>
+
+          <div class="meta">
+            Status
+            <strong>
+              ${statusBadge(first.status)}
+            </strong>
+          </div>
+
+          <div class="meta">
+            Jumlah Item
+            <strong>
+              ${items.length} Item
+            </strong>
+          </div>
+
+          <div class="slip-arrow">
+            ⌄
+          </div>
+
+        </div>
+
+
+        <div class="items">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Item Description</th>
+                <th>Short SKU</th>
+                <th>Qty Return</th>
+                <th>Aging Day</th>
+                <th>Dept.</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              ${items.map((item, i) => `
+
+                <tr>
+
+                  <td>
+                    ${i + 1}
+                  </td>
+
+                  <td>
+                    ${item.itemDesc}
+                  </td>
+
+                  <td>
+                    ${item.shortSku}
+                  </td>
+
+                  <td>
+                    ${Number(item.qty).toFixed(2)}
+                  </td>
+
+                  <td>
+                    <span class="aging">
+                      ${item.aging}
+                    </span>
+                  </td>
+
+                  <td>
+                    ${item.department}
+                  </td>
+
+                </tr>
+
+              `).join("")}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+    `;
+
+  });
+
+
+  detailSection.innerHTML = `
+
+    <button
+      class="back-button"
+      onclick="backToSupplier()"
+    >
+      ← Kembali ke daftar supplier
+    </button>
+
+
+    <div class="supplier-header">
+
+      <div>
+
+        <h2>
+          ${supplier.name}
+        </h2>
+
+        <p>
+          Kode Supplier: ${supplier.code}
+        </p>
+
+      </div>
+
+      <div class="return-badge">
+        ADA RETURN
+      </div>
+
+    </div>
+
+
+    ${html}
+
+  `;
+
+
+  supplierSection.style.display = "none";
+
+  detailSection.style.display = "block";
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+}
 
 
   let html = `
@@ -765,30 +935,20 @@ function backToSupplier(){
 
 function toggleSlip(element){
 
-  const card =
-    element.parentElement;
+  const card = element.parentElement;
 
   card.classList.toggle("open");
 
-
   const arrow =
-    element.querySelector(
-      ":scope > div:last-child"
-    );
-
+    element.querySelector(".slip-arrow");
 
   if(card.classList.contains("open")){
-
     arrow.textContent = "⌃";
-
   }else{
-
     arrow.textContent = "⌄";
-
   }
 
 }
-
 
 /* =========================================================
    SEARCH SUPPLIER
