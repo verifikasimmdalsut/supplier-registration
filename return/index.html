@@ -1,10 +1,1032 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Return Supplier</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Return Supplier — AEON Alam Sutera</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f6f6f8;
+  color:#222;
+}
+
+/* ================= HEADER ================= */
+
+.header{
+  background:#ffffff;
+  border-bottom:1px solid #ddd;
+  padding:16px 5%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo-title{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.logo-box{
+  width:42px;
+  height:42px;
+  background:#111;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:12px;
+  font-weight:bold;
+  border-radius:5px;
+}
+
+.title{
+  font-size:21px;
+  font-weight:bold;
+  color:#222;
+}
+
+.subtitle{
+  font-size:11px;
+  color:#777;
+  margin-top:3px;
+}
+
+.division{
+  font-size:12px;
+  color:#777;
+}
+
+/* ================= CONTAINER ================= */
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:25px 5% 50px;
+}
+
+/* ================= INFO ================= */
+
+.info{
+  background:#f1edff;
+  border-left:4px solid #6d28d9;
+  border-radius:8px;
+  padding:14px 16px;
+  margin-bottom:20px;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.info strong{
+  color:#5b21b6;
+}
+
+/* ================= SEARCH ================= */
+
+.search-box{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:25px;
+}
+
+.search-label{
+  display:block;
+  font-size:12px;
+  font-weight:bold;
+  margin-bottom:7px;
+}
+
+.search-input{
+  width:100%;
+  height:44px;
+  border:1px solid #ccc;
+  border-radius:7px;
+  padding:0 13px;
+  font-size:14px;
+  outline:none;
+}
+
+.search-input:focus{
+  border-color:#6d28d9;
+}
+
+/* ================= SECTION TITLE ================= */
+
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  margin-bottom:12px;
+}
+
+.section-title h2{
+  margin:0;
+  font-size:17px;
+}
+
+.section-title p{
+  margin:4px 0 0;
+  font-size:12px;
+  color:#777;
+}
+
+.supplier-count{
+  font-size:12px;
+  color:#777;
+}
+
+/* ================= SUPPLIER CARD ================= */
+
+.supplier-list{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+
+.supplier-card{
+  background:white;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:17px;
+  cursor:pointer;
+  transition:.2s;
+  position:relative;
+}
+
+.supplier-card:hover{
+  border-color:#6d28d9;
+  box-shadow:0 5px 18px rgba(0,0,0,.08);
+  transform:translateY(-2px);
+}
+
+.supplier-name{
+  font-weight:bold;
+  font-size:14px;
+  line-height:1.4;
+  padding-right:25px;
+}
+
+.supplier-code{
+  color:#777;
+  font-size:11px;
+  margin-top:5px;
+}
+
+.slip-number{
+  font-size:30px;
+  font-weight:bold;
+  color:#5b21b6;
+  margin-top:20px;
+}
+
+.slip-label{
+  color:#777;
+  font-size:11px;
+}
+
+.arrow{
+  position:absolute;
+  right:17px;
+  bottom:18px;
+  color:#6d28d9;
+  font-size:22px;
+}
+
+/* ================= DETAIL ================= */
+
+.detail{
+  display:none;
+  margin-top:25px;
+}
+
+.back-button{
+  border:0;
+  background:none;
+  color:#5b21b6;
+  font-weight:bold;
+  cursor:pointer;
+  padding:5px 0;
+  margin-bottom:12px;
+}
+
+.supplier-header{
+  background:white;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+}
+
+.supplier-header h2{
+  margin:0;
+  font-size:18px;
+}
+
+.supplier-header p{
+  margin:5px 0 0;
+  color:#777;
+  font-size:12px;
+}
+
+.return-badge{
+  background:#fff0f0;
+  color:#dc2626;
+  padding:8px 10px;
+  border-radius:6px;
+  font-size:10px;
+  font-weight:bold;
+}
+
+/* ================= SLIP ================= */
+
+.slip-title{
+  background:white;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:10px;
+  font-weight:bold;
+  font-size:13px;
+}
+
+.slip-card{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  margin-bottom:10px;
+  overflow:hidden;
+}
+
+.slip-head{
+  padding:15px;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:1.3fr 1fr 1fr 1fr 20px;
+  gap:12px;
+  align-items:center;
+}
+
+.slip-head:hover{
+  background:#faf9ff;
+}
+
+.slip-no{
+  font-weight:bold;
+}
+
+.meta{
+  font-size:10px;
+  color:#777;
+}
+
+.meta strong{
+  display:block;
+  color:#222;
+  font-size:12px;
+  margin-top:4px;
+}
+
+.status-updated{
+  display:inline-block;
+  background:#eaf8ee;
+  color:#16803a;
+  padding:5px 7px;
+  border-radius:5px;
+  font-size:9px;
+  font-weight:bold;
+}
+
+.status-cancel{
+  display:inline-block;
+  background:#fff0f0;
+  color:#dc2626;
+  padding:5px 7px;
+  border-radius:5px;
+  font-size:9px;
+  font-weight:bold;
+}
+
+.items{
+  display:none;
+  border-top:1px solid #eee;
+  padding:10px;
+  overflow-x:auto;
+}
+
+.slip-card.open .items{
+  display:block;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:700px;
+}
+
+th{
+  background:#f5f3f8;
+  text-align:left;
+  padding:10px 8px;
+  font-size:10px;
+  color:#555;
+}
+
+td{
+  padding:10px 8px;
+  border-top:1px solid #eee;
+  font-size:11px;
+}
+
+.aging{
+  background:#fff7bf;
+  color:#725d00;
+  padding:4px 7px;
+  border-radius:5px;
+  font-weight:bold;
+}
+
+/* ================= FOOTER ================= */
+
+.footer{
+  background:#5b21b6;
+  color:#fff;
+  text-align:center;
+  padding:12px;
+  font-size:10px;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:800px){
+
+  .header{
+    padding:14px 18px;
+  }
+
+  .division{
+    display:none;
+  }
+
+  .container{
+    padding:18px 13px 35px;
+  }
+
+  .title{
+    font-size:18px;
+  }
+
+  .supplier-list{
+    grid-template-columns:1fr;
+  }
+
+  .supplier-card{
+    padding:16px;
+  }
+
+  .supplier-header{
+    align-items:flex-start;
+    gap:12px;
+  }
+
+  .supplier-header h2{
+    font-size:15px;
+  }
+
+  .slip-head{
+    grid-template-columns:1fr auto;
+  }
+
+  .slip-head .meta:nth-child(2),
+  .slip-head .meta:nth-child(3){
+    display:none;
+  }
+
+  .slip-head .meta:nth-child(4){
+    grid-column:1;
+  }
+
+  .return-badge{
+    font-size:9px;
+  }
+
+  .info{
+    font-size:12px;
+  }
+}
+</style>
 </head>
+
 <body>
-    <h1>RETURN SUPPLIER</h1>
-    <p>Halaman Return Supplier berhasil dibuat.</p>
+
+<!-- ================= HEADER ================= -->
+
+<header class="header">
+
+  <div class="logo-title">
+
+    <div class="logo-box">
+      MMD
+    </div>
+
+    <div>
+      <div class="title">
+        RETURN SUPPLIER
+      </div>
+
+      <div class="subtitle">
+        AEON ALAM SUTERA
+      </div>
+    </div>
+
+  </div>
+
+  <div class="division">
+    MMD Division · AEON Alam Sutera
+  </div>
+
+</header>
+
+
+<!-- ================= MAIN ================= -->
+
+<main class="container">
+
+  <div class="info">
+
+    <strong>ⓘ Informasi Return</strong><br>
+
+    Halaman ini digunakan supplier untuk mengecek
+    apakah terdapat data return di AEON Alam Sutera.
+
+  </div>
+
+
+  <!-- SEARCH -->
+
+  <div class="search-box">
+
+    <label class="search-label">
+      Cari Supplier
+    </label>
+
+    <input
+      type="text"
+      id="searchSupplier"
+      class="search-input"
+      placeholder="Masukkan nama atau kode supplier..."
+    >
+
+  </div>
+
+
+  <!-- SUPPLIER -->
+
+  <section id="supplierSection">
+
+    <div class="section-title">
+
+      <div>
+
+        <h2>
+          DAFTAR SUPPLIER
+        </h2>
+
+        <p>
+          Pilih supplier untuk melihat slip return.
+        </p>
+
+      </div>
+
+      <div
+        class="supplier-count"
+        id="supplierCount"
+      >
+        4 Supplier
+      </div>
+
+    </div>
+
+
+    <div
+      class="supplier-list"
+      id="supplierList"
+    >
+
+      <!-- SUPPLIER 1 -->
+
+      <div
+        class="supplier-card"
+        onclick="openSupplier('3111')"
+      >
+
+        <div class="supplier-name">
+          PT KANMO MULTI GEMILANG
+        </div>
+
+        <div class="supplier-code">
+          Kode Supplier: 3111
+        </div>
+
+        <div class="slip-number">
+          2
+        </div>
+
+        <div class="slip-label">
+          Slip Return
+        </div>
+
+        <div class="arrow">
+          ›
+        </div>
+
+      </div>
+
+
+      <!-- SUPPLIER 2 -->
+
+      <div
+        class="supplier-card"
+        onclick="openSupplier('181')"
+      >
+
+        <div class="supplier-name">
+          PT NIRWANA LESTARI
+        </div>
+
+        <div class="supplier-code">
+          Kode Supplier: 181
+        </div>
+
+        <div class="slip-number">
+          2
+        </div>
+
+        <div class="slip-label">
+          Slip Return
+        </div>
+
+        <div class="arrow">
+          ›
+        </div>
+
+      </div>
+
+
+      <!-- SUPPLIER 3 -->
+
+      <div
+        class="supplier-card"
+        onclick="openSupplier('250')"
+      >
+
+        <div class="supplier-name">
+          PT SUKANDA DJAYA
+        </div>
+
+        <div class="supplier-code">
+          Kode Supplier: 250
+        </div>
+
+        <div class="slip-number">
+          1
+        </div>
+
+        <div class="slip-label">
+          Slip Return
+        </div>
+
+        <div class="arrow">
+          ›
+        </div>
+
+      </div>
+
+
+      <!-- SUPPLIER 4 -->
+
+      <div
+        class="supplier-card"
+        onclick="openSupplier('48')"
+      >
+
+        <div class="supplier-name">
+          PT. DISTRIVERSA BUANAMAS
+        </div>
+
+        <div class="supplier-code">
+          Kode Supplier: 48
+        </div>
+
+        <div class="slip-number">
+          1
+        </div>
+
+        <div class="slip-label">
+          Slip Return
+        </div>
+
+        <div class="arrow">
+          ›
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ================= DETAIL ================= -->
+
+  <section
+    class="detail"
+    id="detailSection"
+  >
+
+    <button
+      class="back-button"
+      onclick="backToSupplier()"
+    >
+      ← Kembali ke daftar supplier
+    </button>
+
+
+    <div class="supplier-header">
+
+      <div>
+
+        <h2 id="detailSupplier">
+          PT KANMO MULTI GEMILANG
+        </h2>
+
+        <p id="detailCode">
+          Kode Supplier: 3111
+        </p>
+
+      </div>
+
+      <div class="return-badge">
+        ADA RETURN
+      </div>
+
+    </div>
+
+
+    <div class="slip-title">
+      DAFTAR SLIP RETURN
+    </div>
+
+
+    <!-- SLIP 41111 -->
+
+    <div class="slip-card open">
+
+      <div
+        class="slip-head"
+        onclick="toggleSlip(this)"
+      >
+
+        <div class="slip-no">
+          No. Slip: 41111
+        </div>
+
+        <div class="meta">
+          Tanggal
+          <strong>
+            01/07/2026
+          </strong>
+        </div>
+
+        <div class="meta">
+          Status
+          <strong>
+            <span class="status-cancel">
+              CANCEL
+            </span>
+          </strong>
+        </div>
+
+        <div class="meta">
+          Jumlah Item
+          <strong>
+            1 Item
+          </strong>
+        </div>
+
+        <div>
+          ⌃
+        </div>
+
+      </div>
+
+
+      <div class="items">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>No</th>
+              <th>Item Description</th>
+              <th>Short SKU</th>
+              <th>Qty Return</th>
+              <th>Aging Day</th>
+              <th>Dept.</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr>
+
+              <td>1</td>
+
+              <td>
+                PUREATS ORGANIC STRAWBERRY PUFFS 30GR
+              </td>
+
+              <td>
+                9232662
+              </td>
+
+              <td>
+                3.00
+              </td>
+
+              <td>
+                <span class="aging">
+                  40
+                </span>
+              </td>
+
+              <td>
+                1033
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+
+    <!-- SLIP 41115 -->
+
+    <div class="slip-card">
+
+      <div
+        class="slip-head"
+        onclick="toggleSlip(this)"
+      >
+
+        <div class="slip-no">
+          No. Slip: 41115
+        </div>
+
+        <div class="meta">
+          Tanggal
+          <strong>
+            01/07/2026
+          </strong>
+        </div>
+
+        <div class="meta">
+          Status
+          <strong>
+            <span class="status-cancel">
+              CANCEL
+            </span>
+          </strong>
+        </div>
+
+        <div class="meta">
+          Jumlah Item
+          <strong>
+            1 Item
+          </strong>
+        </div>
+
+        <div>
+          ⌄
+        </div>
+
+      </div>
+
+
+      <div class="items">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>No</th>
+              <th>Item Description</th>
+              <th>Short SKU</th>
+              <th>Qty Return</th>
+              <th>Aging Day</th>
+              <th>Dept.</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr>
+
+              <td>1</td>
+
+              <td>
+                PUREATS ORGANIC STRAWBERRY PUFFS 30GR
+              </td>
+
+              <td>
+                9232662
+              </td>
+
+              <td>
+                4.00
+              </td>
+
+              <td>
+                <span class="aging">
+                  40
+                </span>
+              </td>
+
+              <td>
+                1033
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<footer class="footer">
+
+  © 2026 MMD Division · AEON Alam Sutera
+
+</footer>
+
+
+<script>
+
+/* ================================
+   BUKA DETAIL SUPPLIER
+================================ */
+
+function openSupplier(code){
+
+  document.getElementById(
+    "supplierSection"
+  ).style.display = "none";
+
+
+  document.getElementById(
+    "detailSection"
+  ).style.display = "block";
+
+
+  if(code === "3111"){
+
+    document.getElementById(
+      "detailSupplier"
+    ).textContent =
+      "PT KANMO MULTI GEMILANG";
+
+    document.getElementById(
+      "detailCode"
+    ).textContent =
+      "Kode Supplier: 3111";
+
+  }
+
+}
+
+
+/* ================================
+   KEMBALI
+================================ */
+
+function backToSupplier(){
+
+  document.getElementById(
+    "detailSection"
+  ).style.display = "none";
+
+
+  document.getElementById(
+    "supplierSection"
+  ).style.display = "block";
+
+}
+
+
+/* ================================
+   BUKA / TUTUP SLIP
+================================ */
+
+function toggleSlip(element){
+
+  const card =
+    element.parentElement;
+
+  card.classList.toggle("open");
+
+  const arrow =
+    element.querySelector(
+      ":scope > div:last-child"
+    );
+
+  if(card.classList.contains("open")){
+
+    arrow.textContent = "⌃";
+
+  }else{
+
+    arrow.textContent = "⌄";
+
+  }
+
+}
+
+
+/* ================================
+   SEARCH SUPPLIER
+================================ */
+
+document
+  .getElementById("searchSupplier")
+  .addEventListener("input", function(){
+
+    const keyword =
+      this.value.toLowerCase();
+
+    const cards =
+      document.querySelectorAll(
+        ".supplier-card"
+      );
+
+    let total = 0;
+
+    cards.forEach(function(card){
+
+      const text =
+        card.textContent.toLowerCase();
+
+      if(text.includes(keyword)){
+
+        card.style.display = "";
+
+        total++;
+
+      }else{
+
+        card.style.display = "none";
+
+      }
+
+    });
+
+
+    document.getElementById(
+      "supplierCount"
+    ).textContent =
+      total + " Supplier";
+
+  });
+
+</script>
+
 </body>
 </html>
