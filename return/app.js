@@ -664,7 +664,7 @@ function openSupplier(code){
       </div>
 
       <div class="return-badge">
-        ADA RETURN
+        DETAIL RETURN
       </div>
 
     </div>
