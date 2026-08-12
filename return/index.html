@@ -309,6 +309,26 @@ body{
   font-weight:bold;
 }
 
+.status-pending{
+  display:inline-block;
+  background:#fff7bf;
+  color:#725d00;
+  padding:5px 7px;
+  border-radius:5px;
+  font-size:9px;
+  font-weight:bold;
+}
+
+.status-preprinted{
+  display:inline-block;
+  background:#e8f0fe;
+  color:#1a56db;
+  padding:5px 7px;
+  border-radius:5px;
+  font-size:9px;
+  font-weight:bold;
+}
+
 .status-cancel{
   display:inline-block;
   background:#fff0f0;
@@ -356,6 +376,106 @@ td{
   padding:4px 7px;
   border-radius:5px;
   font-weight:bold;
+}
+
+/* ================= CHAT ================= */
+
+.chat-box{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  margin-top:15px;
+  overflow:hidden;
+}
+
+.chat-box-header{
+  padding:15px;
+  border-bottom:1px solid #eee;
+  font-weight:bold;
+  font-size:13px;
+}
+
+.chat-messages{
+  padding:15px;
+  max-height:320px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.chat-empty{
+  text-align:center;
+  color:#999;
+  font-size:11px;
+  padding:20px 0;
+}
+
+.chat-bubble{
+  max-width:78%;
+  padding:9px 12px;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.5;
+  word-wrap:break-word;
+}
+
+.chat-bubble .chat-meta{
+  display:block;
+  font-size:9px;
+  margin-top:4px;
+  opacity:0.7;
+}
+
+.chat-bubble.supplier{
+  align-self:flex-end;
+  background:#5b21b6;
+  color:#fff;
+  border-bottom-right-radius:3px;
+}
+
+.chat-bubble.admin{
+  align-self:flex-start;
+  background:#f1f0f4;
+  color:#222;
+  border-bottom-left-radius:3px;
+}
+
+.chat-input-row{
+  display:flex;
+  gap:8px;
+  padding:12px 15px;
+  border-top:1px solid #eee;
+}
+
+.chat-input{
+  flex:1;
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:12px;
+  font-family:inherit;
+}
+
+.chat-input:focus{
+  outline:none;
+  border-color:#5b21b6;
+}
+
+.chat-send-btn{
+  background:#5b21b6;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:0 18px;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.chat-send-btn:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
 }
 
 /* ================= FOOTER ================= */
@@ -549,6 +669,8 @@ td{
 </footer>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../supabase.js"></script>
 <script src="app.js"></script>
 
 </body>
