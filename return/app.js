@@ -1,313 +1,18 @@
-const RETURN_DATA = [
+/* =========================
+   SUMBER DATA (Google Sheets, tab APLIKASI)
+   gid=1633452008 -> tab "APLIKASI"
+========================= */
 
-  {
-    date: "01/07/2026",
-    department: "1033",
-    supplierCode: "3111",
-    supplier: "PT KANMO MULTI GEMILANG",
-    supplierContract: "OS-002",
-    returnNo: "41111",
-    status: "CANCEL",
-    shortSku: "9232662",
-    itemDesc: "PUREATS ORGANIC STRAWBERRY PUFFS 30GR",
-    qty: 3,
-    aging: 40
-  },
+const CSV_URL =
+  "https://docs.google.com/spreadsheets/d/1mwiKR2YB37biTQ6sBQNlBJJM3Vt9ymxD5XAcXFIrcoQ/export?format=csv&gid=1633452008";
 
-  {
-    date: "01/07/2026",
-    department: "1033",
-    supplierCode: "3111",
-    supplier: "PT KANMO MULTI GEMILANG",
-    supplierContract: "OS-002",
-    returnNo: "41115",
-    status: "CANCEL",
-    shortSku: "9232662",
-    itemDesc: "PUREATS ORGANIC STRAWBERRY PUFFS 30GR",
-    qty: 4,
-    aging: 40
-  },
 
-  {
-    date: "01/07/2026",
-    department: "2001",
-    supplierCode: "181",
-    supplier: "PT NIRWANA LESTARI",
-    supplierContract: "OS-001",
-    returnNo: "41083",
-    status: "CANCEL",
-    shortSku: "6645823",
-    itemDesc: "DELFI CHA CHA MINIS SURPRISE 2X12,5GR",
-    qty: 1,
-    aging: 40
-  },
+let RETURN_DATA = [];
 
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "181",
-    supplier: "PT NIRWANA LESTARI",
-    supplierContract: "OS-001",
-    returnNo: "41084",
-    status: "UPDATED",
-    shortSku: "1129090",
-    itemDesc: "CERES HGL MILK 80GR",
-    qty: 24,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "250",
-    supplier: "PT SUKANDA DJAYA",
-    supplierContract: "OS-001",
-    returnNo: "41092",
-    status: "UPDATED",
-    shortSku: "1129441",
-    itemDesc: "MEIJI LUCKY STICK CHOCOLATE 45GR",
-    qty: 3,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "250",
-    supplier: "PT SUKANDA DJAYA",
-    supplierContract: "OS-001",
-    returnNo: "41092",
-    status: "UPDATED",
-    shortSku: "1129458",
-    itemDesc: "MEIJI LUCKY STICK STRAWBERRY 45GR",
-    qty: 2,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "250",
-    supplier: "PT SUKANDA DJAYA",
-    supplierContract: "OS-001",
-    returnNo: "41092",
-    status: "UPDATED",
-    shortSku: "9783089",
-    itemDesc: "HELLO PANDA CARAMEL 42GR",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "415",
-    supplier: "PT MALINDO SUKSES",
-    supplierContract: "OS-001",
-    returnNo: "41095",
-    status: "UPDATED",
-    shortSku: "10306864",
-    itemDesc: "GAIN YUM SUNFLOWER SEEDS CRAB ROE FLAVOR",
-    qty: 22,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "2588",
-    supplier: "PT. LOTTE INDONESIA",
-    supplierContract: "OS-001",
-    returnNo: "41105",
-    status: "UPDATED",
-    shortSku: "1210859",
-    itemDesc: "LOTTE CHOCO PIE MARSHMALLOW BOX 148.8 G",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2002",
-    supplierCode: "2793",
-    supplier: "CV. HARUM MANDIRI",
-    supplierContract: "OS-004",
-    returnNo: "41087",
-    status: "UPDATED",
-    shortSku: "7195327",
-    itemDesc: "MONDE SNACK SPICY TOMATO 50GR",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "48",
-    supplier: "PT. DISTRIVERSA BUANAMAS",
-    supplierContract: "OS-007",
-    returnNo: "41089",
-    status: "UPDATED",
-    shortSku: "1192407",
-    itemDesc: "KOKITA BUMBU NASI GORENG EXTRA MILD 200 GR",
-    qty: 2,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "48",
-    supplier: "PT. DISTRIVERSA BUANAMAS",
-    supplierContract: "OS-007",
-    returnNo: "41089",
-    status: "UPDATED",
-    shortSku: "1192506",
-    itemDesc: "KOKITA SAMBAL BAJAK MILD 200 GR",
-    qty: 3,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "48",
-    supplier: "PT. DISTRIVERSA BUANAMAS",
-    supplierContract: "OS-007",
-    returnNo: "41089",
-    status: "UPDATED",
-    shortSku: "1192735",
-    itemDesc: "KOKITA SAMBAL RAWIT BAWANG 200GR",
-    qty: 7,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "301",
-    supplier: "PT. SARIMUNIK MANDIRI",
-    supplierContract: "OS-001",
-    returnNo: "41085",
-    status: "UPDATED",
-    shortSku: "6647018",
-    itemDesc: "MUNIK SAMBAL CABE IJO PADANG 245GR",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "301",
-    supplier: "PT. SARIMUNIK MANDIRI",
-    supplierContract: "OS-001",
-    returnNo: "41085",
-    status: "UPDATED",
-    shortSku: "8169075",
-    itemDesc: "MUNIK SAMBAL BELACAN KOPITIAM 245G",
-    qty: 3,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "532",
-    supplier: "PT. INDOMARCO ADI PRIMA",
-    supplierContract: "OS-001",
-    returnNo: "41097",
-    status: "UPDATED",
-    shortSku: "1392227",
-    itemDesc: "REFINA GARAM MEJA REF 250 GR",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "1233",
-    supplier: "PT. PANGAN LESTARI",
-    supplierContract: "OS-001",
-    returnNo: "41102",
-    status: "UPDATED",
-    shortSku: "4310310",
-    itemDesc: "ULEG SAMBEL TERASI 500GR",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2004",
-    supplierCode: "1904",
-    supplier: "PT. EAKINDO MITRA SASTARI",
-    supplierContract: "OS-001",
-    returnNo: "41104",
-    status: "CANCEL",
-    shortSku: "3739419",
-    itemDesc: "WONG HUP MUSHROOM VEGETARIAN (OV) 500GR",
-    qty: 6,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2005",
-    supplierCode: "90",
-    supplier: "PT. SINARMAS DISTRIBUSI NUSANTARA",
-    supplierContract: "OS-028",
-    returnNo: "41090",
-    status: "UPDATED",
-    shortSku: "1197181",
-    itemDesc: "HAAN PANCAKE MIX CHEESE 150GR",
-    qty: 2,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2005",
-    supplierCode: "263",
-    supplier: "PT. TUMBAKMAS NIAGASAKTI",
-    supplierContract: "OS-008",
-    returnNo: "41093",
-    status: "UPDATED",
-    shortSku: "5762446",
-    itemDesc: "SASA SANTAN KELAPA CAIR 65ML",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2005",
-    supplierCode: "398",
-    supplier: "PT. SARANA ABADI MAKMUR BERSAMA",
-    supplierContract: "OS-059",
-    returnNo: "41094",
-    status: "UPDATED",
-    shortSku: "1094107",
-    itemDesc: "FILMA MARGARINE SEHAT 200 GR",
-    qty: 1,
-    aging: 40
-  },
-
-  {
-    date: "01/07/2026",
-    department: "2005",
-    supplierCode: "532",
-    supplier: "PT. INDOMARCO ADI PRIMA",
-    supplierContract: "OS-014",
-    returnNo: "41099",
-    status: "UPDATED",
-    shortSku: "10411995",
-    itemDesc: "INDOMIE SOTO MIE 5X70G",
-    qty: 5,
-    aging: 40
-  }
-
+const ALLOWED_STATUS = [
+  "PENDING",
+  "ACCEPTED GRN",
+  "PRE-GRN-PRINTED"
 ];
 
 
@@ -329,6 +34,190 @@ const supplierCount =
 
 const searchInput =
   document.getElementById("searchSupplier");
+
+
+/* =========================
+   PARSER CSV
+   (aman terhadap koma di dalam field & tanda kutip,
+   karena Google Sheets otomatis quote field yang ada komanya)
+========================= */
+
+function parseCSV(text){
+
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for(let i = 0; i < text.length; i++){
+
+    const char = text[i];
+    const next = text[i + 1];
+
+    if(inQuotes){
+
+      if(char === '"' && next === '"'){
+        field += '"';
+        i++;
+      }else if(char === '"'){
+        inQuotes = false;
+      }else{
+        field += char;
+      }
+
+    }else{
+
+      if(char === '"'){
+        inQuotes = true;
+      }else if(char === ","){
+        row.push(field);
+        field = "";
+      }else if(char === "\r"){
+        /* abaikan */
+      }else if(char === "\n"){
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      }else{
+        field += char;
+      }
+
+    }
+
+  }
+
+  if(field.length > 0 || row.length > 0){
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows;
+
+}
+
+
+/* =========================
+   AMBIL & MAPPING DATA
+   (cari kolom berdasarkan NAMA header,
+   bukan posisi tetap, biar tahan perubahan struktur sheet)
+========================= */
+
+async function loadReturnData(){
+
+  const res = await fetch(CSV_URL);
+
+  if(!res.ok){
+    throw new Error("Gagal mengambil data (" + res.status + ")");
+  }
+
+  const text = await res.text();
+  const rows = parseCSV(text);
+
+  let headerIndex = -1;
+  let headerRow = null;
+
+  for(let i = 0; i < rows.length; i++){
+
+    if(rows[i].some(cell => cell.trim() === "Date Created")){
+      headerIndex = i;
+      headerRow = rows[i];
+      break;
+    }
+
+  }
+
+  if(headerIndex === -1){
+    throw new Error("Header 'Date Created' tidak ditemukan di sheet");
+  }
+
+
+  const col = {};
+  let supplierColSeen = 0;
+
+  headerRow.forEach((name, idx) => {
+
+    const n = name.trim();
+
+    if(n === "Supplier"){
+
+      supplierColSeen++;
+
+      if(supplierColSeen === 1){
+        col.supplierCode = idx;
+      }else{
+        col.supplierName = idx;
+      }
+
+    }else if(n === "Date Created"){
+      col.date = idx;
+    }else if(n === "Department"){
+      col.department = idx;
+    }else if(n === "Supplier Contract"){
+      col.supplierContract = idx;
+    }else if(n === "Return No"){
+      col.returnNo = idx;
+    }else if(n === "Status"){
+      col.status = idx;
+    }else if(n === "Short Sku" || n === "Short SKU"){
+      col.shortSku = idx;
+    }else if(n === "Item Desc"){
+      col.itemDesc = idx;
+    }else if(n === "Qty Return"){
+      col.qty = idx;
+    }else if(n === "Aging Day"){
+      col.aging = idx;
+    }else if(n === "Dept."){
+      col.dept = idx;
+    }
+
+  });
+
+
+  const data = [];
+
+  for(let i = headerIndex + 1; i < rows.length; i++){
+
+    const r = rows[i];
+
+    const returnNo =
+      (r[col.returnNo] || "").trim();
+
+    const supplierCode =
+      (r[col.supplierCode] || "").trim();
+
+    /* lewati baris kosong / pemisah section di sheet */
+    if(!returnNo || !supplierCode){
+      continue;
+    }
+
+    const status =
+      (r[col.status] || "").trim().toUpperCase();
+
+    /* hanya tampilkan status yang relevan buat supplier */
+    if(!ALLOWED_STATUS.includes(status)){
+      continue;
+    }
+
+    data.push({
+      date: (r[col.date] || "").trim(),
+      department: (r[col.department] || "").trim(),
+      supplierCode: supplierCode,
+      supplier: (r[col.supplierName] || "").trim(),
+      supplierContract: (r[col.supplierContract] || "").trim(),
+      returnNo: returnNo,
+      status: status,
+      shortSku: (r[col.shortSku] || "").trim(),
+      itemDesc: (r[col.itemDesc] || "").trim(),
+      qty: parseFloat(r[col.qty]) || 0,
+      aging: parseInt(r[col.aging], 10) || 0
+    });
+
+  }
+
+  return data;
+
+}
 
 
 /* =========================
@@ -386,6 +275,19 @@ function renderSuppliers(data){
 
   supplierCount.textContent =
     suppliers.length + " Supplier";
+
+
+  if(suppliers.length === 0){
+
+    supplierList.innerHTML = `
+      <p style="text-align:center;color:#777;padding:30px 0;grid-column:1/-1;">
+        Tidak ada data return.
+      </p>
+    `;
+
+    return;
+
+  }
 
 
   supplierList.innerHTML =
@@ -462,18 +364,17 @@ function groupBySlip(rows){
 
 function statusBadge(status){
 
-  if(status === "UPDATED"){
+  const classMap = {
+    "PENDING": "status-pending",
+    "ACCEPTED GRN": "status-updated",
+    "PRE-GRN-PRINTED": "status-preprinted"
+  };
 
-    return `
-      <span class="status-updated">
-        UPDATED
-      </span>
-    `;
-
-  }
+  const cls =
+    classMap[status] || "status-cancel";
 
   return `
-    <span class="status-cancel">
+    <span class="${cls}">
       ${status}
     </span>
   `;
@@ -664,13 +565,51 @@ function openSupplier(code){
       </div>
 
       <div class="return-badge">
-        DETAIL RETURN
+        ADA RETURN
       </div>
 
     </div>
 
 
     ${html}
+
+
+    <div class="chat-box">
+
+      <div class="chat-box-header">
+        Chat dengan Admin
+      </div>
+
+      <div
+        class="chat-messages"
+        id="chatMessages"
+      >
+        <p class="chat-empty">
+          Memuat chat...
+        </p>
+      </div>
+
+      <div class="chat-input-row">
+
+        <input
+          type="text"
+          class="chat-input"
+          id="chatInput"
+          placeholder="Tulis pesan..."
+          onkeydown="if(event.key==='Enter'){sendChatMessage();}"
+        >
+
+        <button
+          class="chat-send-btn"
+          id="chatSendBtn"
+          onclick="sendChatMessage()"
+        >
+          Kirim
+        </button>
+
+      </div>
+
+    </div>
 
   `;
 
@@ -685,6 +624,9 @@ function openSupplier(code){
     behavior: "smooth"
   });
 
+
+  openChat(supplier.code, supplier.name);
+
 }
 
 
@@ -693,6 +635,14 @@ function openSupplier(code){
 ========================= */
 
 function backToSupplier(){
+
+  if(chatChannel){
+    sb.removeChannel(chatChannel);
+    chatChannel = null;
+  }
+
+  currentSupplierCode = null;
+  currentSupplierName = null;
 
   detailSection.style.display =
     "none";
@@ -704,6 +654,235 @@ function backToSupplier(){
     top: 0,
     behavior: "smooth"
   });
+
+}
+
+
+/* =========================
+   CHAT ADMIN <-> SUPPLIER
+========================= */
+
+let chatChannel = null;
+let currentSupplierCode = null;
+let currentSupplierName = null;
+
+
+function escapeHtml(text){
+
+  const div =
+    document.createElement("div");
+
+  div.textContent = text;
+
+  return div.innerHTML;
+
+}
+
+
+function chatTime(iso){
+
+  return new Date(iso).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+}
+
+
+function chatBubbleHtml(msg){
+
+  const cls =
+    msg.sender_type === "admin"
+      ? "admin"
+      : "supplier";
+
+  const label =
+    msg.sender_type === "admin"
+      ? (msg.sender_name || "Admin")
+      : "Anda";
+
+  return `
+    <div class="chat-bubble ${cls}">
+      ${escapeHtml(msg.message)}
+      <span class="chat-meta">
+        ${label} • ${chatTime(msg.created_at)}
+      </span>
+    </div>
+  `;
+
+}
+
+
+function renderChatMessages(messages){
+
+  const container =
+    document.getElementById("chatMessages");
+
+  if(!container){
+    return;
+  }
+
+  if(!messages || messages.length === 0){
+
+    container.innerHTML = `
+      <p class="chat-empty">
+        Belum ada chat. Tulis pesan pertama kamu di bawah.
+      </p>
+    `;
+
+    return;
+
+  }
+
+  container.innerHTML =
+    messages.map(chatBubbleHtml).join("");
+
+  container.scrollTop =
+    container.scrollHeight;
+
+}
+
+
+async function openChat(code, name){
+
+  currentSupplierCode = code;
+  currentSupplierName = name;
+
+  if(chatChannel){
+    sb.removeChannel(chatChannel);
+    chatChannel = null;
+  }
+
+  const container =
+    document.getElementById("chatMessages");
+
+  if(container){
+    container.innerHTML = `
+      <p class="chat-empty">
+        Memuat chat...
+      </p>
+    `;
+  }
+
+  const { data, error } =
+    await sb
+      .from("return_chat_messages")
+      .select("*")
+      .eq("supplier_code", code)
+      .order("created_at", { ascending: true });
+
+  if(error){
+
+    console.error("Gagal load chat:", error);
+
+    if(container){
+      container.innerHTML = `
+        <p class="chat-empty">
+          Gagal memuat chat. Coba refresh halaman.
+        </p>
+      `;
+    }
+
+  }else{
+
+    renderChatMessages(data);
+
+  }
+
+
+  chatChannel = sb
+    .channel("return_chat_" + code)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "return_chat_messages",
+        filter: "supplier_code=eq." + code
+      },
+      payload => {
+
+        if(currentSupplierCode !== code){
+          return;
+        }
+
+        const box =
+          document.getElementById("chatMessages");
+
+        if(!box){
+          return;
+        }
+
+        const emptyMsg =
+          box.querySelector(".chat-empty");
+
+        if(emptyMsg){
+          box.innerHTML = "";
+        }
+
+        box.insertAdjacentHTML(
+          "beforeend",
+          chatBubbleHtml(payload.new)
+        );
+
+        box.scrollTop =
+          box.scrollHeight;
+
+      }
+    )
+    .subscribe();
+
+}
+
+
+async function sendChatMessage(){
+
+  const input =
+    document.getElementById("chatInput");
+
+  const btn =
+    document.getElementById("chatSendBtn");
+
+  if(!input || !currentSupplierCode){
+    return;
+  }
+
+  const message =
+    input.value.trim();
+
+  if(!message){
+    return;
+  }
+
+  btn.disabled = true;
+
+  const { error } =
+    await sb
+      .from("return_chat_messages")
+      .insert({
+        supplier_code: currentSupplierCode,
+        supplier_name: currentSupplierName,
+        sender_type: "supplier",
+        sender_name: currentSupplierName,
+        message: message
+      });
+
+  btn.disabled = false;
+
+  if(error){
+
+    alert("Gagal mengirim pesan, coba lagi.");
+
+    console.error(error);
+
+    return;
+
+  }
+
+  input.value = "";
 
 }
 
@@ -783,7 +962,59 @@ if(searchInput){
 
 
 /* =========================
-   START
+   START — ambil data live dari Google Sheets
 ========================= */
 
-renderSuppliers(RETURN_DATA);
+async function init(){
+
+  /* halaman admin tidak punya #supplierList, jadi cukup ambil datanya saja */
+  if(!supplierList){
+
+    try{
+      RETURN_DATA = await loadReturnData();
+    }catch(err){
+      console.error("Gagal load data:", err);
+    }
+
+    if(typeof onReturnDataReady === "function"){
+      onReturnDataReady();
+    }
+
+    return;
+
+  }
+
+  supplierList.innerHTML = `
+    <p style="text-align:center;color:#777;padding:30px 0;grid-column:1/-1;">
+      Memuat data return...
+    </p>
+  `;
+
+  try{
+
+    RETURN_DATA = await loadReturnData();
+
+    renderSuppliers(RETURN_DATA);
+
+  }catch(err){
+
+    supplierList.innerHTML = `
+      <p style="text-align:center;color:#dc2626;padding:30px 0;grid-column:1/-1;">
+        Gagal memuat data return.<br>
+        Silakan refresh halaman atau coba lagi nanti.
+      </p>
+    `;
+
+    supplierCount.textContent = "0 Supplier";
+
+    console.error("Gagal load data:", err);
+
+  }
+
+  if(typeof onReturnDataReady === "function"){
+    onReturnDataReady();
+  }
+
+}
+
+init();
