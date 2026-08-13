@@ -174,6 +174,27 @@ body{
   border-bottom:1px solid #f0f0f0;
   cursor:pointer;
   font-size:12px;
+  position:relative;
+}
+
+.supplier-item .unread-dot{
+  display:none;
+  position:absolute;
+  right:14px;
+  top:14px;
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#dc2626;
+}
+
+.supplier-item.has-unread .unread-dot{
+  display:block;
+}
+
+.supplier-item.has-unread{
+  background:#fff7f7;
+  font-weight:bold;
 }
 
 .supplier-item:hover{
@@ -318,6 +339,10 @@ body{
     </div>
 
   </div>
+
+  <button class="logout-btn" id="notifBtn" onclick="enableNotifications()" style="display:none;">
+    🔔 Aktifkan Notifikasi
+  </button>
 
   <button class="logout-btn" id="logoutBtn" onclick="doLogout()">
     Keluar
