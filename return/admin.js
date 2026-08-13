@@ -333,7 +333,7 @@ async function sendAdminReply(){
   btn.disabled = false;
 
   if(error){
-    alert("Gagal mengirim balasan, coba lagi.");
+    alert("Gagal mengirim balasan: " + error.message);
     console.error(error);
     return;
   }
