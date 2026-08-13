@@ -874,7 +874,7 @@ async function sendChatMessage(){
 
   if(error){
 
-    alert("Gagal mengirim pesan, coba lagi.");
+    alert("Gagal mengirim pesan: " + error.message);
 
     console.error(error);
 
