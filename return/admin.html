@@ -123,23 +123,57 @@ body{
   display:none;
 }
 
-/* ============ ADMIN PANEL ============ */
+/* ============ TABS ============ */
 
-.panel{
+#panel{
   display:none;
-  grid-template-columns:280px 1fr;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:18px;
+}
+
+.tab-btn{
+  border:1px solid #ddd;
+  background:#fff;
+  padding:10px 16px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:bold;
+  cursor:pointer;
+  color:#555;
+}
+
+.tab-btn.active{
+  background:#5b21b6;
+  border-color:#5b21b6;
+  color:#fff;
+}
+
+.tab-content{
+  display:none;
+}
+
+.tab-content.active{
+  display:block;
+}
+
+/* ============ ADMIN PANEL: CHAT ============ */
+
+.panel-grid{
+  display:flex;
+  flex-direction:column;
   gap:18px;
-  align-items:start;
 }
 
 @media(min-width:750px){
-  .panel{
+  .panel-grid{
     display:grid;
+    grid-template-columns:280px 1fr;
+    align-items:start;
   }
-}
-
-.panel.mobile-active{
-  display:grid;
 }
 
 .supplier-panel{
@@ -322,6 +356,63 @@ body{
   padding:40px;
   text-align:center;
 }
+
+/* ============ MONITORING RETURN ============ */
+
+.monitor-panel{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.monitor-search{
+  padding:12px 15px;
+  border-bottom:1px solid #eee;
+}
+
+.monitor-search input{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid #ddd;
+  border-radius:7px;
+  font-size:12px;
+}
+
+.monitor-table-wrap{
+  overflow-x:auto;
+}
+
+.monitor-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+
+.monitor-table th{
+  text-align:left;
+  background:#faf9fb;
+  padding:10px 15px;
+  border-bottom:1px solid #eee;
+  white-space:nowrap;
+  color:#555;
+  font-size:11px;
+}
+
+.monitor-table td{
+  padding:10px 15px;
+  border-bottom:1px solid #f2f2f2;
+  vertical-align:top;
+}
+
+.monitor-table tr:last-child td{
+  border-bottom:none;
+}
+
+.monitor-table .loc-empty{
+  color:#bbb;
+  font-style:italic;
+}
 </style>
 </head>
 
@@ -372,32 +463,105 @@ body{
 
 
   <!-- PANEL -->
-  <div class="panel" id="panel">
+  <div id="panel">
 
-    <div class="supplier-panel">
+    <div class="tabs">
 
-      <div class="supplier-panel-head">
-        Daftar Supplier
-      </div>
+      <button
+        class="tab-btn active"
+        id="tabChatBtn"
+        onclick="switchTab('chat')"
+      >
+        💬 Balas Chat
+      </button>
 
-      <div class="supplier-panel-search">
-        <input
-          type="text"
-          id="adminSearch"
-          placeholder="Cari supplier..."
-        >
-      </div>
+      <button
+        class="tab-btn"
+        id="tabMonitorBtn"
+        onclick="switchTab('monitor')"
+      >
+        📋 Monitoring Return
+      </button>
 
-      <div id="supplierPanelList">
-        <p class="chat-empty">Memuat...</p>
+    </div>
+
+
+    <!-- TAB: CHAT -->
+    <div class="tab-content active" id="chatTab">
+
+      <div class="panel-grid">
+
+        <div class="supplier-panel">
+
+          <div class="supplier-panel-head">
+            Daftar Supplier
+          </div>
+
+          <div class="supplier-panel-search">
+            <input
+              type="text"
+              id="adminSearch"
+              placeholder="Cari supplier..."
+            >
+          </div>
+
+          <div id="supplierPanelList">
+            <p class="chat-empty">Memuat...</p>
+          </div>
+
+        </div>
+
+        <div class="chat-panel" id="chatPanel">
+
+          <div class="no-selection">
+            Pilih supplier di sebelah kiri untuk mulai membalas chat.
+          </div>
+
+        </div>
+
       </div>
 
     </div>
 
-    <div class="chat-panel" id="chatPanel">
 
-      <div class="no-selection">
-        Pilih supplier di sebelah kiri untuk mulai membalas chat.
+    <!-- TAB: MONITORING RETURN -->
+    <div class="tab-content" id="monitorTab">
+
+      <div class="monitor-panel">
+
+        <div class="monitor-search">
+          <input
+            type="text"
+            id="monitorSearch"
+            placeholder="Cari nama supplier / no slip / lokasi..."
+          >
+        </div>
+
+        <div class="monitor-table-wrap">
+
+          <table class="monitor-table">
+
+            <thead>
+              <tr>
+                <th>Nama Supplier</th>
+                <th>No Slip</th>
+                <th>Lokasi Return</th>
+                <th>Status Return</th>
+              </tr>
+            </thead>
+
+            <tbody id="monitorTableBody">
+              <tr>
+                <td colspan="4" style="text-align:center;color:#999;padding:20px;">
+                  Memuat data...
+                </td>
+              </tr>
+            </tbody>
+
+          </table>
+
+        </div>
+
       </div>
 
     </div>
