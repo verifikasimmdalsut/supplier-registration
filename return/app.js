@@ -169,6 +169,8 @@ async function loadReturnData(){
       col.aging = idx;
     }else if(n === "Dept."){
       col.dept = idx;
+    }else if(n === "Location"){
+      col.location = idx;
     }
 
   });
@@ -210,7 +212,8 @@ async function loadReturnData(){
       shortSku: (r[col.shortSku] || "").trim(),
       itemDesc: (r[col.itemDesc] || "").trim(),
       qty: parseFloat(r[col.qty]) || 0,
-      aging: parseInt(r[col.aging], 10) || 0
+      aging: parseInt(r[col.aging], 10) || 0,
+      location: col.location !== undefined ? (r[col.location] || "").trim() : ""
     });
 
   }
