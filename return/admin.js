@@ -83,12 +83,136 @@ function showPanel(){
 
   loginBox.style.display = "none";
   logoutBtn.style.display = "inline-block";
-  panelEl.style.display = "grid";
+  panelEl.style.display = "block";
 
   renderSupplierPanelList(RETURN_DATA);
+  renderMonitorTable(RETURN_DATA);
 
   setupNotificationButton();
   subscribeGlobalChat();
+
+}
+
+
+/* =========================
+   TAB SWITCH
+========================= */
+
+function switchTab(tab){
+
+  const chatTab = document.getElementById("chatTab");
+  const monitorTab = document.getElementById("monitorTab");
+  const chatBtn = document.getElementById("tabChatBtn");
+  const monitorBtn = document.getElementById("tabMonitorBtn");
+
+  if(tab === "chat"){
+
+    chatTab.classList.add("active");
+    monitorTab.classList.remove("active");
+    chatBtn.classList.add("active");
+    monitorBtn.classList.remove("active");
+
+  }else{
+
+    monitorTab.classList.add("active");
+    chatTab.classList.remove("active");
+    monitorBtn.classList.add("active");
+    chatBtn.classList.remove("active");
+
+  }
+
+}
+
+
+/* =========================
+   MONITORING RETURN
+========================= */
+
+function renderMonitorTable(data){
+
+  const body =
+    document.getElementById("monitorTableBody");
+
+  if(!body){
+    return;
+  }
+
+  /* satu baris per SLIP (bukan per item), biar gak duplikat */
+  const bySlip = {};
+
+  data.forEach(row => {
+
+    const key = String(row.returnNo);
+
+    if(!bySlip[key]){
+      bySlip[key] = row;
+    }
+
+  });
+
+  const rows =
+    Object.values(bySlip)
+      .sort((a, b) => a.supplier.localeCompare(b.supplier));
+
+  if(rows.length === 0){
+
+    body.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center;color:#999;padding:20px;">
+          Tidak ada data return.
+        </td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+  body.innerHTML =
+    rows.map(row => `
+      <tr>
+        <td>
+          ${escapeHtml(row.supplier)}
+          <div style="color:#999;font-size:10px;margin-top:2px;">
+            Kode: ${escapeHtml(row.supplierCode)}
+          </div>
+        </td>
+        <td>${escapeHtml(row.returnNo)}</td>
+        <td>
+          ${
+            row.location
+              ? escapeHtml(row.location)
+              : '<span class="loc-empty">Belum diisi</span>'
+          }
+        </td>
+        <td>${statusBadge(row.status)}</td>
+      </tr>
+    `).join("");
+
+}
+
+
+const monitorSearch =
+  document.getElementById("monitorSearch");
+
+if(monitorSearch){
+
+  monitorSearch.addEventListener("input", function(){
+
+    const keyword =
+      this.value.trim().toLowerCase();
+
+    const filtered =
+      RETURN_DATA.filter(row =>
+        row.supplier.toLowerCase().includes(keyword) ||
+        String(row.supplierCode).includes(keyword) ||
+        String(row.returnNo).includes(keyword) ||
+        (row.location || "").toLowerCase().includes(keyword)
+      );
+
+    renderMonitorTable(filtered);
+
+  });
 
 }
 
@@ -510,8 +634,9 @@ function subscribeGlobalChat(){
 }
 
 function onReturnDataReady(){
-  if(panelEl.style.display === "grid"){
+  if(panelEl.style.display === "block"){
     renderSupplierPanelList(RETURN_DATA);
+    renderMonitorTable(RETURN_DATA);
   }
 }
 
