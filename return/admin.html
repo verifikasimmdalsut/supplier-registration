@@ -359,59 +359,227 @@ body{
 
 /* ============ MONITORING RETURN ============ */
 
-.monitor-panel{
+.monitor-toolbar{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.monitor-search-box{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:8px;
   background:#fff;
   border:1px solid #ddd;
   border-radius:10px;
+  padding:11px 14px;
+}
+
+.monitor-search-box input{
+  flex:1;
+  border:0;
+  outline:none;
+  font-size:12px;
+}
+
+.monitor-filter-btn{
+  width:42px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.monitor-legend{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:12px 5px 0;
+  font-size:11px;
+  color:#666;
+}
+
+.monitor-legend .dot{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  margin-right:5px;
+}
+
+.dot-pending{ background:#f59e0b; }
+.dot-done{ background:#16a34a; }
+.dot-cancel{ background:#9ca3af; }
+
+.monitor-card{
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:12px;
+  margin-bottom:10px;
   overflow:hidden;
 }
 
-.monitor-search{
-  padding:12px 15px;
-  border-bottom:1px solid #eee;
+.monitor-card.pending{
+  border-color:#fde5b8;
+  background:#fffaf0;
 }
 
-.monitor-search input{
-  width:100%;
-  padding:10px 12px;
-  border:1px solid #ddd;
-  border-radius:7px;
-  font-size:12px;
+.monitor-card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 16px;
+  cursor:pointer;
+  gap:10px;
 }
 
-.monitor-table-wrap{
-  overflow-x:auto;
+.monitor-card-title{
+  font-weight:bold;
+  font-size:13px;
 }
 
-.monitor-table{
+.monitor-card-code{
+  font-size:11px;
+  color:#888;
+  margin-top:3px;
+  font-weight:normal;
+}
+
+.monitor-card-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+
+.status-pill{
+  padding:5px 11px;
+  border-radius:20px;
+  font-size:10px;
+  font-weight:bold;
+  white-space:nowrap;
+}
+
+.status-pill.pending{
+  background:#fef3c7;
+  color:#b45309;
+}
+
+.status-pill.done{
+  background:#dcfce7;
+  color:#15803d;
+}
+
+.status-pill.cancel{
+  background:#f0f0f0;
+  color:#777;
+}
+
+.monitor-chevron{
+  transition:transform 0.15s;
+  color:#999;
+}
+
+.monitor-card.open .monitor-chevron{
+  transform:rotate(180deg);
+}
+
+.monitor-card-body{
+  display:none;
+  padding:0 16px 16px;
+}
+
+.monitor-card.open .monitor-card-body{
+  display:block;
+}
+
+.monitor-slip-table{
   width:100%;
   border-collapse:collapse;
-  font-size:12px;
+  font-size:11.5px;
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:8px;
+  overflow:hidden;
 }
 
-.monitor-table th{
+.monitor-slip-table th{
   text-align:left;
   background:#faf9fb;
-  padding:10px 15px;
+  padding:9px 12px;
+  color:#666;
+  font-size:10.5px;
   border-bottom:1px solid #eee;
-  white-space:nowrap;
-  color:#555;
-  font-size:11px;
 }
 
-.monitor-table td{
-  padding:10px 15px;
+.monitor-slip-table td{
+  padding:9px 12px;
   border-bottom:1px solid #f2f2f2;
-  vertical-align:top;
 }
 
-.monitor-table tr:last-child td{
+.monitor-slip-table tr:last-child td{
   border-bottom:none;
 }
 
-.monitor-table .loc-empty{
-  color:#bbb;
-  font-style:italic;
+.monitor-info-banner{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  font-size:11px;
+  color:#555;
+  margin-top:12px;
+}
+
+.monitor-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+
+.monitor-btn{
+  flex:1;
+  padding:12px;
+  border-radius:9px;
+  font-weight:bold;
+  font-size:12px;
+  cursor:pointer;
+  text-align:center;
+  border:1px solid;
+}
+
+.monitor-btn-cancel{
+  background:#fff;
+  border-color:#fecaca;
+  color:#dc2626;
+}
+
+.monitor-btn-cancel small,
+.monitor-btn-done small{
+  display:block;
+  font-weight:normal;
+  font-size:10px;
+  margin-top:2px;
+  opacity:0.8;
+}
+
+.monitor-btn-done{
+  background:#5b21b6;
+  border-color:#5b21b6;
+  color:#fff;
+}
+
+.monitor-btn:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+.monitor-confirmed-note{
+  font-size:10.5px;
+  color:#999;
+  margin-top:10px;
 }
 </style>
 </head>
@@ -527,9 +695,10 @@ body{
     <!-- TAB: MONITORING RETURN -->
     <div class="tab-content" id="monitorTab">
 
-      <div class="monitor-panel">
+      <div class="monitor-toolbar">
 
-        <div class="monitor-search">
+        <div class="monitor-search-box">
+          <span>🔍</span>
           <input
             type="text"
             id="monitorSearch"
@@ -537,31 +706,26 @@ body{
           >
         </div>
 
-        <div class="monitor-table-wrap">
+        <button
+          class="monitor-filter-btn"
+          id="monitorFilterBtn"
+          onclick="cycleMonitorFilter()"
+          title="Filter status"
+        >
+          ▽
+        </button>
 
-          <table class="monitor-table">
+      </div>
 
-            <thead>
-              <tr>
-                <th>Nama Supplier</th>
-                <th>No Slip</th>
-                <th>Lokasi Return</th>
-                <th>Status Return</th>
-              </tr>
-            </thead>
+      <div id="monitorList">
+        <p class="chat-empty">Memuat data...</p>
+      </div>
 
-            <tbody id="monitorTableBody">
-              <tr>
-                <td colspan="4" style="text-align:center;color:#999;padding:20px;">
-                  Memuat data...
-                </td>
-              </tr>
-            </tbody>
-
-          </table>
-
-        </div>
-
+      <div class="monitor-legend">
+        <span><span class="dot dot-pending"></span>Sedang Proses</span>
+        <span><span class="dot dot-done"></span>Done</span>
+        <span><span class="dot dot-cancel"></span>Dibatalkan</span>
+        <span>ℹ️ Klik untuk melihat detail</span>
       </div>
 
     </div>
