@@ -86,7 +86,7 @@ function showPanel(){
   panelEl.style.display = "block";
 
   renderSupplierPanelList(RETURN_DATA);
-  renderMonitorTable(RETURN_DATA);
+  initMonitor();
 
   setupNotificationButton();
   subscribeGlobalChat();
@@ -126,93 +126,420 @@ function switchTab(tab){
 
 /* =========================
    MONITORING RETURN
+   (join: registrasi supplier x data return sheet x konfirmasi admin)
 ========================= */
 
-function renderMonitorTable(data){
+let REGISTRASI_DATA = [];
+let CONFIRMATIONS = {};
+let monitorFilter = "all";  // all | pending | done | cancel
+let monitorSearchKeyword = "";
+let openMonitorCards = new Set();
+let registrasiChannel = null;
+let confirmChannel = null;
 
-  const body =
-    document.getElementById("monitorTableBody");
 
-  if(!body){
-    return;
-  }
+async function loadMonitorSources(){
 
-  /* satu baris per SLIP (bukan per item), biar gak duplikat */
-  const bySlip = {};
+  const [regRes, confRes] = await Promise.all([
 
-  data.forEach(row => {
+    sb.from("registrasi")
+      .select("kode_supplier, nama_supplier, tanggal")
+      .order("tanggal", { ascending: false }),
 
-    const key = String(row.returnNo);
+    sb.from("return_confirmations")
+      .select("*")
 
-    if(!bySlip[key]){
-      bySlip[key] = row;
+  ]);
+
+  REGISTRASI_DATA = regRes.data || [];
+
+  CONFIRMATIONS = {};
+
+  (confRes.data || []).forEach(row => {
+    CONFIRMATIONS[row.supplier_code] = row;
+  });
+
+}
+
+
+function buildMonitorEntries(){
+
+  const suppliersWithReturn =
+    groupBySupplier(RETURN_DATA);
+
+  const returnBySupplierCode = {};
+
+  suppliersWithReturn.forEach(s => {
+    returnBySupplierCode[s.code] = s;
+  });
+
+  /* ambil registrasi TERBARU per kode_supplier */
+  const latestRegByCode = {};
+
+  REGISTRASI_DATA.forEach(reg => {
+
+    const code = String(reg.kode_supplier);
+
+    if(!latestRegByCode[code] ||
+       new Date(reg.tanggal) > new Date(latestRegByCode[code].tanggal)){
+      latestRegByCode[code] = reg;
     }
 
   });
 
-  const rows =
-    Object.values(bySlip)
-      .sort((a, b) => a.supplier.localeCompare(b.supplier));
+  const entries = [];
 
-  if(rows.length === 0){
+  Object.keys(latestRegByCode).forEach(code => {
 
-    body.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align:center;color:#999;padding:20px;">
-          Tidak ada data return.
-        </td>
-      </tr>
+    const supplierReturn =
+      returnBySupplierCode[code];
+
+    /* HANYA tampil kalau supplier yang registrasi itu punya return */
+    if(!supplierReturn){
+      return;
+    }
+
+    const reg = latestRegByCode[code];
+    const confirmation = CONFIRMATIONS[code];
+
+    let status = "pending";
+
+    if(
+      confirmation &&
+      confirmation.confirmed_at &&
+      new Date(confirmation.confirmed_at) >= new Date(reg.tanggal)
+    ){
+      status = confirmation.status;
+    }
+
+    entries.push({
+      code: code,
+      name: supplierReturn.name || reg.nama_supplier,
+      registeredAt: reg.tanggal,
+      status: status,
+      confirmedAt: confirmation ? confirmation.confirmed_at : null,
+      slips: groupBySlip(supplierReturn.rows)
+    });
+
+  });
+
+  entries.sort((a, b) => {
+
+    const aDone = a.status !== "pending";
+    const bDone = b.status !== "pending";
+
+    if(aDone !== bDone){
+      return aDone ? 1 : -1;
+    }
+
+    if(!aDone){
+      return new Date(b.registeredAt) - new Date(a.registeredAt);
+    }
+
+    return new Date(b.confirmedAt || 0) - new Date(a.confirmedAt || 0);
+
+  });
+
+  return entries;
+
+}
+
+
+function statusPillHtml(status){
+
+  const map = {
+    pending: ["pending", "SEDANG PROSES"],
+    done: ["done", "DONE"],
+    cancel: ["cancel", "DIBATALKAN"]
+  };
+
+  const [cls, label] = map[status] || map.pending;
+
+  return `<span class="status-pill ${cls}">${label}</span>`;
+
+}
+
+
+function renderMonitorList(){
+
+  const container =
+    document.getElementById("monitorList");
+
+  if(!container){
+    return;
+  }
+
+  let entries =
+    buildMonitorEntries();
+
+  if(monitorFilter !== "all"){
+    entries = entries.filter(e => e.status === monitorFilter);
+  }
+
+  if(monitorSearchKeyword){
+
+    const kw = monitorSearchKeyword.toLowerCase();
+
+    entries = entries.filter(e =>
+      e.name.toLowerCase().includes(kw) ||
+      e.code.includes(kw) ||
+      Object.keys(e.slips).some(slipNo => slipNo.includes(kw)) ||
+      Object.values(e.slips).some(items =>
+        items.some(item => (item.location || "").toLowerCase().includes(kw))
+      )
+    );
+
+  }
+
+  if(entries.length === 0){
+
+    container.innerHTML = `
+      <p class="chat-empty">Tidak ada supplier dengan return saat ini.</p>
     `;
 
     return;
 
   }
 
-  body.innerHTML =
-    rows.map(row => `
-      <tr>
-        <td>
-          ${escapeHtml(row.supplier)}
-          <div style="color:#999;font-size:10px;margin-top:2px;">
-            Kode: ${escapeHtml(row.supplierCode)}
+  container.innerHTML =
+    entries.map((entry, index) => {
+
+      const isOpen =
+        openMonitorCards.has(entry.code);
+
+      const slipRowsHtml =
+        Object.entries(entry.slips).map(([slipNo, items]) => {
+
+          const first = items[0];
+
+          return `
+            <tr>
+              <td>${escapeHtml(slipNo)}</td>
+              <td>
+                ${
+                  first.location
+                    ? escapeHtml(first.location)
+                    : '<span style="color:#bbb;font-style:italic;">Belum diisi</span>'
+                }
+              </td>
+              <td>${statusBadge(first.status)}</td>
+              <td>${escapeHtml(first.department)}</td>
+            </tr>
+          `;
+
+        }).join("");
+
+      const numberLabel =
+        String(index + 1).padStart(2, "0");
+
+      const actionsHtml =
+        entry.status === "pending"
+          ? `
+            <div class="monitor-info-banner">
+              <span>ℹ️</span>
+              <span>Supplier baru datang. Silakan konfirmasi jika return sudah selesai.</span>
+            </div>
+
+            <div class="monitor-actions">
+
+              <div
+                class="monitor-btn monitor-btn-cancel"
+                onclick="event.stopPropagation();confirmMonitor('${entry.code}','cancel')"
+              >
+                CANCEL
+                <small>Batalkan proses return</small>
+              </div>
+
+              <div
+                class="monitor-btn monitor-btn-done"
+                onclick="event.stopPropagation();confirmMonitor('${entry.code}','done')"
+              >
+                ✓ DONE (KONFIRMASI)
+                <small>Tandai return sudah selesai</small>
+              </div>
+
+            </div>
+          `
+          : `
+            <div class="monitor-confirmed-note">
+              ${entry.status === "done" ? "Ditandai selesai" : "Dibatalkan"}
+              ${entry.confirmedAt ? "pada " + chatTime(entry.confirmedAt) : ""}
+              ${entry.status !== "pending" ? `
+                <span
+                  style="color:#5b21b6;cursor:pointer;font-weight:bold;"
+                  onclick="event.stopPropagation();confirmMonitor('${entry.code}','pending')"
+                >
+                  &nbsp;•&nbsp;Buka lagi
+                </span>
+              ` : ""}
+            </div>
+          `;
+
+      return `
+        <div class="monitor-card ${entry.status === "pending" ? "pending" : ""} ${isOpen ? "open" : ""}">
+
+          <div
+            class="monitor-card-head"
+            onclick="toggleMonitorCard('${entry.code}')"
+          >
+
+            <div>
+              <div class="monitor-card-title">
+                ${numberLabel}. ${escapeHtml(entry.name)}
+              </div>
+              <div class="monitor-card-code">
+                Kode Supplier: ${escapeHtml(entry.code)}
+              </div>
+            </div>
+
+            <div class="monitor-card-right">
+              ${statusPillHtml(entry.status)}
+              <span class="monitor-chevron">⌄</span>
+            </div>
+
           </div>
-        </td>
-        <td>${escapeHtml(row.returnNo)}</td>
-        <td>
-          ${
-            row.location
-              ? escapeHtml(row.location)
-              : '<span class="loc-empty">Belum diisi</span>'
-          }
-        </td>
-        <td>${statusBadge(row.status)}</td>
-      </tr>
-    `).join("");
+
+          <div class="monitor-card-body">
+
+            <table class="monitor-slip-table">
+
+              <thead>
+                <tr>
+                  <th>No Slip</th>
+                  <th>Lokasi Return</th>
+                  <th>Status</th>
+                  <th>Departemen</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${slipRowsHtml}
+              </tbody>
+
+            </table>
+
+            ${actionsHtml}
+
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
 
 }
 
 
-const monitorSearch =
+function toggleMonitorCard(code){
+
+  if(openMonitorCards.has(code)){
+    openMonitorCards.delete(code);
+  }else{
+    openMonitorCards.add(code);
+  }
+
+  renderMonitorList();
+
+}
+
+
+async function confirmMonitor(code, status){
+
+  const { error } =
+    await sb
+      .from("return_confirmations")
+      .upsert({
+        supplier_code: code,
+        status: status,
+        confirmed_by: adminName,
+        confirmed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+  if(error){
+    alert("Gagal menyimpan status: " + error.message);
+    console.error(error);
+    return;
+  }
+
+  await loadMonitorSources();
+  renderMonitorList();
+
+}
+
+
+function cycleMonitorFilter(){
+
+  const order = ["all", "pending", "done", "cancel"];
+  const labels = { all: "▽", pending: "🟠", done: "🟢", cancel: "⚪" };
+
+  const currentIndex = order.indexOf(monitorFilter);
+
+  monitorFilter = order[(currentIndex + 1) % order.length];
+
+  document.getElementById("monitorFilterBtn").textContent =
+    labels[monitorFilter];
+
+  renderMonitorList();
+
+}
+
+
+function subscribeMonitorRealtime(){
+
+  if(!registrasiChannel){
+
+    registrasiChannel = sb
+      .channel("admin_registrasi_watch")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "registrasi" },
+        async () => {
+          await loadMonitorSources();
+          renderMonitorList();
+        }
+      )
+      .subscribe();
+
+  }
+
+  if(!confirmChannel){
+
+    confirmChannel = sb
+      .channel("admin_confirm_watch")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "return_confirmations" },
+        async () => {
+          await loadMonitorSources();
+          renderMonitorList();
+        }
+      )
+      .subscribe();
+
+  }
+
+}
+
+
+const monitorSearchInput =
   document.getElementById("monitorSearch");
 
-if(monitorSearch){
+if(monitorSearchInput){
 
-  monitorSearch.addEventListener("input", function(){
-
-    const keyword =
-      this.value.trim().toLowerCase();
-
-    const filtered =
-      RETURN_DATA.filter(row =>
-        row.supplier.toLowerCase().includes(keyword) ||
-        String(row.supplierCode).includes(keyword) ||
-        String(row.returnNo).includes(keyword) ||
-        (row.location || "").toLowerCase().includes(keyword)
-      );
-
-    renderMonitorTable(filtered);
-
+  monitorSearchInput.addEventListener("input", function(){
+    monitorSearchKeyword = this.value.trim().toLowerCase();
+    renderMonitorList();
   });
+
+}
+
+
+async function initMonitor(){
+
+  await loadMonitorSources();
+  renderMonitorList();
+  subscribeMonitorRealtime();
 
 }
 
@@ -636,7 +963,7 @@ function subscribeGlobalChat(){
 function onReturnDataReady(){
   if(panelEl.style.display === "block"){
     renderSupplierPanelList(RETURN_DATA);
-    renderMonitorTable(RETURN_DATA);
+    renderMonitorList();
   }
 }
 
