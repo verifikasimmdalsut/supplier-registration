@@ -494,9 +494,23 @@ function subscribeMonitorRealtime(){
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "registrasi" },
-        async () => {
+        async (payload) => {
+
+          const reg = payload.new;
+          const code = String(reg.kode_supplier);
+
           await loadMonitorSources();
           renderMonitorList();
+
+          /* cuma notif kalau supplier ini emang punya return di sheet */
+          const hasReturn =
+            groupBySupplier(RETURN_DATA)
+              .some(s => s.code === code);
+
+          if(hasReturn){
+            notifyNewReturn(code, reg.nama_supplier);
+          }
+
         }
       )
       .subscribe();
@@ -516,6 +530,40 @@ function subscribeMonitorRealtime(){
         }
       )
       .subscribe();
+
+  }
+
+}
+
+
+function notifyNewReturn(code, name){
+
+  playNotifSound();
+
+  if(notificationsEnabled){
+
+    const n = new Notification("Return baru — " + name, {
+      body: "Kode Supplier: " + code + " • Supplier baru datang & ada return",
+      tag: "return_" + code
+    });
+
+    n.onclick = () => {
+
+      window.focus();
+
+      switchTab("monitor");
+
+      openMonitorCards.add(code);
+
+      renderMonitorList();
+
+      const el = document.getElementById("panel");
+
+      if(el){
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+
+    };
 
   }
 
