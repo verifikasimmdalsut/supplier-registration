@@ -965,8 +965,265 @@ if(searchInput){
 
 
 /* =========================
-   START — ambil data live dari Google Sheets
+   MODE TOGGLE (Chat / List)
 ========================= */
+
+function switchMode(mode){
+
+  const chatView = document.getElementById("chatView");
+  const listView = document.getElementById("listView");
+  const chatBtn = document.getElementById("modeChatBtn");
+  const listBtn = document.getElementById("modeListBtn");
+
+  if(!chatView || !listView){
+    return;
+  }
+
+  if(mode === "chat"){
+
+    chatView.style.display = "block";
+    listView.style.display = "none";
+    chatBtn.classList.add("active");
+    listBtn.classList.remove("active");
+
+  }else{
+
+    chatView.style.display = "none";
+    listView.style.display = "block";
+    listBtn.classList.add("active");
+    chatBtn.classList.remove("active");
+
+  }
+
+}
+
+
+/* =========================
+   CHATBOT PENCARIAN SUPPLIER (fuzzy search, gratis, tanpa AI)
+========================= */
+
+let supplierFuse = null;
+let awaitingSupplierChoice = null;
+
+
+function buildSupplierFuse(){
+
+  const suppliers =
+    groupBySupplier(RETURN_DATA)
+      .map(s => ({ code: s.code, name: s.name }));
+
+  supplierFuse = new Fuse(suppliers, {
+    keys: ["name", "code"],
+    threshold: 0.4,
+    ignoreLocation: true
+  });
+
+}
+
+
+function addChatPageBubble(html, sender){
+
+  const container =
+    document.getElementById("chatPageMessages");
+
+  if(!container){
+    return;
+  }
+
+  const bubble = document.createElement("div");
+
+  bubble.className = "chat-page-bubble " + sender;
+  bubble.innerHTML = html;
+
+  container.appendChild(bubble);
+
+  container.scrollTop = container.scrollHeight;
+
+}
+
+
+function chatBotGreeting(){
+
+  const container =
+    document.getElementById("chatPageMessages");
+
+  if(!container || container.childElementCount > 0){
+    return;
+  }
+
+  addChatPageBubble(
+    "Halo, mau cek return supplier apa hari ini? Ketik nama atau kode supplier ya.",
+    "bot"
+  );
+
+}
+
+
+function chatSupplierDetailHtml(supplierCode){
+
+  const supplier =
+    groupBySupplier(RETURN_DATA)
+      .find(s => s.code === supplierCode);
+
+  if(!supplier){
+
+    return `Maaf, data supplier itu gak ketemu. Coba cari lagi ya.`;
+
+  }
+
+  const slipGroups =
+    groupBySlip(supplier.rows);
+
+  let html = `
+    <strong>${supplier.name}</strong><br>
+    Kode Supplier: ${supplier.code} · ${Object.keys(slipGroups).length} slip return
+  `;
+
+  Object.entries(slipGroups).forEach(([slipNo, items]) => {
+
+    const first = items[0];
+
+    html += `
+      <div class="chat-slip-card">
+
+        <div class="chat-slip-head">
+          <strong>No. Slip ${escapeHtml(slipNo)}</strong>
+          ${statusBadge(first.status)}
+        </div>
+
+        <div class="chat-slip-meta">
+          ${escapeHtml(first.date)} · ${items.length} item
+        </div>
+
+        <table class="chat-item-table">
+
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>SKU</th>
+              <th style="text-align:right;">Qty</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td>${escapeHtml(item.itemDesc)}</td>
+                <td>${escapeHtml(item.shortSku)}</td>
+                <td style="text-align:right;">${Number(item.qty).toFixed(2)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+
+  });
+
+  html += `<div style="margin-top:8px;font-size:11px;color:#888;">Mau cek supplier lain? Ketik nama atau kode lagi.</div>`;
+
+  return html;
+
+}
+
+
+function chooseSupplierInChat(code){
+
+  const supplier =
+    groupBySupplier(RETURN_DATA)
+      .find(s => s.code === code);
+
+  addChatPageBubble(
+    escapeHtml(supplier ? supplier.name : code),
+    "user"
+  );
+
+  addChatPageBubble(
+    chatSupplierDetailHtml(code),
+    "bot"
+  );
+
+  awaitingSupplierChoice = null;
+
+}
+
+
+function sendChatPageMessage(){
+
+  const input =
+    document.getElementById("chatPageInput");
+
+  if(!input){
+    return;
+  }
+
+  const text =
+    input.value.trim();
+
+  if(!text){
+    return;
+  }
+
+  addChatPageBubble(escapeHtml(text), "user");
+
+  input.value = "";
+
+  if(!supplierFuse){
+
+    addChatPageBubble(
+      "Data return masih dimuat, coba lagi sebentar ya.",
+      "bot"
+    );
+
+    return;
+
+  }
+
+  const results =
+    supplierFuse.search(text);
+
+  if(results.length === 0){
+
+    addChatPageBubble(
+      "Maaf, supplier gak ketemu. Coba cek lagi ejaan nama atau kode supplier-nya.",
+      "bot"
+    );
+
+  }else if(results.length === 1 || results[0].score < 0.08){
+
+    const supplier = results[0].item;
+
+    addChatPageBubble(
+      chatSupplierDetailHtml(supplier.code),
+      "bot"
+    );
+
+  }else{
+
+    const topMatches =
+      results.slice(0, 5);
+
+    const optionsHtml =
+      topMatches.map(r => `
+        <div
+          class="chat-option-btn"
+          onclick="chooseSupplierInChat('${r.item.code}')"
+        >
+          ${escapeHtml(r.item.name)}
+          <span style="color:#999;">· ${escapeHtml(r.item.code)}</span>
+        </div>
+      `).join("");
+
+    addChatPageBubble(
+      `Ini beberapa supplier yang mirip, mana yang dimaksud?${optionsHtml}`,
+      "bot"
+    );
+
+  }
+
+}
 
 async function init(){
 
@@ -999,6 +1256,8 @@ async function init(){
 
     renderSuppliers(RETURN_DATA);
 
+    buildSupplierFuse();
+
   }catch(err){
 
     supplierList.innerHTML = `
@@ -1019,5 +1278,7 @@ async function init(){
   }
 
 }
+
+chatBotGreeting();
 
 init();
