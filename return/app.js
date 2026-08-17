@@ -1015,7 +1015,8 @@ function buildSupplierFuse(){
 
   supplierFuse = new Fuse(suppliers, {
     keys: ["name", "code"],
-    threshold: 0.4,
+    threshold: 0.3,
+    minMatchCharLength: 3,
     ignoreLocation: true
   });
 
@@ -1042,7 +1043,8 @@ async function buildMasterSupplierFuse(){
       data.map(s => ({ code: String(s.kode_supplier), name: s.nama_supplier })),
       {
         keys: ["name", "code"],
-        threshold: 0.4,
+        threshold: 0.3,
+        minMatchCharLength: 3,
         ignoreLocation: true
       }
     );
@@ -1168,6 +1170,20 @@ function chatSupplierDetailHtml(supplierCode){
 }
 
 
+function chooseMasterSupplierInChat(code, name){
+
+  addChatPageBubble(escapeHtml(name), "user");
+
+  addChatPageBubble(
+    `Supplier <strong>${escapeHtml(name)}</strong> (kode ${escapeHtml(code)}) ada di data kami, tapi saat ini <strong>gak ada return yang aktif</strong>.<br><br>
+    Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+    <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
+    "bot"
+  );
+
+}
+
+
 function chooseSupplierInChat(code){
 
   const supplier =
@@ -1209,6 +1225,17 @@ async function sendChatPageMessage(){
 
   input.value = "";
 
+  if(text.length < 3){
+
+    addChatPageBubble(
+      "Coba ketik minimal 3 huruf/angka dari nama atau kode supplier ya, biar pencariannya lebih akurat.",
+      "bot"
+    );
+
+    return;
+
+  }
+
   if(!supplierFuse){
 
     addChatPageBubble(
@@ -1239,7 +1266,7 @@ async function sendChatPageMessage(){
         ? masterSupplierFuse.search(text)
         : [];
 
-    if(masterMatch.length > 0 && masterMatch[0].score < 0.3){
+    if(masterMatch.length === 1 && masterMatch[0].score <= 0.02){
 
       const found = masterMatch[0].item;
 
@@ -1247,6 +1274,26 @@ async function sendChatPageMessage(){
         `Supplier <strong>${escapeHtml(found.name)}</strong> (kode ${escapeHtml(found.code)}) ada di data kami, tapi saat ini <strong>gak ada return yang aktif</strong>.<br><br>
         Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
         <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
+        "bot"
+      );
+
+    }else if(masterMatch.length > 0){
+
+      const topMatches = masterMatch.slice(0, 5);
+
+      const optionsHtml =
+        topMatches.map(r => `
+          <div
+            class="chat-option-btn"
+            onclick="chooseMasterSupplierInChat('${r.item.code}', '${r.item.name.replace(/'/g, "\\'")}')"
+          >
+            ${escapeHtml(r.item.name)}
+            <span style="color:#999;">· ${escapeHtml(r.item.code)}</span>
+          </div>
+        `).join("");
+
+      addChatPageBubble(
+        `Apakah salah satu supplier ini yang kamu maksud?${optionsHtml}`,
         "bot"
       );
 
@@ -1261,7 +1308,7 @@ async function sendChatPageMessage(){
 
     }
 
-  }else if(results.length === 1 || results[0].score < 0.08){
+  }else if(results.length === 1 && results[0].score <= 0.02){
 
     const supplier = results[0].item;
 
@@ -1287,7 +1334,7 @@ async function sendChatPageMessage(){
       `).join("");
 
     addChatPageBubble(
-      `Ini beberapa supplier yang mirip, mana yang dimaksud?${optionsHtml}`,
+      `Apakah salah satu ini yang kamu maksud?${optionsHtml}`,
       "bot"
     );
 
