@@ -1003,6 +1003,7 @@ function switchMode(mode){
 ========================= */
 
 let supplierFuse = null;
+let masterSupplierFuse = null;
 let awaitingSupplierChoice = null;
 
 
@@ -1017,6 +1018,37 @@ function buildSupplierFuse(){
     threshold: 0.4,
     ignoreLocation: true
   });
+
+}
+
+
+async function buildMasterSupplierFuse(){
+
+  try{
+
+    const { data, error } =
+      await sb
+        .from("supplier")
+        .select("kode_supplier, nama_supplier");
+
+    if(error || !data){
+      return;
+    }
+
+    masterSupplierFuse = new Fuse(
+      data.map(s => ({ code: String(s.kode_supplier), name: s.nama_supplier })),
+      {
+        keys: ["name", "code"],
+        threshold: 0.4,
+        ignoreLocation: true
+      }
+    );
+
+  }catch(err){
+
+    console.error("Gagal memuat master data supplier:", err);
+
+  }
 
 }
 
@@ -1190,12 +1222,32 @@ function sendChatPageMessage(){
 
   if(results.length === 0){
 
-    addChatPageBubble(
-      `Maaf, supplier gak ketemu. Coba cek lagi ejaan nama atau kode supplier-nya.<br><br>
-      Kalau masih kesulitan, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
-      <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
-      "bot"
-    );
+    const masterMatch =
+      masterSupplierFuse
+        ? masterSupplierFuse.search(text)
+        : [];
+
+    if(masterMatch.length > 0 && masterMatch[0].score < 0.3){
+
+      const found = masterMatch[0].item;
+
+      addChatPageBubble(
+        `Supplier <strong>${escapeHtml(found.name)}</strong> (kode ${escapeHtml(found.code)}) ada di data kami, tapi saat ini <strong>gak ada return yang aktif</strong>.<br><br>
+        Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+        <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
+        "bot"
+      );
+
+    }else{
+
+      addChatPageBubble(
+        `Maaf, supplier gak ketemu. Coba cek lagi ejaan nama atau kode supplier-nya.<br><br>
+        Kalau masih kesulitan, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+        <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
+        "bot"
+      );
+
+    }
 
   }else if(results.length === 1 || results[0].score < 0.08){
 
@@ -1263,6 +1315,7 @@ async function init(){
     renderSuppliers(RETURN_DATA);
 
     buildSupplierFuse();
+    buildMasterSupplierFuse();
 
   }catch(err){
 
