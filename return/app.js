@@ -1044,6 +1044,10 @@ async function buildMasterSupplierFuse(){
 
       if(error){
         console.error("Gagal memuat master data supplier:", error);
+        addChatPageBubble(
+          "🔧 Debug: error saat fetch — " + JSON.stringify(error),
+          "bot"
+        );
         break;
       }
 
@@ -1062,6 +1066,10 @@ async function buildMasterSupplierFuse(){
     }
 
     if(allRows.length === 0){
+      addChatPageBubble(
+        "🔧 Debug: fetch sukses tapi hasilnya 0 baris (kemungkinan RLS/policy nolak diam-diam).",
+        "bot"
+      );
       return;
     }
 
@@ -1077,9 +1085,19 @@ async function buildMasterSupplierFuse(){
 
     console.log("Master supplier ke-load:", allRows.length, "baris");
 
+    addChatPageBubble(
+      "🔧 Debug: " + allRows.length + " data supplier berhasil dimuat.",
+      "bot"
+    );
+
   }catch(err){
 
     console.error("Gagal memuat master data supplier:", err);
+
+    addChatPageBubble(
+      "🔧 Debug: GAGAL memuat data supplier — " + (err.message || err),
+      "bot"
+    );
 
   }
 
