@@ -478,6 +478,162 @@ td{
   cursor:not-allowed;
 }
 
+/* ================= MODE TOGGLE ================= */
+
+.mode-toggle{
+  display:flex;
+  gap:8px;
+  margin-bottom:15px;
+}
+
+.mode-btn{
+  flex:1;
+  border:1px solid #ddd;
+  background:#fff;
+  padding:10px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:bold;
+  cursor:pointer;
+  color:#555;
+}
+
+.mode-btn.active{
+  background:#5b21b6;
+  border-color:#5b21b6;
+  color:#fff;
+}
+
+/* ================= CHAT PAGE ================= */
+
+.chat-page-box{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:12px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.chat-page-messages{
+  padding:15px;
+  min-height:320px;
+  max-height:60vh;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.chat-page-bubble{
+  max-width:88%;
+  padding:9px 12px;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.6;
+}
+
+.chat-page-bubble.user{
+  align-self:flex-end;
+  background:#5b21b6;
+  color:#fff;
+  border-bottom-right-radius:3px;
+}
+
+.chat-page-bubble.bot{
+  align-self:flex-start;
+  background:#f6f5f8;
+  color:#222;
+  border-bottom-left-radius:3px;
+  width:88%;
+}
+
+.chat-option-btn{
+  display:block;
+  width:100%;
+  text-align:left;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:9px 11px;
+  font-size:12px;
+  margin-top:6px;
+  cursor:pointer;
+}
+
+.chat-option-btn:hover{
+  border-color:#5b21b6;
+}
+
+.chat-slip-card{
+  background:#fff;
+  border-radius:9px;
+  padding:10px;
+  margin-top:8px;
+}
+
+.chat-slip-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.chat-slip-meta{
+  color:#888;
+  font-size:10.5px;
+  margin:2px 0 8px;
+}
+
+.chat-item-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:10.5px;
+}
+
+.chat-item-table th{
+  text-align:left;
+  color:#888;
+  font-weight:normal;
+  padding:4px 0;
+}
+
+.chat-item-table td{
+  padding:5px 0;
+  border-top:1px solid #eee;
+}
+
+.chat-page-input-row{
+  display:flex;
+  gap:8px;
+  padding:12px 15px;
+  border-top:1px solid #eee;
+}
+
+.chat-page-input{
+  flex:1;
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:12px;
+  font-family:inherit;
+}
+
+.chat-page-input:focus{
+  outline:none;
+  border-color:#5b21b6;
+}
+
+.chat-page-send{
+  background:#5b21b6;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:0 18px;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:12px;
+}
+
 /* ================= FOOTER ================= */
 
 .footer{
@@ -594,70 +750,134 @@ td{
   </div>
 
 
-  <!-- SEARCH -->
+  <!-- MODE TOGGLE -->
 
-  <div class="search-box">
+  <div class="mode-toggle">
 
-    <label class="search-label">
-      Cari Supplier
-    </label>
-
-    <input
-      type="text"
-      id="searchSupplier"
-      class="search-input"
-      placeholder="Masukkan nama atau kode supplier..."
+    <button
+      class="mode-btn active"
+      id="modeChatBtn"
+      onclick="switchMode('chat')"
     >
+      💬 Chat
+    </button>
+
+    <button
+      class="mode-btn"
+      id="modeListBtn"
+      onclick="switchMode('list')"
+    >
+      📋 List Supplier
+    </button>
 
   </div>
 
 
-  <!-- SUPPLIER -->
+  <!-- ================= CHAT VIEW ================= -->
 
-  <section id="supplierSection">
+  <section id="chatView">
 
-    <div class="section-title">
-
-      <div>
-
-        <h2>
-          DAFTAR SUPPLIER
-        </h2>
-
-        <p>
-          Pilih supplier untuk melihat slip return.
-        </p>
-
-      </div>
+    <div class="chat-page-box">
 
       <div
-        class="supplier-count"
-        id="supplierCount"
-      >
-        4 Supplier
+        class="chat-page-messages"
+        id="chatPageMessages"
+      ></div>
+
+      <div class="chat-page-input-row">
+
+        <input
+          type="text"
+          id="chatPageInput"
+          class="chat-page-input"
+          placeholder="Ketik nama atau kode supplier..."
+          onkeydown="if(event.key==='Enter'){sendChatPageMessage();}"
+        >
+
+        <button
+          class="chat-page-send"
+          onclick="sendChatPageMessage()"
+        >
+          Kirim
+        </button>
+
       </div>
 
     </div>
 
+  </section>
 
-    <div
-      class="supplier-list"
-      id="supplierList"
-    >
-      <!-- Diisi otomatis oleh app.js (renderSuppliers) -->
+
+  <!-- ================= LIST VIEW ================= -->
+
+  <div id="listView" style="display:none;">
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+      <label class="search-label">
+        Cari Supplier
+      </label>
+
+      <input
+        type="text"
+        id="searchSupplier"
+        class="search-input"
+        placeholder="Masukkan nama atau kode supplier..."
+      >
+
     </div>
 
-  </section>
+
+    <!-- SUPPLIER -->
+
+    <section id="supplierSection">
+
+      <div class="section-title">
+
+        <div>
+
+          <h2>
+            DAFTAR SUPPLIER
+          </h2>
+
+          <p>
+            Pilih supplier untuk melihat slip return.
+          </p>
+
+        </div>
+
+        <div
+          class="supplier-count"
+          id="supplierCount"
+        >
+          4 Supplier
+        </div>
+
+      </div>
 
 
-  <!-- ================= DETAIL ================= -->
+      <div
+        class="supplier-list"
+        id="supplierList"
+      >
+        <!-- Diisi otomatis oleh app.js (renderSuppliers) -->
+      </div>
 
-  <section
-    class="detail"
-    id="detailSection"
-  >
-    <!-- Diisi otomatis oleh app.js (openSupplier) -->
-  </section>
+    </section>
+
+
+    <!-- ================= DETAIL ================= -->
+
+    <section
+      class="detail"
+      id="detailSection"
+    >
+      <!-- Diisi otomatis oleh app.js (openSupplier) -->
+    </section>
+
+  </div>
 
 </main>
 
@@ -671,6 +891,7 @@ td{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js"></script>
 <script src="app.js"></script>
 
 </body>
