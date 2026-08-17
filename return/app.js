@@ -1059,6 +1059,9 @@ function chatBotGreeting(){
 }
 
 
+const SUPPORT_WA_NUMBER = "000000000000";  // TODO: ganti ke nomor WA admin yang asli
+
+
 function chatSupplierDetailHtml(supplierCode){
 
   const supplier =
@@ -1092,7 +1095,8 @@ function chatSupplierDetailHtml(supplierCode){
         </div>
 
         <div class="chat-slip-meta">
-          ${escapeHtml(first.date)} · ${items.length} item
+          Tanggal Dibuat: ${escapeHtml(first.date)}<br>
+          Status: ${escapeHtml(first.status)} · ${items.length} item
         </div>
 
         <table class="chat-item-table">
@@ -1187,7 +1191,9 @@ function sendChatPageMessage(){
   if(results.length === 0){
 
     addChatPageBubble(
-      "Maaf, supplier gak ketemu. Coba cek lagi ejaan nama atau kode supplier-nya.",
+      `Maaf, supplier gak ketemu. Coba cek lagi ejaan nama atau kode supplier-nya.<br><br>
+      Kalau masih kesulitan, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+      <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
       "bot"
     );
 
