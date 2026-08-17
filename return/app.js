@@ -1022,6 +1022,9 @@ function buildSupplierFuse(){
 }
 
 
+let masterSupplierFusePromise = null;
+
+
 async function buildMasterSupplierFuse(){
 
   try{
@@ -1186,7 +1189,7 @@ function chooseSupplierInChat(code){
 }
 
 
-function sendChatPageMessage(){
+async function sendChatPageMessage(){
 
   const input =
     document.getElementById("chatPageInput");
@@ -1221,6 +1224,15 @@ function sendChatPageMessage(){
     supplierFuse.search(text);
 
   if(results.length === 0){
+
+    if(masterSupplierFusePromise){
+
+      await Promise.race([
+        masterSupplierFusePromise,
+        new Promise(resolve => setTimeout(resolve, 3000))
+      ]);
+
+    }
 
     const masterMatch =
       masterSupplierFuse
@@ -1315,7 +1327,6 @@ async function init(){
     renderSuppliers(RETURN_DATA);
 
     buildSupplierFuse();
-    buildMasterSupplierFuse();
 
   }catch(err){
 
@@ -1339,5 +1350,7 @@ async function init(){
 }
 
 chatBotGreeting();
+
+masterSupplierFusePromise = buildMasterSupplierFuse();
 
 init();
