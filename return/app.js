@@ -1030,18 +1030,43 @@ async function buildMasterSupplierFuse(){
 
   try{
 
-    const { data, error } =
-      await sb
-        .from("supplier")
-        .select("kode_supplier, nama_supplier")
-        .limit(5000);
+    let allRows = [];
+    let from = 0;
+    const pageSize = 1000;
 
-    if(error || !data){
+    while(true){
+
+      const { data, error } =
+        await sb
+          .from("supplier")
+          .select("kode_supplier, nama_supplier")
+          .range(from, from + pageSize - 1);
+
+      if(error){
+        console.error("Gagal memuat master data supplier:", error);
+        break;
+      }
+
+      if(!data || data.length === 0){
+        break;
+      }
+
+      allRows = allRows.concat(data);
+
+      if(data.length < pageSize){
+        break;
+      }
+
+      from += pageSize;
+
+    }
+
+    if(allRows.length === 0){
       return;
     }
 
     masterSupplierFuse = new Fuse(
-      data.map(s => ({ code: String(s.kode_supplier), name: s.nama_supplier })),
+      allRows.map(s => ({ code: String(s.kode_supplier), name: s.nama_supplier })),
       {
         keys: ["name", "code"],
         threshold: 0.3,
@@ -1049,6 +1074,8 @@ async function buildMasterSupplierFuse(){
         ignoreLocation: true
       }
     );
+
+    console.log("Master supplier ke-load:", allRows.length, "baris");
 
   }catch(err){
 
