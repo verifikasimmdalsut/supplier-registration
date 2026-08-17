@@ -1033,7 +1033,8 @@ async function buildMasterSupplierFuse(){
     const { data, error } =
       await sb
         .from("supplier")
-        .select("kode_supplier, nama_supplier");
+        .select("kode_supplier, nama_supplier")
+        .limit(5000);
 
     if(error || !data){
       return;
