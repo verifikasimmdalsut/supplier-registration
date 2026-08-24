@@ -20,6 +20,7 @@ let adminName = "";
 let globalChatChannel = null;
 const unreadSuppliers = new Set();
 let notificationsEnabled = false;
+const lastMessageAt = {};
 
 
 /* =========================
@@ -85,11 +86,45 @@ function showPanel(){
   logoutBtn.style.display = "inline-block";
   panelEl.style.display = "block";
 
-  renderSupplierPanelList(RETURN_DATA);
+  loadLastMessageTimes().then(() => {
+    renderSupplierPanelList(RETURN_DATA);
+  });
+
   initMonitor();
 
   setupNotificationButton();
   subscribeGlobalChat();
+
+}
+
+
+async function loadLastMessageTimes(){
+
+  try{
+
+    const { data, error } =
+      await sb
+        .from("return_chat_messages")
+        .select("supplier_code, created_at")
+        .order("created_at", { ascending: false });
+
+    if(error || !data){
+      return;
+    }
+
+    data.forEach(row => {
+
+      if(!lastMessageAt[row.supplier_code]){
+        lastMessageAt[row.supplier_code] = row.created_at;
+      }
+
+    });
+
+  }catch(err){
+
+    console.error("Gagal memuat waktu chat terakhir:", err);
+
+  }
 
 }
 
@@ -601,6 +636,27 @@ function renderSupplierPanelList(data){
   const suppliers =
     groupBySupplier(data);
 
+  suppliers.sort((a, b) => {
+
+    const timeA = lastMessageAt[a.code];
+    const timeB = lastMessageAt[b.code];
+
+    if(timeA && timeB){
+      return new Date(timeB) - new Date(timeA);
+    }
+
+    if(timeA && !timeB){
+      return -1;
+    }
+
+    if(!timeA && timeB){
+      return 1;
+    }
+
+    return 0;
+
+  });
+
   if(suppliers.length === 0){
 
     supplierPanelList.innerHTML = `
@@ -974,6 +1030,10 @@ function subscribeGlobalChat(){
           return;
         }
 
+        lastMessageAt[msg.supplier_code] = msg.created_at;
+
+        renderSupplierPanelList(RETURN_DATA);
+
         const isCurrentlyOpen =
           msg.supplier_code === activeSupplierCode &&
           document.visibilityState === "visible";
@@ -981,8 +1041,6 @@ function subscribeGlobalChat(){
         if(!isCurrentlyOpen){
 
           unreadSuppliers.add(msg.supplier_code);
-
-          renderSupplierPanelList(RETURN_DATA);
 
           if(notificationsEnabled){
 
