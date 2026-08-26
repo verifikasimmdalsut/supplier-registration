@@ -134,7 +134,7 @@ function getPemusnahanInfo(dateCreatedStr, deptStr){
     pemusnahanDate.getDate() + category.pemusnahanHari
   );
 
-  /* pemusnahan cuma dilakukan hari Senin */
+  /* pemusnahan hanya dilakukan dihari Senin */
   pemusnahanDate =
     rollToNextMonday(pemusnahanDate);
 
@@ -1368,7 +1368,7 @@ function chooseMasterSupplierInChat(code, name){
 
   addChatPageBubble(
     `Supplier <strong>${escapeHtml(name)}</strong> (kode ${escapeHtml(code)}) ada di data kami, tapi saat ini <strong>gak ada return yang aktif</strong>.<br><br>
-    Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman List Supplier, atau WhatsApp ke
+    jika dirasa ini keliru, silakan hubungi kami lewat kolom chat di halaman List Supplier, atau WhatsApp ke
     <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
     "bot"
   );
@@ -1464,7 +1464,7 @@ async function sendChatPageMessage(){
 
       addChatPageBubble(
         `Supplier <strong>${escapeHtml(found.name)}</strong> (kode ${escapeHtml(found.code)}) ada di data kami, tapi saat ini <strong>tidak ada return yang aktif</strong>.<br><br>
-        Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+        jika dirasa ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
         <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
         "bot"
       );
@@ -1493,7 +1493,7 @@ async function sendChatPageMessage(){
 
       addChatPageBubble(
         `Maaf, supplier gak ketemu. Coba cek lagi ejaan nama atau kode supplier-nya.<br><br>
-        Kalau masih kesulitan, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+        jika masih kesulitan, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
         <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
         "bot"
       );
