@@ -17,6 +17,111 @@ const ALLOWED_STATUS = [
 
 
 /* =========================
+   TANGGAL PEMUSNAHAN
+   (berdasarkan kategori merchandise per departemen)
+
+   - Food Line - Groceries   : dept 2001-2011, 2025-2030  -> pemusnahan hari ke-11
+   - Food Line - Non Groceries : dept 2014-2024            -> pemusnahan hari ke-11
+   - Hard Line               : dept 3001-3051              -> pemusnahan hari ke-21
+   - Soft Line                : dept 1001-1100              -> pemusnahan hari ke-21
+========================= */
+
+function getMerchandiseCategory(deptStr){
+
+  const dept = parseInt(deptStr, 10);
+
+  if(isNaN(dept)){
+    return null;
+  }
+
+  if((dept >= 2001 && dept <= 2011) || (dept >= 2025 && dept <= 2030)){
+    return { label: "Food Line - Groceries", pemusnahanHari: 11 };
+  }
+
+  if(dept >= 2014 && dept <= 2024){
+    return { label: "Food Line - Non Groceries", pemusnahanHari: 11 };
+  }
+
+  if(dept >= 3001 && dept <= 3051){
+    return { label: "Hard Line", pemusnahanHari: 21 };
+  }
+
+  if(dept >= 1001 && dept <= 1100){
+    return { label: "Soft Line", pemusnahanHari: 21 };
+  }
+
+  return null;
+
+}
+
+
+function parseFlexibleDate(str){
+
+  if(!str){
+    return null;
+  }
+
+  const s = str.trim();
+
+  /* format ISO: 2026-07-01 */
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if(m){
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+
+  /* format Indonesia: 01/07/2026 */
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+  if(m){
+    return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  }
+
+  return null;
+
+}
+
+
+function formatDateID(date){
+
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+
+  return `${dd}/${mm}/${yyyy}`;
+
+}
+
+
+function getPemusnahanInfo(dateCreatedStr, deptStr){
+
+  const category =
+    getMerchandiseCategory(deptStr);
+
+  const createdDate =
+    parseFlexibleDate(dateCreatedStr);
+
+  if(!category || !createdDate){
+    return null;
+  }
+
+  const pemusnahanDate =
+    new Date(createdDate);
+
+  pemusnahanDate.setDate(
+    pemusnahanDate.getDate() + category.pemusnahanHari
+  );
+
+  return {
+    category: category.label,
+    hari: category.pemusnahanHari,
+    tanggal: formatDateID(pemusnahanDate)
+  };
+
+}
+
+
+/* =========================
    ELEMENT
 ========================= */
 
@@ -319,7 +424,7 @@ function renderSuppliers(data){
           </div>
 
           <div class="slip-label">
-            Slip Return
+            Jumlah Slip Return
           </div>
 
           <div class="arrow">
@@ -492,13 +597,19 @@ function openSupplier(code){
                   <th>Qty Return</th>
                   <th>Aging Day</th>
                   <th>Dept.</th>
+                  <th>Tgl Pemusnahan</th>
                 </tr>
 
               </thead>
 
               <tbody>
 
-                ${items.map((item, index) => `
+                ${items.map((item, index) => {
+
+                  const pemusnahan =
+                    getPemusnahanInfo(first.date, item.department);
+
+                  return `
 
                   <tr>
 
@@ -526,9 +637,19 @@ function openSupplier(code){
                       ${item.department}
                     </td>
 
+                    <td>
+                      ${
+                        pemusnahan
+                          ? `<span class="pemusnahan-badge" title="${pemusnahan.category} · hari ke-${pemusnahan.hari}">${pemusnahan.tanggal}</span>`
+                          : '<span style="color:#bbb;">-</span>'
+                      }
+                    </td>
+
                   </tr>
 
-                `).join("")}
+                  `;
+
+                }).join("")}
 
               </tbody>
 
@@ -1170,17 +1291,32 @@ function chatSupplierDetailHtml(supplierCode){
               <th>Item</th>
               <th>SKU</th>
               <th style="text-align:right;">Qty</th>
+              <th>Pemusnahan</th>
             </tr>
           </thead>
 
           <tbody>
-            ${items.map(item => `
+            ${items.map(item => {
+
+              const pemusnahan =
+                getPemusnahanInfo(first.date, item.department);
+
+              return `
               <tr>
                 <td>${escapeHtml(item.itemDesc)}</td>
                 <td>${escapeHtml(item.shortSku)}</td>
                 <td style="text-align:right;">${Number(item.qty).toFixed(2)}</td>
+                <td>
+                  ${
+                    pemusnahan
+                      ? `<span class="pemusnahan-badge" title="${escapeHtml(pemusnahan.category)} · hari ke-${pemusnahan.hari}">${pemusnahan.tanggal}</span>`
+                      : '<span style="color:#bbb;">-</span>'
+                  }
+                </td>
               </tr>
-            `).join("")}
+            `;
+
+            }).join("")}
           </tbody>
 
         </table>
