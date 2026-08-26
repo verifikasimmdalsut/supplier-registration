@@ -21,7 +21,7 @@ const ALLOWED_STATUS = [
    (berdasarkan kategori merchandise per departemen)
 
    - Food Line - Groceries   : dept 2001-2011, 2025-2030  -> pemusnahan hari ke-11
-   - Food Line - Non Groceries : dept 2014-2024            -> pemusnahan hari ke-11
+   - Food Line - Non Groceries : dept 2014-2024            -> pemusnahan hari ke-16
    - Hard Line               : dept 3001-3051              -> pemusnahan hari ke-21
    - Soft Line                : dept 1001-1100              -> pemusnahan hari ke-21
 ========================= */
@@ -39,7 +39,7 @@ function getMerchandiseCategory(deptStr){
   }
 
   if(dept >= 2014 && dept <= 2024){
-    return { label: "Food Line - Non Groceries", pemusnahanHari: 11 };
+    return { label: "Food Line - Non Groceries", pemusnahanHari: 16 };
   }
 
   if(dept >= 3001 && dept <= 3051){
