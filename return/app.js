@@ -93,6 +93,28 @@ function formatDateID(date){
 }
 
 
+function rollToNextMonday(date){
+
+  const d = new Date(date);
+  const day = d.getDay();  // 0=Minggu, 1=Senin, ... 6=Sabtu
+
+  let diff;
+
+  if(day === 1){
+    diff = 0;               // udah Senin
+  }else if(day === 0){
+    diff = 1;                // Minggu -> besoknya Senin
+  }else{
+    diff = 8 - day;          // Selasa..Sabtu -> maju ke Senin berikutnya
+  }
+
+  d.setDate(d.getDate() + diff);
+
+  return d;
+
+}
+
+
 function getPemusnahanInfo(dateCreatedStr, deptStr){
 
   const category =
@@ -105,12 +127,16 @@ function getPemusnahanInfo(dateCreatedStr, deptStr){
     return null;
   }
 
-  const pemusnahanDate =
+  let pemusnahanDate =
     new Date(createdDate);
 
   pemusnahanDate.setDate(
     pemusnahanDate.getDate() + category.pemusnahanHari
   );
+
+  /* pemusnahan cuma dilakukan hari Senin */
+  pemusnahanDate =
+    rollToNextMonday(pemusnahanDate);
 
   return {
     category: category.label,
@@ -1288,10 +1314,10 @@ function chatSupplierDetailHtml(supplierCode){
 
           <thead>
             <tr>
-              <th>Item</th>
-              <th>SKU</th>
-              <th style="text-align:right;">Qty</th>
-              <th>Pemusnahan</th>
+              <th style="width:38%;">Item</th>
+              <th style="width:20%;">SKU</th>
+              <th style="width:14%;text-align:right;">Qty</th>
+              <th style="width:28%;">Pemusnahan</th>
             </tr>
           </thead>
 
