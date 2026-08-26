@@ -347,6 +347,9 @@ function renderMonitorList(){
 
           const first = items[0];
 
+          const pemusnahan =
+            getPemusnahanInfo(first.date, first.department);
+
           return `
             <tr>
               <td>${escapeHtml(slipNo)}</td>
@@ -359,6 +362,13 @@ function renderMonitorList(){
               </td>
               <td>${statusBadge(first.status)}</td>
               <td>${escapeHtml(first.department)}</td>
+              <td>
+                ${
+                  pemusnahan
+                    ? `<span class="pemusnahan-badge" title="${escapeHtml(pemusnahan.category)} · hari ke-${pemusnahan.hari}">${pemusnahan.tanggal}</span>`
+                    : '<span style="color:#bbb;">-</span>'
+                }
+              </td>
             </tr>
           `;
 
@@ -444,6 +454,7 @@ function renderMonitorList(){
                   <th>Lokasi Return</th>
                   <th>Status</th>
                   <th>Departemen</th>
+                  <th>Tgl Pemusnahan</th>
                 </tr>
               </thead>
 
