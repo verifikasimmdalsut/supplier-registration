@@ -1310,42 +1310,45 @@ function chatSupplierDetailHtml(supplierCode){
           Status: ${escapeHtml(first.status)} · ${items.length} item
         </div>
 
-        <table class="chat-item-table">
+        <div class="chat-item-list">
 
-          <thead>
-            <tr>
-              <th style="width:38%;">Item</th>
-              <th style="width:20%;">SKU</th>
-              <th style="width:14%;text-align:right;">Qty</th>
-              <th style="width:28%;">Pemusnahan</th>
-            </tr>
-          </thead>
+          ${items.map(item => {
 
-          <tbody>
-            ${items.map(item => {
+            const pemusnahan =
+              getPemusnahanInfo(first.date, item.department);
 
-              const pemusnahan =
-                getPemusnahanInfo(first.date, item.department);
+            return `
+              <div class="chat-item-card">
 
-              return `
-              <tr>
-                <td>${escapeHtml(item.itemDesc)}</td>
-                <td>${escapeHtml(item.shortSku)}</td>
-                <td style="text-align:right;">${Number(item.qty).toFixed(2)}</td>
-                <td>
+                <div class="chat-item-name">
+                  ${escapeHtml(item.itemDesc)}
+                </div>
+
+                <div class="chat-item-row">
+                  <span class="chat-item-key">SKU</span>
+                  <span>${escapeHtml(item.shortSku)}</span>
+                </div>
+
+                <div class="chat-item-row">
+                  <span class="chat-item-key">Qty Return</span>
+                  <span>${Number(item.qty).toFixed(2)}</span>
+                </div>
+
+                <div class="chat-item-row">
+                  <span class="chat-item-key">Tgl Pemusnahan</span>
                   ${
                     pemusnahan
                       ? `<span class="pemusnahan-badge" title="${escapeHtml(pemusnahan.category)} · hari ke-${pemusnahan.hari}">${pemusnahan.tanggal}</span>`
                       : '<span style="color:#bbb;">-</span>'
                   }
-                </td>
-              </tr>
+                </div>
+
+              </div>
             `;
 
-            }).join("")}
-          </tbody>
+          }).join("")}
 
-        </table>
+        </div>
 
       </div>
     `;
