@@ -594,18 +594,26 @@ td{
   width:100%;
   border-collapse:collapse;
   font-size:10.5px;
+  table-layout:fixed;
 }
 
 .chat-item-table th{
   text-align:left;
   color:#888;
   font-weight:normal;
-  padding:4px 0;
+  padding:4px 6px 4px 0;
 }
 
 .chat-item-table td{
-  padding:5px 0;
+  padding:6px 6px 6px 0;
   border-top:1px solid #eee;
+  vertical-align:top;
+  word-break:break-word;
+}
+
+.chat-item-table th:last-child,
+.chat-item-table td:last-child{
+  padding-right:0;
 }
 
 .chat-page-input-row{
