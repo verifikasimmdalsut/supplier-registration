@@ -682,6 +682,60 @@ td{
   white-space:nowrap;
 }
 
+.pemusnahan-info-box{
+  background:var(--magenta-light);
+  border:1px solid #f6c6dc;
+  border-radius:12px;
+  padding:14px 15px;
+  margin-bottom:15px;
+}
+
+.pemusnahan-info-title{
+  font-weight:bold;
+  font-size:13px;
+  color:var(--magenta);
+  margin-bottom:6px;
+}
+
+.pemusnahan-info-desc{
+  font-size:11px;
+  color:#555;
+  line-height:1.6;
+  margin-bottom:10px;
+}
+
+.pemusnahan-info-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  gap:8px;
+}
+
+.pemusnahan-info-item{
+  background:#fff;
+  border-radius:8px;
+  padding:9px 11px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+
+.pemusnahan-info-cat{
+  font-size:11px;
+  font-weight:bold;
+  color:#333;
+}
+
+.pemusnahan-info-day{
+  font-size:10px;
+  font-weight:bold;
+  color:var(--magenta);
+  background:var(--magenta-light);
+  padding:3px 8px;
+  border-radius:20px;
+  white-space:nowrap;
+}
+
 /* ================= FOOTER ================= */
 
 .footer{
@@ -794,6 +848,47 @@ td{
 
     Halaman ini digunakan supplier untuk mengecek
     apakah terdapat data return di AEON Alam Sutera.
+
+  </div>
+
+
+  <!-- JADWAL PEMUSNAHAN -->
+
+  <div class="pemusnahan-info-box">
+
+    <div class="pemusnahan-info-title">
+      📅 Jadwal Pemusnahan Barang Return
+    </div>
+
+    <div class="pemusnahan-info-desc">
+      Dihitung sejak <strong>Tanggal Dibuat</strong> return, dan pemusnahan
+      cuma dilakukan tiap hari <strong>Senin</strong> — kalau perhitungannya
+      jatuh di hari lain, otomatis dimajukan ke Senin berikutnya.
+    </div>
+
+    <div class="pemusnahan-info-grid">
+
+      <div class="pemusnahan-info-item">
+        <div class="pemusnahan-info-cat">Food Line - Groceries</div>
+        <div class="pemusnahan-info-day">Hari ke-11</div>
+      </div>
+
+      <div class="pemusnahan-info-item">
+        <div class="pemusnahan-info-cat">Food Line - Non Groceries</div>
+        <div class="pemusnahan-info-day">Hari ke-16</div>
+      </div>
+
+      <div class="pemusnahan-info-item">
+        <div class="pemusnahan-info-cat">Hard Line</div>
+        <div class="pemusnahan-info-day">Hari ke-21</div>
+      </div>
+
+      <div class="pemusnahan-info-item">
+        <div class="pemusnahan-info-cat">Soft Line</div>
+        <div class="pemusnahan-info-day">Hari ke-21</div>
+      </div>
+
+    </div>
 
   </div>
 
