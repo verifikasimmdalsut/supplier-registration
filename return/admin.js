@@ -105,7 +105,7 @@ async function loadLastMessageTimes(){
     const { data, error } =
       await sb
         .from("return_chat_messages")
-        .select("supplier_code, created_at")
+        .select("supplier_code, created_at, sender_type")
         .order("created_at", { ascending: false });
 
     if(error || !data){
@@ -115,7 +115,18 @@ async function loadLastMessageTimes(){
     data.forEach(row => {
 
       if(!lastMessageAt[row.supplier_code]){
+
         lastMessageAt[row.supplier_code] = row.created_at;
+
+        /* tandai belum dibaca cuma kalau pesan TERAKHIR dari supplier
+           (kalau admin udah bales duluan, gak perlu ditandai lagi) */
+        if(
+          row.sender_type === "supplier" &&
+          row.supplier_code !== activeSupplierCode
+        ){
+          unreadSuppliers.add(row.supplier_code);
+        }
+
       }
 
     });
@@ -775,6 +786,17 @@ async function selectSupplier(code, name){
     </div>
 
   `;
+
+  /* di layar sempit, panel chat ada DI BAWAH daftar supplier —
+     auto-scroll langsung biar keliatan, gak perlu geser manual */
+  if(window.innerWidth < 750){
+
+    chatPanel.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+  }
 
   if(adminChannel){
     sb.removeChannel(adminChannel);
