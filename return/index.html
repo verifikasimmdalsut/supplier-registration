@@ -22,6 +22,7 @@ body{
   font-family:Arial, Helvetica, sans-serif;
   background:#f6f6f8;
   color:#222;
+  overflow-x:hidden;
 }
 
 /* ================= HEADER ================= */
@@ -526,6 +527,7 @@ td{
   min-height:320px;
   max-height:60vh;
   overflow-y:auto;
+  overflow-x:hidden;
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -537,6 +539,7 @@ td{
   border-radius:12px;
   font-size:12px;
   line-height:1.6;
+  box-sizing:border-box;
 }
 
 .chat-page-bubble.user{
@@ -565,6 +568,7 @@ td{
   font-size:12px;
   margin-top:6px;
   cursor:pointer;
+  box-sizing:border-box;
 }
 
 .chat-option-btn:hover{
@@ -582,6 +586,8 @@ td{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
 }
 
 .chat-slip-meta{
@@ -590,30 +596,45 @@ td{
   margin:2px 0 8px;
 }
 
-.chat-item-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:10.5px;
-  table-layout:fixed;
+/* item ditampilkan sebagai kartu bertumpuk ke bawah, bukan tabel,
+   biar aman dari overflow horizontal di layar sempit (HP) */
+
+.chat-item-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 
-.chat-item-table th{
-  text-align:left;
-  color:#888;
-  font-weight:normal;
-  padding:4px 6px 4px 0;
+.chat-item-card{
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:8px;
+  padding:9px 10px;
 }
 
-.chat-item-table td{
-  padding:6px 6px 6px 0;
-  border-top:1px solid #eee;
-  vertical-align:top;
+.chat-item-name{
+  font-weight:bold;
+  font-size:11.5px;
+  margin-bottom:6px;
   word-break:break-word;
 }
 
-.chat-item-table th:last-child,
-.chat-item-table td:last-child{
-  padding-right:0;
+.chat-item-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  font-size:11px;
+  padding:3px 0;
+  border-top:1px dashed #f0f0f0;
+}
+
+.chat-item-row:first-of-type{
+  border-top:none;
+}
+
+.chat-item-key{
+  color:#888;
 }
 
 .chat-page-input-row{
