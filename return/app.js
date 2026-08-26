@@ -1463,7 +1463,7 @@ async function sendChatPageMessage(){
       const found = masterMatch[0].item;
 
       addChatPageBubble(
-        `Supplier <strong>${escapeHtml(found.name)}</strong> (kode ${escapeHtml(found.code)}) ada di data kami, tapi saat ini <strong>gak ada return yang aktif</strong>.<br><br>
+        `Supplier <strong>${escapeHtml(found.name)}</strong> (kode ${escapeHtml(found.code)}) ada di data kami, tapi saat ini <strong>tidak ada return yang aktif</strong>.<br><br>
         Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
         <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
         "bot"
