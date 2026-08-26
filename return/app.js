@@ -1281,7 +1281,7 @@ function chatSupplierDetailHtml(supplierCode){
 
   if(!supplier){
 
-    return `Maaf, data supplier itu gak ketemu. Coba cari lagi ya.`;
+    return `Maaf, data supplier itu tidak ditemukan. Coba cari lagi ya.`;
 
   }
 
@@ -1368,7 +1368,7 @@ function chooseMasterSupplierInChat(code, name){
 
   addChatPageBubble(
     `Supplier <strong>${escapeHtml(name)}</strong> (kode ${escapeHtml(code)}) ada di data kami, tapi saat ini <strong>gak ada return yang aktif</strong>.<br><br>
-    Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman detail supplier, atau WhatsApp ke
+    Kalau menurut kamu ini keliru, silakan hubungi kami lewat kolom chat di halaman List Supplier, atau WhatsApp ke
     <a href="https://wa.me/${SUPPORT_WA_NUMBER}" target="_blank" style="color:#5b21b6;font-weight:bold;">${SUPPORT_WA_NUMBER}</a>.`,
     "bot"
   );
