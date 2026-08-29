@@ -1349,7 +1349,7 @@ function chatBotGreeting(){
 }
 
 
-const SUPPORT_WA_NUMBER = "6281234567890";  // TODO: ganti ke nomor WA admin yang asli
+const SUPPORT_WA_NUMBER = "6281977259644";  // TODO: ganti ke nomor WA admin yang asli
 
 
 function chatSupplierDetailHtml(supplierCode){
