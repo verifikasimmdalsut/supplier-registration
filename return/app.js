@@ -1342,14 +1342,14 @@ function chatBotGreeting(){
   }
 
   addChatPageBubble(
-    "Halo, mau cek return supplier apa hari ini? Ketik nama atau kode supplier ya.",
+    "Halo, mau cek return supplier apa? Ketik nama atau kode supplier ya.",
     "bot"
   );
 
 }
 
 
-const SUPPORT_WA_NUMBER = "081977259644";  // TODO: ganti ke nomor WA admin yang asli
+const SUPPORT_WA_NUMBER = "6281234567890";  // TODO: ganti ke nomor WA admin yang asli
 
 
 function chatSupplierDetailHtml(supplierCode){
