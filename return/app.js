@@ -20,10 +20,11 @@ const ALLOWED_STATUS = [
    TANGGAL PEMUSNAHAN
    (berdasarkan kategori merchandise per departemen)
 
-   - Food Line - Groceries   : dept 2001-2011, 2025-2030  -> pemusnahan hari ke-11
-   - Food Line - Non Groceries : dept 2014-2024            -> pemusnahan hari ke-16
-   - Hard Line               : dept 3001-3051              -> pemusnahan hari ke-21
-   - Soft Line                : dept 1001-1100              -> pemusnahan hari ke-21
+   - GROCERY          : dept 2001-2011              -> pemusnahan hari ke-11
+   - DAILY & DAIRY     : dept 2025-2030              -> pemusnahan hari ke-11
+   - NON FOOD          : dept 2014-2019              -> pemusnahan hari ke-16
+   - HBC               : dept 2020-2024              -> pemusnahan hari ke-16
+   - HSD KIDS          : dept 3001-3051, 1001-1100   -> pemusnahan hari ke-21
 ========================= */
 
 function getMerchandiseCategory(deptStr){
@@ -34,23 +35,94 @@ function getMerchandiseCategory(deptStr){
     return null;
   }
 
-  if((dept >= 2001 && dept <= 2011) || (dept >= 2025 && dept <= 2030)){
-    return { label: "Food Line - Groceries", pemusnahanHari: 11 };
+  if(dept >= 2001 && dept <= 2011){
+    return { label: "GROCERY", pemusnahanHari: 11 };
   }
 
-  if(dept >= 2014 && dept <= 2024){
-    return { label: "Food Line - Non Groceries", pemusnahanHari: 16 };
+  if(dept >= 2025 && dept <= 2030){
+    return { label: "DAILY & DAIRY", pemusnahanHari: 11 };
   }
 
-  if(dept >= 3001 && dept <= 3051){
-    return { label: "Hard Line", pemusnahanHari: 21 };
+  if(dept >= 2014 && dept <= 2019){
+    return { label: "NON FOOD", pemusnahanHari: 16 };
   }
 
-  if(dept >= 1001 && dept <= 1100){
-    return { label: "Soft Line", pemusnahanHari: 21 };
+  if(dept >= 2020 && dept <= 2024){
+    return { label: "HBC", pemusnahanHari: 16 };
+  }
+
+  if((dept >= 3001 && dept <= 3051) || (dept >= 1001 && dept <= 1100)){
+    return { label: "HSD KIDS", pemusnahanHari: 21 };
   }
 
   return null;
+
+}
+
+
+/* =========================
+   NAMA DEPARTEMEN
+   (biar supplier tau kode departemennya itu apa)
+========================= */
+
+const DEPARTMENT_NAMES = {
+  2001: "Confectionary",
+  2002: "Snack",
+  2003: "Seasonal",
+  2004: "Seasoning",
+  2005: "Material",
+  2006: "Imported Food",
+  2007: "Non Halal Grocery",
+  2009: "Hot Beverage",
+  2010: "Cold Beverage",
+  2011: "Beer",
+  2014: "Pet Care",
+  2015: "Cleaning",
+  2016: "Sanitary",
+  2017: "Tobacco",
+  2020: "Toiletries",
+  2021: "Skin Care",
+  2022: "Grooming",
+  2023: "Prescription Poison",
+  2024: "Health Support",
+  2025: "Daily Food",
+  2026: "Bread",
+  2027: "Fresh Drink",
+  2028: "Dairy Product",
+  2029: "Processed Food",
+  2030: "Ice-cream & Dessert",
+  2031: "Fresh Seafood",
+  2032: "Processed Seafood",
+  2033: "Red Meat",
+  2034: "Poultry",
+  2035: "Pork",
+  2036: "Ham - Sausage - Pickles",
+  2037: "Vegetable",
+  2038: "Fruit",
+  2039: "Delica",
+  2040: "Sushi",
+  2041: "Bakery",
+  2042: "Bakery"
+};
+
+
+function getDepartmentName(deptStr){
+
+  const dept = parseInt(deptStr, 10);
+
+  return DEPARTMENT_NAMES[dept] || null;
+
+}
+
+
+function formatDepartmentLabel(deptStr){
+
+  const name =
+    getDepartmentName(deptStr);
+
+  return name
+    ? deptStr + " - " + name
+    : String(deptStr);
 
 }
 
@@ -603,6 +675,13 @@ function openSupplier(code){
               </strong>
             </div>
 
+            <div class="meta">
+              Aging
+              <strong>
+                ${first.aging} Hari
+              </strong>
+            </div>
+
             <div class="slip-arrow">
               ⌄
             </div>
@@ -660,7 +739,7 @@ function openSupplier(code){
                     </td>
 
                     <td>
-                      ${item.department}
+                      ${formatDepartmentLabel(item.department)}
                     </td>
 
                     <td>
@@ -1307,7 +1386,7 @@ function chatSupplierDetailHtml(supplierCode){
 
         <div class="chat-slip-meta">
           Tanggal Dibuat: ${escapeHtml(first.date)}<br>
-          Status: ${escapeHtml(first.status)} · ${items.length} item
+          Status: ${escapeHtml(first.status)} · ${items.length} item · Aging: ${first.aging} hari
         </div>
 
         <div class="chat-item-list">
@@ -1332,6 +1411,16 @@ function chatSupplierDetailHtml(supplierCode){
                 <div class="chat-item-row">
                   <span class="chat-item-key">Qty Return</span>
                   <span>${Number(item.qty).toFixed(2)}</span>
+                </div>
+
+                <div class="chat-item-row">
+                  <span class="chat-item-key">Aging</span>
+                  <span>${item.aging} hari</span>
+                </div>
+
+                <div class="chat-item-row">
+                  <span class="chat-item-key">Departemen</span>
+                  <span>${escapeHtml(formatDepartmentLabel(item.department))}</span>
                 </div>
 
                 <div class="chat-item-row">
