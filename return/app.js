@@ -52,7 +52,7 @@ function getMerchandiseCategory(deptStr){
   }
 
   if((dept >= 3001 && dept <= 3051) || (dept >= 1001 && dept <= 1100)){
-    return { label: "HSD KIDS", pemusnahanHari: 21 };
+    return { label: "HSD DAN KIDS", pemusnahanHari: 21 };
   }
 
   return null;
