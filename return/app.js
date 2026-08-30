@@ -61,67 +61,85 @@ function getMerchandiseCategory(deptStr){
 
 
 /* =========================
-   NAMA DEPARTEMEN
-   (biar supplier tau kode departemennya itu apa)
+   INFORMASI DEPARTEMEN
+   (persis sesuai tabel "Departemen Information":
+   Divisi, Kode Departemen, Deskripsi)
 ========================= */
 
-const DEPARTMENT_NAMES = {
-  2001: "Confectionary",
-  2002: "Snack",
-  2003: "Seasonal",
-  2004: "Seasoning",
-  2005: "Material",
-  2006: "Imported Food",
-  2007: "Non Halal Grocery",
-  2009: "Hot Beverage",
-  2010: "Cold Beverage",
-  2011: "Beer",
-  2014: "Pet Care",
-  2015: "Cleaning",
-  2016: "Sanitary",
-  2017: "Tobacco",
-  2020: "Toiletries",
-  2021: "Skin Care",
-  2022: "Grooming",
-  2023: "Prescription Poison",
-  2024: "Health Support",
-  2025: "Daily Food",
-  2026: "Bread",
-  2027: "Fresh Drink",
-  2028: "Dairy Product",
-  2029: "Processed Food",
-  2030: "Ice-cream & Dessert",
-  2031: "Fresh Seafood",
-  2032: "Processed Seafood",
-  2033: "Red Meat",
-  2034: "Poultry",
-  2035: "Pork",
-  2036: "Ham - Sausage - Pickles",
-  2037: "Vegetable",
-  2038: "Fruit",
-  2039: "Delica",
-  2040: "Sushi",
-  2041: "Bakery",
-  2042: "Bakery"
+const DEPARTMENT_INFO = {
+
+  /* GROCERY */
+  2001: { divisi: "GROCERY", desc: "Confectionary" },
+  2002: { divisi: "GROCERY", desc: "Snack" },
+  2003: { divisi: "GROCERY", desc: "Seasonal" },
+  2004: { divisi: "GROCERY", desc: "Seasoning" },
+  2005: { divisi: "GROCERY", desc: "Material" },
+  2006: { divisi: "GROCERY", desc: "Imported Food" },
+  2007: { divisi: "GROCERY", desc: "Non Halal Grocery" },
+  2009: { divisi: "GROCERY", desc: "Hot Beverage" },
+  2010: { divisi: "GROCERY", desc: "Cold Beverage" },
+  2011: { divisi: "GROCERY", desc: "Beer" },
+
+  /* DAILY & DAIRY */
+  2025: { divisi: "DAILY & DAIRY", desc: "Daily Food" },
+  2026: { divisi: "DAILY & DAIRY", desc: "Bread" },
+  2027: { divisi: "DAILY & DAIRY", desc: "Fresh Drink" },
+  2028: { divisi: "DAILY & DAIRY", desc: "Dairy Product" },
+  2029: { divisi: "DAILY & DAIRY", desc: "Processed Food" },
+  2030: { divisi: "DAILY & DAIRY", desc: "Ice-cream & Dessert" },
+
+  /* FISH */
+  2031: { divisi: "FISH", desc: "Fresh Seafood" },
+  2032: { divisi: "FISH", desc: "Processed Seafood" },
+
+  /* MEAT */
+  2033: { divisi: "MEAT", desc: "Red Meat" },
+  2034: { divisi: "MEAT", desc: "Poultry" },
+  2035: { divisi: "MEAT", desc: "Pork" },
+  2036: { divisi: "MEAT", desc: "Ham - Sausage - Pickles" },
+
+  /* PRODUCE */
+  2037: { divisi: "PRODUCE", desc: "Vegetable" },
+  2038: { divisi: "PRODUCE", desc: "Fruit" },
+
+  /* NONFOODS&HBC */
+  2014: { divisi: "NONFOODS&HBC", desc: "Pet Care" },
+  2015: { divisi: "NONFOODS&HBC", desc: "Cleaning" },
+  2016: { divisi: "NONFOODS&HBC", desc: "Sanitary" },
+  2017: { divisi: "NONFOODS&HBC", desc: "Tobacco" },
+  2020: { divisi: "NONFOODS&HBC", desc: "Toiletries" },
+  2021: { divisi: "NONFOODS&HBC", desc: "Skin Care" },
+  2022: { divisi: "NONFOODS&HBC", desc: "Grooming" },
+  2023: { divisi: "NONFOODS&HBC", desc: "Prescription Poison" },
+  2024: { divisi: "NONFOODS&HBC", desc: "Health Support" },
+
+  /* DELICA */
+  2039: { divisi: "DELICA", desc: "Delica" },
+  2040: { divisi: "DELICA", desc: "Sushi" },
+
+  /* BAKERY */
+  2041: { divisi: "BAKERY", desc: "Bakery" },
+  2042: { divisi: "BAKERY", desc: "Bakery" }
+
 };
 
 
-function getDepartmentName(deptStr){
+function getDepartmentInfo(deptStr){
 
   const dept = parseInt(deptStr, 10);
 
-  return DEPARTMENT_NAMES[dept] || null;
+  return DEPARTMENT_INFO[dept] || null;
 
 }
 
 
 function formatDepartmentLabel(deptStr){
 
-  const name =
-    getDepartmentName(deptStr);
+  const info =
+    getDepartmentInfo(deptStr);
 
-  return name
-    ? deptStr + " - " + name
+  return info
+    ? deptStr + " - " + info.desc + " (" + info.divisi + ")"
     : String(deptStr);
 
 }
