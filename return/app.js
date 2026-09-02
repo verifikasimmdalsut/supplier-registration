@@ -422,6 +422,16 @@ async function loadReturnData(){
       continue;
     }
 
+    const location =
+      col.location !== undefined ? (r[col.location] || "").trim() : "";
+
+    /* skip kalau lokasi return belum diisi
+       (cuma berlaku kalau kolom Location memang ada di sheet —
+       kalau kolomnya gak ketemu sama sekali, gak usah filter) */
+    if(col.location !== undefined && !location){
+      continue;
+    }
+
     data.push({
       date: (r[col.date] || "").trim(),
       department: (r[col.department] || "").trim(),
@@ -434,7 +444,7 @@ async function loadReturnData(){
       itemDesc: (r[col.itemDesc] || "").trim(),
       qty: parseFloat(r[col.qty]) || 0,
       aging: parseInt(r[col.aging], 10) || 0,
-      location: col.location !== undefined ? (r[col.location] || "").trim() : ""
+      location: location
     });
 
   }
