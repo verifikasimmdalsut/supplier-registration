@@ -91,7 +91,7 @@ function formatTanggalHariIni(){
   const dd = String(now.getDate()).padStart(2, '0');
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const yyyy = now.getFullYear();
-  return ${dd}/${mm}/${yyyy};
+  return dd + '/' + mm + '/' + yyyy;
 }
 
 // Parser CSV sederhana (aman selama tidak ada koma di dalam value)
@@ -293,4 +293,3 @@ if(lastQueue && lastQueue.nomor_antrian){
     btnDaftar.disabled = false;
     btnDaftar.innerHTML = originalHtml;
   }
-});
