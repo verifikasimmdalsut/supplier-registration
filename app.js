@@ -293,3 +293,4 @@ if(lastQueue && lastQueue.nomor_antrian){
     btnDaftar.disabled = false;
     btnDaftar.innerHTML = originalHtml;
   }
+});
