@@ -1,8 +1,11 @@
 // ==========================================
 // AEON Registrasi Supplier — app.js
 // Logic form: cari supplier, validasi, submit
-// (Menggunakan koneksi `sb` dari supabase.js)
+// (Menggunakan koneksi sb dari supabase.js)
 // ==========================================
+
+// --- Kode Akses Security (harian) ---
+const KODE_AKSES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR32zY8ej5YFqxPsxHIUPxNHWpwfcTWKTy-jal-IomBj58EsZVuglItP6Fju02nYHQ97FgEVt-nbhNU/pub?output=csv';
 
 // --- Elemen ---
 const kodeInput = document.getElementById('kode_supplier');
@@ -11,6 +14,7 @@ const supplierCard = document.getElementById('supplierCard');
 const namaSupplierEl = document.getElementById('nama_supplier');
 const form = document.getElementById('formRegistrasi');
 const btnDaftar = document.getElementById('btnDaftar');
+const kodeAksesInput = document.getElementById('kode_akses_security');
 
 let verifiedSupplier = null;
 let searchTimer = null;
@@ -81,6 +85,49 @@ kodeInput.addEventListener('input', () => {
   searchTimer = setTimeout(() => cariSupplier(kode), 400);
 });
 
+// --- Ambil kode akses security yang berlaku hari ini ---
+function formatTanggalHariIni(){
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  return ${dd}/${mm}/${yyyy};
+}
+
+// Parser CSV sederhana (aman selama tidak ada koma di dalam value)
+function parseCSV(text){
+  return text
+    .trim()
+    .split('\n')
+    .map(baris => baris.split(',').map(v => v.trim()));
+}
+
+async function ambilKodeAksesHariIni(){
+  const res = await fetch(KODE_AKSES_CSV_URL + '&_=' + Date.now(), { cache: 'no-store' });
+  if(!res.ok) throw new Error('Gagal ambil data kode akses');
+
+  const rows = parseCSV(await res.text());
+  const header = rows[0]; // ID, Tanggal, Kode
+  const idxTanggal = header.indexOf('Tanggal');
+  const idxKode = header.indexOf('Kode');
+
+  const tanggalHariIni = formatTanggalHariIni();
+
+  // Ambil baris TERAKHIR yang tanggalnya = hari ini
+  // (asumsi: baris baru selalu ditambahkan di bawah oleh AppSheet)
+  let kodeTerbaru = null;
+  for(let i = 1; i < rows.length; i++){
+    const baris = rows[i];
+    if(!baris[idxTanggal]) continue;
+    const tanggalBaris = baris[idxTanggal].split(' ')[0]; // ambil "dd/mm/yyyy" saja
+    if(tanggalBaris === tanggalHariIni){
+      kodeTerbaru = baris[idxKode];
+    }
+  }
+
+  return kodeTerbaru; // null kalau belum ada kode yang diisi hari ini
+}
+
 // --- Validasi field wajib ---
 const REQUIRED_FIELDS = {
   nomor_kendaraan: 'Nomor kendaraan wajib diisi.',
@@ -133,8 +180,43 @@ form.addEventListener('submit', async (e) => {
   const { valid, values } = validateForm();
   if(!valid) return;
 
+  // Validasi kode akses dari security
+  const kodeAksesInputVal = kodeAksesInput.value.trim();
+  if(!kodeAksesInputVal){
+    kodeAksesInput.classList.add('is-invalid');
+    const err = document.getElementById('err_kode_akses_security');
+    if(err) err.textContent = 'Wajib diisi. Minta kode ke security.';
+    return;
+  }
+
   const originalHtml = btnDaftar.innerHTML;
   btnDaftar.disabled = true;
+  btnDaftar.innerHTML = 'Memeriksa kode akses...';
+
+  let kodeAksesValid;
+  try{
+    kodeAksesValid = await ambilKodeAksesHariIni();
+  }catch(err){
+    console.error(err);
+    btnDaftar.disabled = false;
+    btnDaftar.innerHTML = originalHtml;
+    kodeAksesInput.classList.add('is-invalid');
+    const errEl = document.getElementById('err_kode_akses_security');
+    if(errEl) errEl.textContent = 'Gagal memeriksa kode akses. Coba lagi.';
+    return;
+  }
+
+  if(!kodeAksesValid || kodeAksesInputVal !== String(kodeAksesValid).trim()){
+    btnDaftar.disabled = false;
+    btnDaftar.innerHTML = originalHtml;
+    kodeAksesInput.classList.add('is-invalid');
+    const errEl = document.getElementById('err_kode_akses_security');
+    if(errEl) errEl.textContent = kodeAksesValid
+      ? 'Kode akses salah. Minta kode yang benar ke security.'
+      : 'Kode akses hari ini belum diisi security.';
+    return;
+  }
+
   btnDaftar.innerHTML = 'Menyimpan...';
 
   try{
@@ -199,6 +281,9 @@ if(lastQueue && lastQueue.nomor_antrian){
       verifiedSupplier = null;
       supplierCard.style.display = 'none';
       setStatus('', 'Ketik kode supplier...');
+      kodeAksesInput.classList.remove('is-invalid');
+      const errEl = document.getElementById('err_kode_akses_security');
+      if(errEl) errEl.textContent = '';
     }, { once: true });
 
   }catch(err){
