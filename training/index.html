@@ -339,6 +339,7 @@ function el(tag, props, children){
     if(k === "class") e.className = props[k];
     else if(k === "text") e.textContent = props[k];
     else if(k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(), props[k]);
+    else if(props[k] === null || props[k] === undefined || props[k] === false) e.removeAttribute(k);
     else e.setAttribute(k, props[k]);
   }
   if(children) children.forEach(c => c && e.appendChild(c));
