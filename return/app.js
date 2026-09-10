@@ -426,7 +426,7 @@ async function loadReturnData(){
       col.location !== undefined ? (r[col.location] || "").trim() : "";
 
     /* skip kalau lokasi return belum diisi
-       (cuma berlaku kalau kolom Location memang ada di sheet —
+       (Hanya berlaku kalau kolom Location memang ada di sheet —
        kalau kolomnya gak ketemu sama sekali, gak usah filter) */
     if(col.location !== undefined && !location){
       continue;
