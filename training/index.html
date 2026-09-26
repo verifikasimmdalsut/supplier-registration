@@ -6,16 +6,17 @@
 <title>Training Gudang</title>
 <style>
   :root{
-    --bg:#14181F;
-    --surface:#1E232C;
-    --surface-2:#262C37;
-    --border:#333B48;
-    --text:#EDEFF2;
-    --text-muted:#8B93A1;
-    --accent:#F5A623;
-    --accent-dark:#7A5313;
-    --good:#4CAF7D;
-    --bad:#E2574C;
+    --bg:#F5F6F8;
+    --surface:#FFFFFF;
+    --surface-2:#F0F2F5;
+    --border:#E1E4E9;
+    --text:#1F2430;
+    --text-muted:#6B7280;
+    --accent:#F2971D;
+    --accent-soft:#FFF3E0;
+    --good:#1E8A5F;
+    --good-soft:#E7F5EE;
+    --bad:#D64541;
     --radius:14px;
   }
   *{box-sizing:border-box;}
@@ -42,28 +43,11 @@
     color:var(--text-muted);
     margin-bottom:4px;
   }
-  h1{
-    font-size:26px;
-    font-weight:700;
-    margin:0 0 24px;
-    line-height:1.25;
-  }
-  h2{
-    font-size:19px;
-    font-weight:700;
-    margin:0 0 6px;
-  }
-  p.sub{
-    color:var(--text-muted);
-    font-size:14px;
-    margin:0 0 20px;
-    line-height:1.5;
-  }
-  .section-grid{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
+  h1{ font-size:24px; font-weight:700; margin:0 0 22px; line-height:1.3; }
+  h2{ font-size:19px; font-weight:700; margin:0 0 6px; }
+  p.sub{ color:var(--text-muted); font-size:14px; margin:0 0 20px; line-height:1.5; }
+
+  .section-grid{ display:flex; flex-direction:column; gap:12px; }
   .section-card{
     background:var(--surface);
     border:1px solid var(--border);
@@ -76,24 +60,17 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    transition:border-color .15s ease, transform .1s ease;
+    box-shadow:0 1px 2px rgba(20,24,31,0.04);
   }
   .section-card:active{ transform:scale(0.98); }
   .section-card:hover{ border-color:var(--accent); }
-  .section-card .label{
-    font-size:17px;
-    font-weight:700;
-  }
-  .section-card .desc{
-    font-size:13px;
-    color:var(--text-muted);
-    margin-top:2px;
-  }
+  .section-card .label{ font-size:17px; font-weight:700; }
+  .section-card .desc{ font-size:13px; color:var(--text-muted); margin-top:2px; }
   .chev{ color:var(--text-muted); font-size:20px; }
 
   input[type=text]{
     width:100%;
-    background:var(--surface-2);
+    background:var(--surface);
     border:1px solid var(--border);
     color:var(--text);
     padding:14px 16px;
@@ -101,14 +78,23 @@
     font-size:16px;
     margin-bottom:12px;
   }
-  input[type=text]:focus{
-    outline:none;
-    border-color:var(--accent);
+  input[type=text]:focus{ outline:none; border-color:var(--accent); }
+
+  select{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:14px 16px;
+    border-radius:10px;
+    font-size:16px;
+    margin-bottom:12px;
   }
+
   button.primary{
     width:100%;
     background:var(--accent);
-    color:#241a00;
+    color:#2B1900;
     border:none;
     padding:15px 16px;
     border-radius:10px;
@@ -118,10 +104,7 @@
     margin-top:4px;
   }
   button.primary:active{ transform:scale(0.98); }
-  button.primary:disabled{
-    opacity:0.5;
-    cursor:default;
-  }
+  button.primary:disabled{ opacity:0.45; cursor:default; }
   button.ghost{
     width:100%;
     background:transparent;
@@ -133,36 +116,35 @@
     cursor:pointer;
     margin-top:10px;
   }
-  .error{
-    color:var(--bad);
-    font-size:13px;
-    margin:-6px 0 12px;
-  }
-  .top-nav{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:20px;
-  }
-  .back{
+  button.link{
     background:none;
     border:none;
     color:var(--text-muted);
-    font-size:22px;
+    font-size:13px;
+    text-decoration:underline;
     cursor:pointer;
     padding:0;
-    line-height:1;
+    margin-top:auto;
+    align-self:center;
   }
+
+  .error{ color:var(--bad); font-size:13px; margin:-6px 0 12px; }
+  .success-text{ color:var(--good); font-size:13px; margin:-6px 0 12px; }
+
+  .top-nav{ display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .back{ background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer; padding:0; line-height:1; }
+
   .tag{
     display:inline-block;
-    background:var(--accent-dark);
-    color:var(--accent);
+    background:var(--accent-soft);
+    color:#8A5300;
     font-size:12px;
     font-weight:700;
     padding:4px 10px;
     border-radius:20px;
     margin-bottom:14px;
   }
+
   .materi-box{
     background:var(--surface);
     border:1px solid var(--border);
@@ -174,6 +156,45 @@
     margin-bottom:20px;
     flex:1;
   }
+
+  .menu-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    box-shadow:0 1px 2px rgba(20,24,31,0.04);
+  }
+  .menu-card.disabled{ opacity:0.55; }
+  .menu-left{ display:flex; flex-direction:column; }
+  .menu-title{ font-size:16px; font-weight:700; }
+  .menu-desc{ font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .menu-btn{
+    background:var(--accent);
+    color:#2B1900;
+    border:none;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .menu-btn:disabled{ background:var(--surface-2); color:var(--text-muted); cursor:default; }
+  .menu-btn.done{ background:var(--good-soft); color:var(--good); }
+  .badge-score{
+    font-size:12px;
+    font-weight:700;
+    color:var(--good);
+    background:var(--good-soft);
+    padding:4px 10px;
+    border-radius:20px;
+  }
+
   .soal-card{
     background:var(--surface);
     border:1px solid var(--border);
@@ -181,17 +202,8 @@
     padding:18px;
     margin-bottom:14px;
   }
-  .soal-num{
-    font-size:13px;
-    color:var(--text-muted);
-    margin-bottom:6px;
-  }
-  .soal-teks{
-    font-size:16px;
-    font-weight:600;
-    margin-bottom:14px;
-    line-height:1.4;
-  }
+  .soal-num{ font-size:13px; color:var(--text-muted); margin-bottom:6px; }
+  .soal-teks{ font-size:16px; font-weight:600; margin-bottom:14px; line-height:1.4; }
   .pilihan{
     display:flex;
     align-items:flex-start;
@@ -201,69 +213,35 @@
     border-radius:10px;
     margin-bottom:8px;
     cursor:pointer;
+    background:var(--surface);
   }
-  .pilihan.selected{
-    border-color:var(--accent);
-    background:rgba(245,166,35,0.08);
-  }
+  .pilihan.selected{ border-color:var(--accent); background:var(--accent-soft); }
   .pilihan .huruf{
-    width:22px;
-    height:22px;
-    border-radius:50%;
+    width:22px; height:22px; border-radius:50%;
     border:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:12px;
-    font-weight:700;
-    color:var(--text-muted);
-    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:var(--text-muted);
+    flex-shrink:0; background:var(--surface);
   }
-  .pilihan.selected .huruf{
-    background:var(--accent);
-    border-color:var(--accent);
-    color:#241a00;
-  }
+  .pilihan.selected .huruf{ background:var(--accent); border-color:var(--accent); color:#2B1900; }
   .pilihan .teks{ font-size:14px; line-height:1.5; }
-  .center-flex{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-  }
+
+  .center-flex{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
   .score-circle{
-    width:160px;
-    height:160px;
-    border-radius:50%;
+    width:160px; height:160px; border-radius:50%;
     border:6px solid var(--accent);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    margin-bottom:20px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    margin-bottom:20px; background:var(--surface);
   }
   .score-num{ font-size:40px; font-weight:800; }
   .score-label{ font-size:12px; color:var(--text-muted); margin-top:2px; }
-  .loading{
-    text-align:center;
-    color:var(--text-muted);
-    padding:40px 0;
-    font-size:14px;
-  }
-  .progress-bar{
-    height:4px;
-    background:var(--surface-2);
-    border-radius:2px;
-    margin-bottom:20px;
-    overflow:hidden;
-  }
-  .progress-fill{
-    height:100%;
-    background:var(--accent);
-    transition:width .2s ease;
-  }
+
+  .loading{ text-align:center; color:var(--text-muted); padding:40px 0; font-size:14px; }
+
+  .progress-bar{ height:4px; background:var(--surface-2); border-radius:2px; margin-bottom:20px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--accent); transition:width .2s ease; }
+
+  .admin-field label{ font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px; }
 </style>
 </head>
 <body>
@@ -272,30 +250,30 @@
 <script>
 const SUPABASE_URL = "https://akrjxgtevgwadhslkhee.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrcmp4Z3Rldmd3YWRoc2xraGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5NjQ3MzUsImV4cCI6MjA5OTU0MDczNX0.BVPsD3zyEy4fv-Ihy2JiFcgyx1l6hBGta0xVA08nnDg";
+const ADMIN_PASSCODE = "gudang123"; // ganti sesuai kebutuhan, ini cuma pengaman ringan untuk prototype
 
 async function sb(path){
   const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
-    headers:{
-      "apikey": SUPABASE_KEY,
-      "Authorization": "Bearer " + SUPABASE_KEY
-    }
+    headers:{ "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
   });
   if(!res.ok) throw new Error("Gagal ambil data");
   return res.json();
 }
-
 async function sbInsert(table, body){
   const res = await fetch(SUPABASE_URL + "/rest/v1/" + table, {
     method:"POST",
-    headers:{
-      "apikey": SUPABASE_KEY,
-      "Authorization": "Bearer " + SUPABASE_KEY,
-      "Content-Type":"application/json",
-      "Prefer":"return=minimal"
-    },
+    headers:{ "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type":"application/json", "Prefer":"return=minimal" },
     body: JSON.stringify(body)
   });
   if(!res.ok) throw new Error("Gagal simpan data");
+}
+async function sbUpsert(table, body, conflictCols){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/" + table + "?on_conflict=" + conflictCols, {
+    method:"POST",
+    headers:{ "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type":"application/json", "Prefer":"resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error("Gagal update data");
 }
 
 const SECTION_INFO = {
@@ -303,34 +281,51 @@ const SECTION_INFO = {
   scanner: { label:"Scanner", desc:"Login pakai NIK terdaftar" },
   auditor: { label:"Auditor", desc:"Login pakai NIK terdaftar" }
 };
+const JENIS_INFO = {
+  pretest: { label:"Pre Test", desc:"Dikerjakan sebelum materi selesai dievaluasi" },
+  posttest: { label:"Post Test", desc:"Dikerjakan setelah materi selesai dipelajari" }
+};
 
 let state = {
   screen: "home",
   section: null,
   nama: "",
   nik: "",
+  identifier: "",
   inputVal: "",
   errorMsg: "",
   loading: false,
   modul: null,
+  progress: { sudah_baca_materi:false },
+  locks: {
+    pretest: { selesai:false, boleh_ulang:false, nilai:null },
+    posttest: { selesai:false, boleh_ulang:false, nilai:null }
+  },
+  currentJenis: null,
   soalList: [],
   jawaban: {},
-  hasil: null
+  hasil: null,
+  adminAuthed: false,
+  adminPasscodeInput: "",
+  adminSection: "scanner",
+  adminIdentifier: "",
+  adminJenis: "pretest",
+  adminMsg: "",
+  adminLoading: false
 };
 
-function setState(patch){
-  state = Object.assign({}, state, patch);
-  render();
-}
+function setState(patch){ state = Object.assign({}, state, patch); render(); }
 
 function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
   if(state.screen === "home") app.appendChild(renderHome());
   else if(state.screen === "login") app.appendChild(renderLogin());
+  else if(state.screen === "dashboard") app.appendChild(renderDashboard());
   else if(state.screen === "materi") app.appendChild(renderMateri());
   else if(state.screen === "kuis") app.appendChild(renderKuis());
   else if(state.screen === "hasil") app.appendChild(renderHasil());
+  else if(state.screen === "admin") app.appendChild(renderAdmin());
 }
 
 function el(tag, props, children){
@@ -346,6 +341,8 @@ function el(tag, props, children){
   return e;
 }
 
+function isCounter(){ return state.section === "counter"; }
+
 function renderHome(){
   const wrap = el("div");
   wrap.appendChild(el("div", {class:"brand", text:"Training gudang"}));
@@ -353,18 +350,16 @@ function renderHome(){
   const grid = el("div", {class:"section-grid"});
   ["counter","scanner","auditor"].forEach(key=>{
     const info = SECTION_INFO[key];
-    const card = el("button", {
-      class:"section-card",
-      onClick: ()=> setState({screen:"login", section:key, inputVal:"", errorMsg:""})
-    });
+    const card = el("button", { class:"section-card", onClick: ()=> setState({screen:"login", section:key, inputVal:"", errorMsg:""}) });
     const left = el("div");
     left.appendChild(el("div", {class:"label", text:info.label}));
     left.appendChild(el("div", {class:"desc", text:info.desc}));
     card.appendChild(left);
-    card.appendChild(el("span", {class:"chev", text:"›"}));
+    card.appendChild(el("span", {class:"chev", text:"\u203a"}));
     grid.appendChild(card);
   });
   wrap.appendChild(grid);
+  wrap.appendChild(el("button", {class:"link", text:"Masuk sebagai admin", onClick: ()=> setState({screen:"admin", adminMsg:""})}));
   return wrap;
 }
 
@@ -372,40 +367,29 @@ function renderLogin(){
   const info = SECTION_INFO[state.section];
   const wrap = el("div");
   const nav = el("div", {class:"top-nav"});
-  nav.appendChild(el("button", {class:"back", text:"←", onClick:()=> setState({screen:"home", errorMsg:""})}));
+  nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", errorMsg:""})}));
   wrap.appendChild(nav);
   wrap.appendChild(el("div", {class:"tag", text:info.label}));
 
-  const isCounter = state.section === "counter";
-  wrap.appendChild(el("h2", {text: isCounter ? "Masukkan nama kamu" : "Masukkan NIK kamu"}));
-  wrap.appendChild(el("p", {class:"sub", text: isCounter
-    ? "Nama ini akan dipakai untuk mencatat hasil kuis kamu."
+  const counterMode = isCounter();
+  wrap.appendChild(el("h2", {text: counterMode ? "Masukkan nama kamu" : "Masukkan NIK kamu"}));
+  wrap.appendChild(el("p", {class:"sub", text: counterMode
+    ? "Nama ini akan dipakai untuk mencatat progres dan nilai kamu."
     : "NIK kamu akan dicocokkan ke daftar peserta " + info.label + "."}));
 
-  const input = el("input", {
-    type:"text",
-    placeholder: isCounter ? "Nama lengkap" : "Contoh: 3201xxxxxxxx",
-    value: state.inputVal
-  });
+  const input = el("input", { type:"text", placeholder: counterMode ? "Nama lengkap" : "Contoh: 3201xxxxxxxx", value: state.inputVal });
   input.addEventListener("input", e => { state.inputVal = e.target.value; });
   wrap.appendChild(input);
 
   if(state.errorMsg) wrap.appendChild(el("div", {class:"error", text: state.errorMsg}));
 
-  const btn = el("button", {
-    class:"primary",
-    text: state.loading ? "Memeriksa..." : "Lanjut",
-    disabled: state.loading ? "true" : null
-  });
+  const btn = el("button", { class:"primary", text: state.loading ? "Memeriksa..." : "Lanjut", disabled: state.loading });
   btn.addEventListener("click", async ()=>{
     const val = input.value.trim();
-    if(!val){
-      setState({errorMsg: isCounter ? "Nama belum diisi." : "NIK belum diisi."});
-      return;
-    }
-    if(isCounter){
-      setState({nama: val, nik:"", screen:"materi", errorMsg:""});
-      loadMateri();
+    if(!val){ setState({errorMsg: counterMode ? "Nama belum diisi." : "NIK belum diisi."}); return; }
+    if(counterMode){
+      setState({nama: val, nik:"", identifier: val, errorMsg:""});
+      loadDashboard();
       return;
     }
     setState({loading:true, errorMsg:""});
@@ -415,14 +399,96 @@ function renderLogin(){
         setState({loading:false, errorMsg:"NIK tidak terdaftar untuk bagian " + info.label + "."});
         return;
       }
-      setState({loading:false, nama: rows[0].nama, nik: rows[0].nik, screen:"materi"});
-      loadMateri();
+      setState({loading:false, nama: rows[0].nama, nik: rows[0].nik, identifier: rows[0].nik});
+      loadDashboard();
     }catch(err){
       setState({loading:false, errorMsg:"Gagal memeriksa NIK. Coba lagi."});
     }
   });
   wrap.appendChild(btn);
   setTimeout(()=> input.focus(), 50);
+  return wrap;
+}
+
+async function loadDashboard(){
+  setState({loading:true, screen:"dashboard"});
+  try{
+    const progRows = await sb("training_progress?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&select=sudah_baca_materi");
+    const lockRows = await sb("training_test_lock?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&select=jenis,selesai,boleh_ulang");
+    const hasilRows = await sb("training_hasil?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&select=jenis,nilai,selesai_at&order=selesai_at.desc");
+
+    const locks = { pretest:{selesai:false, boleh_ulang:false, nilai:null}, posttest:{selesai:false, boleh_ulang:false, nilai:null} };
+    lockRows.forEach(r=>{ locks[r.jenis].selesai = r.selesai; locks[r.jenis].boleh_ulang = r.boleh_ulang; });
+    ["pretest","posttest"].forEach(j=>{
+      const found = hasilRows.find(h => h.jenis === j);
+      if(found) locks[j].nilai = found.nilai;
+    });
+
+    setState({
+      loading:false,
+      progress: { sudah_baca_materi: progRows.length ? progRows[0].sudah_baca_materi : false },
+      locks
+    });
+  }catch(err){
+    setState({loading:false});
+  }
+}
+
+function renderDashboard(){
+  const info = SECTION_INFO[state.section];
+  const wrap = el("div");
+  const nav = el("div", {class:"top-nav"});
+  nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", section:null, nama:"", nik:"", identifier:""})}));
+  wrap.appendChild(nav);
+  wrap.appendChild(el("div", {class:"tag", text: info.label + " \u00b7 " + state.nama}));
+  wrap.appendChild(el("h2", {text:"Menu training"}));
+
+  if(state.loading){
+    wrap.appendChild(el("div", {class:"loading", text:"Memuat status..."}));
+    return wrap;
+  }
+
+  wrap.appendChild(el("p", {class:"sub", text:"Baca materi dulu sebelum bisa mengisi Pre Test dan Post Test."}));
+
+  // Materi card
+  const materiCard = el("div", {class:"menu-card"});
+  const materiLeft = el("div", {class:"menu-left"});
+  materiLeft.appendChild(el("div", {class:"menu-title", text:"Materi"}));
+  materiLeft.appendChild(el("div", {class:"menu-desc", text: state.progress.sudah_baca_materi ? "Sudah dibaca" : "Belum dibaca"}));
+  materiCard.appendChild(materiLeft);
+  const materiBtn = el("button", {class:"menu-btn" + (state.progress.sudah_baca_materi ? " done" : ""), text: state.progress.sudah_baca_materi ? "Baca lagi" : "Buka"});
+  materiBtn.addEventListener("click", ()=>{ setState({screen:"materi"}); loadMateri(); });
+  materiCard.appendChild(materiBtn);
+  wrap.appendChild(materiCard);
+
+  // Pretest & Posttest cards
+  ["pretest","posttest"].forEach(jenis=>{
+    const jinfo = JENIS_INFO[jenis];
+    const lock = state.locks[jenis];
+    const card = el("div", {class:"menu-card" + (!state.progress.sudah_baca_materi ? " disabled" : "")});
+    const left = el("div", {class:"menu-left"});
+    left.appendChild(el("div", {class:"menu-title", text: jinfo.label}));
+    let desc = jinfo.desc;
+    if(!state.progress.sudah_baca_materi) desc = "Baca materi dulu";
+    else if(lock.selesai && !lock.boleh_ulang) desc = "Sudah dikerjakan, hubungi admin untuk mengulang";
+    else if(lock.selesai && lock.boleh_ulang) desc = "Sudah dibuka admin untuk mengulang";
+    left.appendChild(el("div", {class:"menu-desc", text: desc}));
+    card.appendChild(left);
+
+    if(lock.selesai && !lock.boleh_ulang){
+      card.appendChild(el("div", {class:"badge-score", text:"Nilai " + (lock.nilai != null ? lock.nilai : "-")}));
+    } else {
+      const canOpen = state.progress.sudah_baca_materi;
+      const btnText = lock.selesai && lock.boleh_ulang ? "Ulang" : "Mulai";
+      const btn = el("button", {class:"menu-btn", text: btnText, disabled: !canOpen});
+      if(canOpen){
+        btn.addEventListener("click", ()=>{ setState({currentJenis: jenis}); loadKuis(); });
+      }
+      card.appendChild(btn);
+    }
+    wrap.appendChild(card);
+  });
+
   return wrap;
 }
 
@@ -439,16 +505,27 @@ async function loadMateri(){
 function renderMateri(){
   const info = SECTION_INFO[state.section];
   const wrap = el("div");
-  wrap.appendChild(el("div", {class:"tag", text: info.label + " · " + state.nama}));
+  const nav = el("div", {class:"top-nav"});
+  nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"dashboard"})}));
+  wrap.appendChild(nav);
+  wrap.appendChild(el("div", {class:"tag", text: info.label + " \u00b7 " + state.nama}));
+
   if(state.loading || !state.modul){
     wrap.appendChild(el("div", {class:"loading", text:"Memuat materi..."}));
     return wrap;
   }
   wrap.appendChild(el("h2", {text: state.modul.judul}));
-  wrap.appendChild(el("p", {class:"sub", text:"Baca materi berikut sebelum mulai kuis."}));
   wrap.appendChild(el("div", {class:"materi-box", text: state.modul.konten}));
-  const btn = el("button", {class:"primary", text:"Saya sudah baca, mulai kuis"});
-  btn.addEventListener("click", loadKuis);
+
+  const btn = el("button", {class:"primary", text: state.progress.sudah_baca_materi ? "Kembali ke menu" : "Saya sudah baca materi ini", disabled: state.loading});
+  btn.addEventListener("click", async ()=>{
+    if(state.progress.sudah_baca_materi){ setState({screen:"dashboard"}); return; }
+    setState({loading:true});
+    try{
+      await sbUpsert("training_progress", { section: state.section, identifier: state.identifier, sudah_baca_materi: true }, "section,identifier");
+    }catch(err){ /* tetap lanjut walau gagal simpan status */ }
+    setState({loading:false, progress:{sudah_baca_materi:true}, screen:"dashboard"});
+  });
   wrap.appendChild(btn);
   return wrap;
 }
@@ -465,8 +542,9 @@ async function loadKuis(){
 
 function renderKuis(){
   const info = SECTION_INFO[state.section];
+  const jinfo = JENIS_INFO[state.currentJenis];
   const wrap = el("div");
-  wrap.appendChild(el("div", {class:"tag", text: info.label + " · " + state.nama}));
+  wrap.appendChild(el("div", {class:"tag", text: info.label + " \u00b7 " + jinfo.label}));
 
   if(state.loading){
     wrap.appendChild(el("div", {class:"loading", text:"Memuat soal..."}));
@@ -475,13 +553,14 @@ function renderKuis(){
   if(state.soalList.length === 0){
     wrap.appendChild(el("h2", {text:"Soal belum tersedia"}));
     wrap.appendChild(el("p", {class:"sub", text:"Admin belum menambahkan soal untuk bagian ini."}));
+    wrap.appendChild(el("button", {class:"ghost", text:"Kembali ke menu", onClick:()=> setState({screen:"dashboard"})}));
     return wrap;
   }
 
   const answered = Object.keys(state.jawaban).length;
   const total = state.soalList.length;
-  wrap.appendChild(el("h2", {text:"Kuis " + info.label}));
-  wrap.appendChild(el("p", {class:"sub", text: answered + " dari " + total + " soal terjawab"}));
+  wrap.appendChild(el("h2", {text: jinfo.label + " " + info.label}));
+  wrap.appendChild(el("p", {class:"sub", text: answered + " dari " + total + " soal terjawab \u00b7 hanya bisa dikerjakan sekali"}));
   const bar = el("div", {class:"progress-bar"});
   bar.appendChild(el("div", {class:"progress-fill", style:"width:" + Math.round(answered/total*100) + "%"}));
   wrap.appendChild(bar);
@@ -496,10 +575,7 @@ function renderKuis(){
       const opt = el("div", {class:"pilihan" + (isSel ? " selected" : "")});
       opt.appendChild(el("div", {class:"huruf", text: letter.toUpperCase()}));
       opt.appendChild(el("div", {class:"teks", text: teks}));
-      opt.addEventListener("click", ()=>{
-        state.jawaban[soal.id] = letter.toUpperCase();
-        render();
-      });
+      opt.addEventListener("click", ()=>{ state.jawaban[soal.id] = letter.toUpperCase(); render(); });
       card.appendChild(opt);
     });
     wrap.appendChild(card);
@@ -507,7 +583,7 @@ function renderKuis(){
 
   if(state.errorMsg) wrap.appendChild(el("div", {class:"error", text: state.errorMsg}));
 
-  const btn = el("button", {class:"primary", text: state.loading ? "Menyimpan..." : "Selesai, lihat nilai"});
+  const btn = el("button", {class:"primary", text: state.loading ? "Menyimpan..." : "Selesai, kirim jawaban"});
   btn.addEventListener("click", submitKuis);
   wrap.appendChild(btn);
   return wrap;
@@ -521,42 +597,117 @@ async function submitKuis(){
     return;
   }
   let benar = 0;
-  state.soalList.forEach(soal=>{
-    if(state.jawaban[soal.id] === soal.jawaban_benar) benar++;
-  });
+  state.soalList.forEach(soal=>{ if(state.jawaban[soal.id] === soal.jawaban_benar) benar++; });
   const nilai = Math.round((benar/total)*100);
   setState({loading:true, errorMsg:""});
   try{
     await sbInsert("training_hasil", {
-      section: state.section,
-      nama: state.nama,
-      nik: state.nik || null,
-      benar: benar,
-      total: total,
-      nilai: nilai
+      section: state.section, nama: state.nama, nik: state.nik || null, identifier: state.identifier,
+      jenis: state.currentJenis, benar: benar, total: total, nilai: nilai
     });
-  }catch(err){
-    // tetap tampilkan nilai walau gagal simpan
-  }
-  setState({loading:false, screen:"hasil", hasil:{benar, total, nilai}});
+    await sbUpsert("training_test_lock", {
+      section: state.section, identifier: state.identifier, jenis: state.currentJenis,
+      selesai: true, boleh_ulang: false
+    }, "section,identifier,jenis");
+  }catch(err){ /* tetap tampilkan nilai walau gagal simpan */ }
+  const locks = Object.assign({}, state.locks);
+  locks[state.currentJenis] = { selesai:true, boleh_ulang:false, nilai:nilai };
+  setState({loading:false, screen:"hasil", hasil:{benar, total, nilai}, locks});
 }
 
 function renderHasil(){
   const info = SECTION_INFO[state.section];
+  const jinfo = JENIS_INFO[state.currentJenis];
   const wrap = el("div", {class:"center-flex"});
   const h = state.hasil;
   const circle = el("div", {class:"score-circle"});
   circle.appendChild(el("div", {class:"score-num", text: h.nilai}));
   circle.appendChild(el("div", {class:"score-label", text:"NILAI"}));
   wrap.appendChild(circle);
-  wrap.appendChild(el("h2", {text:"Selesai, " + state.nama}));
-  wrap.appendChild(el("p", {class:"sub", text: h.benar + " dari " + h.total + " jawaban benar · Bagian " + info.label}));
-  const btn = el("button", {class:"ghost", text:"Kembali ke halaman awal"});
-  btn.addEventListener("click", ()=> setState({
-    screen:"home", section:null, nama:"", nik:"", inputVal:"", errorMsg:"",
-    modul:null, soalList:[], jawaban:{}, hasil:null
-  }));
+  wrap.appendChild(el("h2", {text: jinfo.label + " selesai, " + state.nama}));
+  wrap.appendChild(el("p", {class:"sub", text: h.benar + " dari " + h.total + " jawaban benar \u00b7 Bagian " + info.label}));
+  const btn = el("button", {class:"ghost", text:"Kembali ke menu"});
+  btn.addEventListener("click", ()=> setState({screen:"dashboard", hasil:null, currentJenis:null}));
   wrap.appendChild(btn);
+  return wrap;
+}
+
+// ---------- ADMIN ----------
+function renderAdmin(){
+  const wrap = el("div");
+  const nav = el("div", {class:"top-nav"});
+  nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", adminAuthed:false, adminPasscodeInput:"", adminMsg:""})}));
+  wrap.appendChild(nav);
+
+  if(!state.adminAuthed){
+    wrap.appendChild(el("h2", {text:"Masuk admin"}));
+    wrap.appendChild(el("p", {class:"sub", text:"Masukkan kode admin untuk membuka kunci ulang Pre Test / Post Test peserta."}));
+    const input = el("input", {type:"text", placeholder:"Kode admin", value: state.adminPasscodeInput});
+    input.addEventListener("input", e=>{ state.adminPasscodeInput = e.target.value; });
+    wrap.appendChild(input);
+    if(state.adminMsg) wrap.appendChild(el("div", {class:"error", text: state.adminMsg}));
+    const btn = el("button", {class:"primary", text:"Masuk"});
+    btn.addEventListener("click", ()=>{
+      if(input.value.trim() === ADMIN_PASSCODE) setState({adminAuthed:true, adminMsg:""});
+      else setState({adminMsg:"Kode admin salah."});
+    });
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  wrap.appendChild(el("h2", {text:"Buka kunci ulang"}));
+  wrap.appendChild(el("p", {class:"sub", text:"Pilih section, isi NIK (atau nama untuk Counter), pilih jenis test, lalu buka kunci supaya peserta bisa mengulang."}));
+
+  const secField = el("div", {class:"admin-field"});
+  secField.appendChild(el("label", {text:"Section"}));
+  const secSelect = el("select");
+  ["counter","scanner","auditor"].forEach(s=>{
+    const opt = el("option", {value:s, text: SECTION_INFO[s].label});
+    if(state.adminSection === s) opt.setAttribute("selected","true");
+    secSelect.appendChild(opt);
+  });
+  secSelect.addEventListener("change", e=>{ state.adminSection = e.target.value; });
+  secField.appendChild(secSelect);
+  wrap.appendChild(secField);
+
+  const idField = el("div", {class:"admin-field"});
+  idField.appendChild(el("label", {text:"NIK / Nama peserta"}));
+  const idInput = el("input", {type:"text", placeholder:"Contoh: 3201010101010001", value: state.adminIdentifier});
+  idInput.addEventListener("input", e=>{ state.adminIdentifier = e.target.value; });
+  idField.appendChild(idInput);
+  wrap.appendChild(idField);
+
+  const jenisField = el("div", {class:"admin-field"});
+  jenisField.appendChild(el("label", {text:"Jenis test"}));
+  const jenisSelect = el("select");
+  ["pretest","posttest"].forEach(j=>{
+    const opt = el("option", {value:j, text: JENIS_INFO[j].label});
+    if(state.adminJenis === j) opt.setAttribute("selected","true");
+    jenisSelect.appendChild(opt);
+  });
+  jenisSelect.addEventListener("change", e=>{ state.adminJenis = e.target.value; });
+  jenisField.appendChild(jenisSelect);
+  wrap.appendChild(jenisField);
+
+  if(state.adminMsg) wrap.appendChild(el("div", {class: state.adminMsg.startsWith("Berhasil") ? "success-text" : "error", text: state.adminMsg}));
+
+  const btn = el("button", {class:"primary", text: state.adminLoading ? "Memproses..." : "Buka Kunci Ulang", disabled: state.adminLoading});
+  btn.addEventListener("click", async ()=>{
+    const idVal = idInput.value.trim();
+    if(!idVal){ setState({adminMsg:"Isi NIK/nama peserta dulu."}); return; }
+    setState({adminLoading:true, adminMsg:""});
+    try{
+      await sbUpsert("training_test_lock", {
+        section: state.adminSection, identifier: idVal, jenis: state.adminJenis,
+        selesai: true, boleh_ulang: true
+      }, "section,identifier,jenis");
+      setState({adminLoading:false, adminMsg:"Berhasil dibuka. Peserta sekarang bisa mengulang " + JENIS_INFO[state.adminJenis].label + "."});
+    }catch(err){
+      setState({adminLoading:false, adminMsg:"Gagal membuka kunci. Coba lagi."});
+    }
+  });
+  wrap.appendChild(btn);
+
   return wrap;
 }
 
