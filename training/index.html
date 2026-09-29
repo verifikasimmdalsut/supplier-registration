@@ -448,7 +448,7 @@ function renderDashboard(){
     return wrap;
   }
 
-  wrap.appendChild(el("p", {class:"sub", text:"Baca materi dulu sebelum bisa mengisi Pre Test dan Post Test."}));
+  wrap.appendChild(el("p", {class:"sub", text:"Pre Test bisa langsung dikerjakan. Post Test baru bisa diisi setelah Pre Test selesai."}));
 
   // Materi card
   const materiCard = el("div", {class:"menu-card"});
@@ -462,14 +462,16 @@ function renderDashboard(){
   wrap.appendChild(materiCard);
 
   // Pretest & Posttest cards
+  const pretestDone = state.locks.pretest.selesai && !state.locks.pretest.boleh_ulang;
   ["pretest","posttest"].forEach(jenis=>{
     const jinfo = JENIS_INFO[jenis];
     const lock = state.locks[jenis];
-    const card = el("div", {class:"menu-card" + (!state.progress.sudah_baca_materi ? " disabled" : "")});
+    const gatedByPretest = jenis === "posttest" && !pretestDone && !(lock.selesai && !lock.boleh_ulang);
+    const card = el("div", {class:"menu-card" + (gatedByPretest ? " disabled" : "")});
     const left = el("div", {class:"menu-left"});
     left.appendChild(el("div", {class:"menu-title", text: jinfo.label}));
     let desc = jinfo.desc;
-    if(!state.progress.sudah_baca_materi) desc = "Baca materi dulu";
+    if(gatedByPretest) desc = "Selesaikan Pre Test dulu";
     else if(lock.selesai && !lock.boleh_ulang) desc = "Sudah dikerjakan, hubungi admin untuk mengulang";
     else if(lock.selesai && lock.boleh_ulang) desc = "Sudah dibuka admin untuk mengulang";
     left.appendChild(el("div", {class:"menu-desc", text: desc}));
@@ -478,7 +480,7 @@ function renderDashboard(){
     if(lock.selesai && !lock.boleh_ulang){
       card.appendChild(el("div", {class:"badge-score", text:"Nilai " + (lock.nilai != null ? lock.nilai : "-")}));
     } else {
-      const canOpen = state.progress.sudah_baca_materi;
+      const canOpen = !gatedByPretest;
       const btnText = lock.selesai && lock.boleh_ulang ? "Ulang" : "Mulai";
       const btn = el("button", {class:"menu-btn", text: btnText, disabled: !canOpen});
       if(canOpen){
