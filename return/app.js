@@ -1224,30 +1224,253 @@ if(searchInput){
 
 function switchMode(mode){
 
-  const chatView = document.getElementById("chatView");
-  const listView = document.getElementById("listView");
-  const chatBtn = document.getElementById("modeChatBtn");
-  const listBtn = document.getElementById("modeListBtn");
+  const views = {
+    chat: document.getElementById("chatView"),
+    list: document.getElementById("listView"),
+    disposal: document.getElementById("disposalView")
+  };
 
-  if(!chatView || !listView){
+  const btns = {
+    chat: document.getElementById("modeChatBtn"),
+    list: document.getElementById("modeListBtn"),
+    disposal: document.getElementById("modeDisposalBtn")
+  };
+
+  if(!views.chat || !views.list){
     return;
   }
 
-  if(mode === "chat"){
+  Object.keys(views).forEach(key => {
 
-    chatView.style.display = "block";
-    listView.style.display = "none";
-    chatBtn.classList.add("active");
-    listBtn.classList.remove("active");
+    if(!views[key] || !btns[key]){
+      return;
+    }
 
+    if(key === mode){
+      views[key].style.display = "block";
+      btns[key].classList.add("active");
+    }else{
+      views[key].style.display = "none";
+      btns[key].classList.remove("active");
+    }
+
+  });
+
+  if(mode === "disposal"){
+    renderDisposalList();
+  }
+
+}
+
+
+/* =========================
+   LIST DISPOSAL
+   (grouping barang return per tanggal pemusnahan & kategori departemen)
+========================= */
+
+function categoryDisplayName(label){
+
+  /* HSD DAN KIDS ditampilkan sebagai GMS di List Disposal */
+  if(label === "HSD DAN KIDS"){
+    return "GMS";
+  }
+
+  return label;
+
+}
+
+
+function parseDateIDToSortable(str){
+
+  const parts = (str || "").split("/");
+
+  if(parts.length !== 3){
+    return new Date(0);
+  }
+
+  return new Date(
+    Number(parts[2]),
+    Number(parts[1]) - 1,
+    Number(parts[0])
+  );
+
+}
+
+
+function buildDisposalGroups(){
+
+  const dateMap = {};
+
+  RETURN_DATA.forEach(row => {
+
+    const pemusnahan =
+      getPemusnahanInfo(row.date, row.department);
+
+    if(!pemusnahan){
+      return;
+    }
+
+    const dateKey = pemusnahan.tanggal;
+    const catKey = categoryDisplayName(pemusnahan.category);
+
+    if(!dateMap[dateKey]){
+      dateMap[dateKey] = {};
+    }
+
+    if(!dateMap[dateKey][catKey]){
+      dateMap[dateKey][catKey] = [];
+    }
+
+    dateMap[dateKey][catKey].push(row);
+
+  });
+
+  return dateMap;
+
+}
+
+
+const openDisposalCats = new Set();
+
+
+function toggleDisposalCat(key){
+
+  if(openDisposalCats.has(key)){
+    openDisposalCats.delete(key);
   }else{
+    openDisposalCats.add(key);
+  }
 
-    chatView.style.display = "none";
-    listView.style.display = "block";
-    listBtn.classList.add("active");
-    chatBtn.classList.remove("active");
+  renderDisposalList();
+
+}
+
+
+function renderDisposalList(){
+
+  const container =
+    document.getElementById("disposalList");
+
+  if(!container){
+    return;
+  }
+
+  const dateMap =
+    buildDisposalGroups();
+
+  const dateKeys =
+    Object.keys(dateMap)
+      .sort((a, b) => parseDateIDToSortable(a) - parseDateIDToSortable(b));
+
+  if(dateKeys.length === 0){
+
+    container.innerHTML = `
+      <p class="disposal-empty">Belum ada jadwal disposal saat ini.</p>
+    `;
+
+    return;
 
   }
+
+  const dayNames =
+    ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+  container.innerHTML =
+    dateKeys.map(dateKey => {
+
+      const dateObj =
+        parseDateIDToSortable(dateKey);
+
+      const dayName =
+        dayNames[dateObj.getDay()];
+
+      const categories = dateMap[dateKey];
+
+      const catKeys =
+        Object.keys(categories).sort();
+
+      let totalItems = 0;
+
+      const buttonsHtml =
+        catKeys.map(catName => {
+
+          const items = categories[catName];
+          const cardKey = dateKey + "__" + catName;
+          const isOpen = openDisposalCats.has(cardKey);
+
+          totalItems += items.length;
+
+          return `
+            <div
+              class="disposal-cat-btn"
+              onclick="toggleDisposalCat('${cardKey}')"
+            >
+              <div class="c-name">
+                ${escapeHtml(catName)} ${isOpen ? "▲" : "▼"}
+              </div>
+              <div class="c-count">
+                ${items.length} item
+              </div>
+            </div>
+          `;
+
+        }).join("");
+
+      const bodiesHtml =
+        catKeys.map(catName => {
+
+          const items = categories[catName];
+          const cardKey = dateKey + "__" + catName;
+          const isOpen = openDisposalCats.has(cardKey);
+
+          if(!isOpen){
+            return "";
+          }
+
+          const itemsHtml =
+            items.map(item => `
+              <div class="disposal-item-row">
+                <div class="di-top">
+                  <span>${escapeHtml(item.itemDesc)}</span>
+                  <span>${Number(item.qty).toFixed(2)}</span>
+                </div>
+                <div class="di-meta">
+                  ${escapeHtml(item.supplier)} (${escapeHtml(item.supplierCode)}) ·
+                  Slip ${escapeHtml(item.returnNo)} ·
+                  ${escapeHtml(formatDepartmentLabel(item.department))}
+                </div>
+              </div>
+            `).join("");
+
+          return `
+            <div class="disposal-cat-body open">
+              <div style="font-weight:bold;font-size:11px;color:#888;margin-bottom:6px;">
+                ${escapeHtml(catName)}
+              </div>
+              ${itemsHtml}
+            </div>
+          `;
+
+        }).join("");
+
+      return `
+        <div class="disposal-date-card">
+
+          <div class="disposal-date-head">
+            <div class="d-date">📅 ${escapeHtml(dateKey)} (${dayName})</div>
+            <div class="d-sub">${totalItems} item dijadwalkan dimusnahkan</div>
+          </div>
+
+          <div class="disposal-cat-grid">
+            ${buttonsHtml}
+          </div>
+
+          ${bodiesHtml}
+
+        </div>
+      `;
+
+    }).join("");
 
 }
 
