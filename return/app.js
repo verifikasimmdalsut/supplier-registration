@@ -1427,27 +1427,65 @@ function renderDisposalList(){
             return "";
           }
 
-          const itemsHtml =
-            items.map(item => `
-              <div class="disposal-item-row">
-                <div class="di-top">
-                  <span>${escapeHtml(item.itemDesc)}</span>
-                  <span>${Number(item.qty).toFixed(2)}</span>
+          /* kelompokkan dulu per No Slip */
+          const bySlip = {};
+
+          items.forEach(item => {
+
+            const slipKey = item.returnNo;
+
+            if(!bySlip[slipKey]){
+              bySlip[slipKey] = {
+                supplier: item.supplier,
+                supplierCode: item.supplierCode,
+                department: item.department,
+                rows: []
+              };
+            }
+
+            bySlip[slipKey].rows.push(item);
+
+          });
+
+          const slipKeys =
+            Object.keys(bySlip).sort();
+
+          const slipsHtml =
+            slipKeys.map(slipNo => {
+
+              const slip = bySlip[slipNo];
+
+              const itemRowsHtml =
+                slip.rows.map(item => `
+                  <div class="disposal-item-row">
+                    <div class="di-top">
+                      <span>${escapeHtml(item.itemDesc)}</span>
+                      <span>${Number(item.qty).toFixed(2)}</span>
+                    </div>
+                  </div>
+                `).join("");
+
+              return `
+                <div class="disposal-slip-group">
+                  <div class="disposal-slip-head">
+                    No. Slip ${escapeHtml(slipNo)}
+                    <span class="disposal-slip-sup">
+                      ${escapeHtml(slip.supplier)} (${escapeHtml(slip.supplierCode)}) ·
+                      ${escapeHtml(formatDepartmentLabel(slip.department))}
+                    </span>
+                  </div>
+                  ${itemRowsHtml}
                 </div>
-                <div class="di-meta">
-                  ${escapeHtml(item.supplier)} (${escapeHtml(item.supplierCode)}) ·
-                  Slip ${escapeHtml(item.returnNo)} ·
-                  ${escapeHtml(formatDepartmentLabel(item.department))}
-                </div>
-              </div>
-            `).join("");
+              `;
+
+            }).join("");
 
           return `
             <div class="disposal-cat-body open">
               <div style="font-weight:bold;font-size:11px;color:#888;margin-bottom:6px;">
                 ${escapeHtml(catName)}
               </div>
-              ${itemsHtml}
+              ${slipsHtml}
             </div>
           `;
 
