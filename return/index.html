@@ -804,12 +804,41 @@ td{
   display:block;
 }
 
-.disposal-item-row{
+.disposal-slip-group{
   background:#faf9fb;
+  border:1px solid #eee;
+  border-radius:10px;
+  padding:10px 11px;
+  margin-bottom:8px;
+}
+
+.disposal-slip-head{
+  font-weight:bold;
+  font-size:11.5px;
+  color:var(--magenta);
+  margin-bottom:8px;
+  padding-bottom:6px;
+  border-bottom:1px dashed #e4d4dc;
+}
+
+.disposal-slip-sup{
+  display:block;
+  font-weight:normal;
+  color:#888;
+  font-size:10px;
+  margin-top:2px;
+}
+
+.disposal-item-row{
+  background:#fff;
   border-radius:8px;
-  padding:9px 11px;
-  margin-bottom:6px;
+  padding:8px 10px;
+  margin-bottom:5px;
   font-size:11px;
+}
+
+.disposal-item-row:last-child{
+  margin-bottom:0;
 }
 
 .disposal-item-row .di-top{
@@ -817,12 +846,6 @@ td{
   justify-content:space-between;
   gap:8px;
   font-weight:bold;
-}
-
-.disposal-item-row .di-meta{
-  color:#888;
-  font-size:10px;
-  margin-top:3px;
 }
 
 .disposal-empty{
