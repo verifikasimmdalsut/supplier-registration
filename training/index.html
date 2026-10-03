@@ -4,25 +4,37 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Training Gudang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F5F6F8;
+    --bg:#FAFAF8;
     --surface:#FFFFFF;
-    --surface-2:#F0F2F5;
-    --border:#E1E4E9;
-    --text:#1F2430;
-    --text-muted:#6B7280;
+    --surface-2:#F1F1EC;
+    --border:#E3E2DA;
+    --ink:#122146;
+    --text:#232A3B;
+    --text-muted:#6E7488;
     --accent:#F2971D;
-    --accent-soft:#FFF3E0;
-    --good:#1E8A5F;
-    --good-soft:#E7F5EE;
-    --bad:#D64541;
+    --accent-soft:#FFF1DC;
+    --good:#0F7B63;
+    --good-soft:#E3F3EE;
+    --bad:#C8432F;
     --radius:14px;
+    --font-display:"Space Grotesk", -apple-system, sans-serif;
+    --font-body:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --c-counter:#0F7B63;
+    --c-counter-soft:#E3F3EE;
+    --c-scanner:#F2971D;
+    --c-scanner-soft:#FFF1DC;
+    --c-auditor:#122146;
+    --c-auditor-soft:#E7EAF2;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:var(--font-body);
     background:var(--bg);
     color:var(--text);
     min-height:100vh;
@@ -38,21 +50,30 @@
     flex-direction:column;
   }
   .brand{
-    font-size:13px;
-    letter-spacing:0.02em;
+    font-size:12px;
+    letter-spacing:0.03em;
     color:var(--text-muted);
-    margin-bottom:4px;
+    margin-bottom:10px;
   }
-  h1{ font-size:24px; font-weight:700; margin:0 0 22px; line-height:1.3; }
-  h2{ font-size:19px; font-weight:700; margin:0 0 6px; }
+  .barcode{
+    display:flex;
+    align-items:flex-end;
+    gap:2px;
+    height:28px;
+    margin-bottom:14px;
+  }
+  .barcode span{ display:block; width:3px; background:var(--ink); border-radius:1px; }
+  h1{ font-family:var(--font-display); color:var(--ink); font-size:25px; font-weight:600; margin:0 0 22px; line-height:1.3; }
+  h2{ font-family:var(--font-display); color:var(--ink); font-size:19px; font-weight:600; margin:0 0 6px; }
   p.sub{ color:var(--text-muted); font-size:14px; margin:0 0 20px; line-height:1.5; }
 
   .section-grid{ display:flex; flex-direction:column; gap:12px; }
   .section-card{
     background:var(--surface);
     border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:20px;
+    border-left:4px solid var(--c);
+    border-radius:10px;
+    padding:18px 20px;
     text-align:left;
     color:var(--text);
     cursor:pointer;
@@ -60,11 +81,9 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    box-shadow:0 1px 2px rgba(20,24,31,0.04);
   }
   .section-card:active{ transform:scale(0.98); }
-  .section-card:hover{ border-color:var(--accent); }
-  .section-card .label{ font-size:17px; font-weight:700; }
+  .section-card .label{ font-family:var(--font-display); font-size:17px; font-weight:600; color:var(--ink); }
   .section-card .desc{ font-size:13px; color:var(--text-muted); margin-top:2px; }
   .chev{ color:var(--text-muted); font-size:20px; }
 
@@ -136,11 +155,10 @@
 
   .tag{
     display:inline-block;
-    background:var(--accent-soft);
-    color:#8A5300;
+    font-family:var(--font-display);
     font-size:12px;
-    font-weight:700;
-    padding:4px 10px;
+    font-weight:600;
+    padding:5px 12px;
     border-radius:20px;
     margin-bottom:14px;
   }
@@ -160,18 +178,18 @@
   .menu-card{
     background:var(--surface);
     border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:18px 20px;
+    border-left:4px solid var(--c, var(--border));
+    border-radius:10px;
+    padding:16px 18px;
     margin-bottom:12px;
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:12px;
-    box-shadow:0 1px 2px rgba(20,24,31,0.04);
   }
-  .menu-card.disabled{ opacity:0.55; }
+  .menu-card.disabled{ opacity:0.5; }
   .menu-left{ display:flex; flex-direction:column; }
-  .menu-title{ font-size:16px; font-weight:700; }
+  .menu-title{ font-family:var(--font-display); font-size:16px; font-weight:600; color:var(--ink); }
   .menu-desc{ font-size:12px; color:var(--text-muted); margin-top:3px; }
   .menu-btn{
     background:var(--accent);
@@ -183,15 +201,17 @@
     font-weight:700;
     cursor:pointer;
     white-space:nowrap;
+    font-family:var(--font-body);
   }
   .menu-btn:disabled{ background:var(--surface-2); color:var(--text-muted); cursor:default; }
   .menu-btn.done{ background:var(--good-soft); color:var(--good); }
   .badge-score{
-    font-size:12px;
-    font-weight:700;
+    font-family:var(--font-display);
+    font-size:13px;
+    font-weight:600;
     color:var(--good);
     background:var(--good-soft);
-    padding:4px 10px;
+    padding:5px 12px;
     border-radius:20px;
   }
 
@@ -228,13 +248,21 @@
 
   .center-flex{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
   .score-circle{
-    width:160px; height:160px; border-radius:50%;
-    border:6px solid var(--accent);
+    width:164px; height:164px; border-radius:50%;
+    border:2px dashed var(--accent);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    margin-bottom:20px; background:var(--surface);
+    margin-bottom:20px; background:var(--accent-soft);
+    position:relative;
   }
-  .score-num{ font-size:40px; font-weight:800; }
-  .score-label{ font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .score-circle::before{
+    content:"";
+    position:absolute; inset:10px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1px solid var(--border);
+  }
+  .score-num{ font-family:var(--font-display); font-size:42px; font-weight:600; color:var(--ink); position:relative; }
+  .score-label{ font-size:11px; letter-spacing:0.04em; color:var(--text-muted); margin-top:2px; position:relative; }
 
   .loading{ text-align:center; color:var(--text-muted); padding:40px 0; font-size:14px; }
 
@@ -277,9 +305,9 @@ async function sbUpsert(table, body, conflictCols){
 }
 
 const SECTION_INFO = {
-  counter: { label:"Counter", desc:"Login pakai nama, tanpa NIK" },
-  scanner: { label:"Scanner", desc:"Login pakai NIK terdaftar" },
-  auditor: { label:"Auditor", desc:"Login pakai NIK terdaftar" }
+  counter: { label:"Counter", desc:"Login pakai nama, tanpa NIK", color:"var(--c-counter)", soft:"var(--c-counter-soft)" },
+  scanner: { label:"Scanner", desc:"Login pakai NIK terdaftar", color:"var(--c-scanner)", soft:"var(--c-scanner-soft)" },
+  auditor: { label:"Auditor", desc:"Login pakai NIK terdaftar", color:"var(--c-auditor)", soft:"var(--c-auditor-soft)" }
 };
 const JENIS_INFO = {
   pretest: { label:"Pre Test", desc:"Dikerjakan sebelum materi selesai dievaluasi" },
@@ -343,14 +371,29 @@ function el(tag, props, children){
 
 function isCounter(){ return state.section === "counter"; }
 
+function tagEl(text, info){
+  return el("div", {class:"tag", text:text, style:"background:" + info.soft + ";color:" + info.color + ";"});
+}
+
+function barcodeEl(){
+  const bar = el("div", {class:"barcode"});
+  const widths = [2,1,3,1,2,4,1,2,1,3,2,1,4,1,2,3,1,2];
+  widths.forEach((w,i)=>{
+    const h = 14 + ((i*7) % 14);
+    bar.appendChild(el("span", {style:"width:" + w + "px;height:" + h + "px;"}));
+  });
+  return bar;
+}
+
 function renderHome(){
   const wrap = el("div");
+  wrap.appendChild(barcodeEl());
   wrap.appendChild(el("div", {class:"brand", text:"Training gudang"}));
   wrap.appendChild(el("h1", {text:"Pilih bagian yang kamu ikuti"}));
   const grid = el("div", {class:"section-grid"});
   ["counter","scanner","auditor"].forEach(key=>{
     const info = SECTION_INFO[key];
-    const card = el("button", { class:"section-card", onClick: ()=> setState({screen:"login", section:key, inputVal:"", errorMsg:""}) });
+    const card = el("button", { class:"section-card", style:"--c:" + info.color, onClick: ()=> setState({screen:"login", section:key, inputVal:"", errorMsg:""}) });
     const left = el("div");
     left.appendChild(el("div", {class:"label", text:info.label}));
     left.appendChild(el("div", {class:"desc", text:info.desc}));
@@ -369,7 +412,7 @@ function renderLogin(){
   const nav = el("div", {class:"top-nav"});
   nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", errorMsg:""})}));
   wrap.appendChild(nav);
-  wrap.appendChild(el("div", {class:"tag", text:info.label}));
+  wrap.appendChild(tagEl(info.label, info));
 
   const counterMode = isCounter();
   wrap.appendChild(el("h2", {text: counterMode ? "Masukkan nama kamu" : "Masukkan NIK kamu"}));
@@ -440,7 +483,7 @@ function renderDashboard(){
   const nav = el("div", {class:"top-nav"});
   nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", section:null, nama:"", nik:"", identifier:""})}));
   wrap.appendChild(nav);
-  wrap.appendChild(el("div", {class:"tag", text: info.label + " \u00b7 " + state.nama}));
+  wrap.appendChild(tagEl(info.label + " \u00b7 " + state.nama, info));
   wrap.appendChild(el("h2", {text:"Menu training"}));
 
   if(state.loading){
@@ -451,7 +494,7 @@ function renderDashboard(){
   wrap.appendChild(el("p", {class:"sub", text:"Pre Test bisa langsung dikerjakan. Post Test baru bisa diisi setelah Pre Test selesai."}));
 
   // Materi card
-  const materiCard = el("div", {class:"menu-card"});
+  const materiCard = el("div", {class:"menu-card", style:"--c:" + info.color});
   const materiLeft = el("div", {class:"menu-left"});
   materiLeft.appendChild(el("div", {class:"menu-title", text:"Materi"}));
   materiLeft.appendChild(el("div", {class:"menu-desc", text: state.progress.sudah_baca_materi ? "Sudah dibaca" : "Belum dibaca"}));
@@ -467,7 +510,7 @@ function renderDashboard(){
     const jinfo = JENIS_INFO[jenis];
     const lock = state.locks[jenis];
     const gatedByPretest = jenis === "posttest" && !pretestDone && !(lock.selesai && !lock.boleh_ulang);
-    const card = el("div", {class:"menu-card" + (gatedByPretest ? " disabled" : "")});
+    const card = el("div", {class:"menu-card" + (gatedByPretest ? " disabled" : ""), style:"--c:" + info.color});
     const left = el("div", {class:"menu-left"});
     left.appendChild(el("div", {class:"menu-title", text: jinfo.label}));
     let desc = jinfo.desc;
@@ -510,7 +553,7 @@ function renderMateri(){
   const nav = el("div", {class:"top-nav"});
   nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"dashboard"})}));
   wrap.appendChild(nav);
-  wrap.appendChild(el("div", {class:"tag", text: info.label + " \u00b7 " + state.nama}));
+  wrap.appendChild(tagEl(info.label + " \u00b7 " + state.nama, info));
 
   if(state.loading || !state.modul){
     wrap.appendChild(el("div", {class:"loading", text:"Memuat materi..."}));
@@ -546,7 +589,7 @@ function renderKuis(){
   const info = SECTION_INFO[state.section];
   const jinfo = JENIS_INFO[state.currentJenis];
   const wrap = el("div");
-  wrap.appendChild(el("div", {class:"tag", text: info.label + " \u00b7 " + jinfo.label}));
+  wrap.appendChild(tagEl(info.label + " \u00b7 " + jinfo.label, info));
 
   if(state.loading){
     wrap.appendChild(el("div", {class:"loading", text:"Memuat soal..."}));
