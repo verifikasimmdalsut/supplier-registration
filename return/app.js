@@ -1427,54 +1427,83 @@ function renderDisposalList(){
             return "";
           }
 
-          /* kelompokkan dulu per No Slip */
-          const bySlip = {};
+          /* kelompokkan dulu per SUPPLIER, baru di dalamnya per No Slip */
+          const bySupplier = {};
 
           items.forEach(item => {
 
-            const slipKey = item.returnNo;
+            const supKey = item.supplierCode;
 
-            if(!bySlip[slipKey]){
-              bySlip[slipKey] = {
+            if(!bySupplier[supKey]){
+              bySupplier[supKey] = {
                 supplier: item.supplier,
                 supplierCode: item.supplierCode,
+                slips: {}
+              };
+            }
+
+            const slipKey = item.returnNo;
+
+            if(!bySupplier[supKey].slips[slipKey]){
+              bySupplier[supKey].slips[slipKey] = {
                 department: item.department,
                 rows: []
               };
             }
 
-            bySlip[slipKey].rows.push(item);
+            bySupplier[supKey].slips[slipKey].rows.push(item);
 
           });
 
-          const slipKeys =
-            Object.keys(bySlip).sort();
+          const supplierKeys =
+            Object.keys(bySupplier).sort((a, b) =>
+              bySupplier[a].supplier.localeCompare(bySupplier[b].supplier)
+            );
 
-          const slipsHtml =
-            slipKeys.map(slipNo => {
+          const suppliersHtml =
+            supplierKeys.map(supKey => {
 
-              const slip = bySlip[slipNo];
+              const sup = bySupplier[supKey];
 
-              const itemRowsHtml =
-                slip.rows.map(item => `
-                  <div class="disposal-item-row">
-                    <div class="di-top">
-                      <span>${escapeHtml(item.itemDesc)}</span>
-                      <span>${Number(item.qty).toFixed(2)}</span>
+              const slipKeys =
+                Object.keys(sup.slips).sort();
+
+              const slipsHtml =
+                slipKeys.map(slipNo => {
+
+                  const slip = sup.slips[slipNo];
+
+                  const itemRowsHtml =
+                    slip.rows.map(item => `
+                      <div class="disposal-item-row">
+                        <div class="di-top">
+                          <span>${escapeHtml(item.itemDesc)}</span>
+                          <span>${Number(item.qty).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    `).join("");
+
+                  return `
+                    <div class="disposal-slip-group">
+                      <div class="disposal-slip-head">
+                        No. Slip ${escapeHtml(slipNo)}
+                        <span class="disposal-slip-sup">
+                          ${escapeHtml(formatDepartmentLabel(slip.department))}
+                        </span>
+                      </div>
+                      ${itemRowsHtml}
                     </div>
-                  </div>
-                `).join("");
+                  `;
+
+                }).join("");
 
               return `
-                <div class="disposal-slip-group">
-                  <div class="disposal-slip-head">
-                    No. Slip ${escapeHtml(slipNo)}
-                    <span class="disposal-slip-sup">
-                      ${escapeHtml(slip.supplier)} (${escapeHtml(slip.supplierCode)}) ·
-                      ${escapeHtml(formatDepartmentLabel(slip.department))}
-                    </span>
+                <div class="disposal-supplier-group">
+                  <div class="disposal-supplier-head">
+                    ${escapeHtml(sup.supplier)}
+                    <span class="disposal-supplier-code">(${escapeHtml(sup.supplierCode)})</span>
                   </div>
-                  ${itemRowsHtml}
+                  ${slipsHtml}
                 </div>
               `;
 
@@ -1485,7 +1514,7 @@ function renderDisposalList(){
               <div style="font-weight:bold;font-size:11px;color:#888;margin-bottom:6px;">
                 ${escapeHtml(catName)}
               </div>
-              ${slipsHtml}
+              ${suppliersHtml}
             </div>
           `;
 
