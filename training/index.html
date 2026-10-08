@@ -269,6 +269,36 @@
   .progress-bar{ height:4px; background:var(--surface-2); border-radius:2px; margin-bottom:20px; overflow:hidden; }
   .progress-fill{ height:100%; background:var(--accent); transition:width .2s ease; }
 
+
+  .barcode.small{ height:18px; margin-bottom:10px; }
+  .tabs{ display:flex; gap:6px; margin:14px 0 18px; border-bottom:1px solid var(--border); }
+  .tab{
+    background:none; border:none; padding:10px 12px; font-family:var(--font-display);
+    font-size:14px; font-weight:600; color:var(--text-muted); cursor:pointer;
+    border-bottom:3px solid transparent; margin-bottom:-1px;
+  }
+  .tab.active{ color:var(--ink); border-bottom-color:var(--accent); }
+  .stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+  .stat-grid.two{ grid-template-columns:repeat(2,1fr); }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 12px; }
+  .stat-num{ font-family:var(--font-display); font-size:28px; font-weight:600; line-height:1; }
+  .stat-label{ font-size:12px; color:var(--text-muted); margin-top:6px; }
+  .filters{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .filters.one{ grid-template-columns:1fr; }
+  .filters select{ margin-bottom:0; padding:11px 10px; font-size:14px; }
+  .result-list{ margin-top:16px; }
+  .result-item{
+    background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--c, var(--border));
+    border-radius:10px; padding:12px 14px; margin-bottom:8px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .result-name{ font-family:var(--font-display); font-size:15px; font-weight:600; color:var(--ink); }
+  .result-meta{ font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .result-right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .nilai-badge{ font-family:var(--font-display); font-weight:600; font-size:15px; min-width:44px; text-align:center; padding:6px 10px; border-radius:8px; }
+  .nilai-badge.pass{ background:var(--good-soft); color:var(--good); }
+  .nilai-badge.fail{ background:#FBE7E3; color:var(--bad); }
+  .mini-btn{ background:var(--surface); border:1px solid var(--border); color:var(--ink); font-size:12px; font-weight:600; padding:7px 10px; border-radius:8px; cursor:pointer; font-family:var(--font-body); }
   .admin-field label{ font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px; }
 </style>
 </head>
@@ -339,7 +369,13 @@ let state = {
   adminIdentifier: "",
   adminJenis: "pretest",
   adminMsg: "",
-  adminLoading: false
+  adminLoading: false,
+  adminTab: "hasil",
+  adminData: null,
+  adminDataLoading: false,
+  fSection: "all",
+  fJenis: "all",
+  fStatus: "all"
 };
 
 function setState(patch){ state = Object.assign({}, state, patch); render(); }
@@ -347,6 +383,7 @@ function setState(patch){ state = Object.assign({}, state, patch); render(); }
 function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
+  app.style.maxWidth = (state.screen === "admin" && state.adminAuthed) ? "760px" : "480px";
   if(state.screen === "home") app.appendChild(renderHome());
   else if(state.screen === "login") app.appendChild(renderLogin());
   else if(state.screen === "dashboard") app.appendChild(renderDashboard());
@@ -678,6 +715,58 @@ function renderHasil(){
 }
 
 // ---------- ADMIN ----------
+const PASS_GRADE = 80;
+
+async function loadAdminData(){
+  setState({adminDataLoading:true});
+  try{
+    const hasil = await sb("training_hasil?select=nama,identifier,section,jenis,nilai,selesai_at&order=selesai_at.desc&limit=5000");
+    const peserta = await sb("training_peserta_nik?select=nik,nama,section&limit=5000");
+    setState({adminDataLoading:false, adminData:{hasil, peserta}});
+  }catch(err){
+    setState({adminDataLoading:false, adminMsg:"Gagal memuat data nilai."});
+  }
+}
+
+function latestResults(){
+  // ambil percobaan terbaru per (section, identifier, jenis)
+  const seen = {};
+  const out = [];
+  state.adminData.hasil.forEach(h=>{
+    const k = h.section + "|" + h.identifier + "|" + h.jenis;
+    if(!seen[k]){ seen[k] = true; out.push(h); }
+  });
+  return out;
+}
+
+function fmtTanggal(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString("id-ID", {day:"2-digit", month:"short"}) + " " +
+         d.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
+}
+
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+function selectEl(options, current, onChange){
+  const s = el("select");
+  options.forEach(o=>{
+    const opt = el("option", {value:o[0], text:o[1]});
+    if(current === o[0]) opt.setAttribute("selected","true");
+    s.appendChild(opt);
+  });
+  s.addEventListener("change", e=> onChange(e.target.value));
+  return s;
+}
+
 function renderAdmin(){
   const wrap = el("div");
   const nav = el("div", {class:"top-nav"});
@@ -686,55 +775,189 @@ function renderAdmin(){
 
   if(!state.adminAuthed){
     wrap.appendChild(el("h2", {text:"Masuk admin"}));
-    wrap.appendChild(el("p", {class:"sub", text:"Masukkan kode admin untuk membuka kunci ulang Pre Test / Post Test peserta."}));
+    wrap.appendChild(el("p", {class:"sub", text:"Masukkan kode admin untuk melihat nilai peserta dan membuka kunci remedial."}));
     const input = el("input", {type:"text", placeholder:"Kode admin", value: state.adminPasscodeInput});
     input.addEventListener("input", e=>{ state.adminPasscodeInput = e.target.value; });
     wrap.appendChild(input);
     if(state.adminMsg) wrap.appendChild(el("div", {class:"error", text: state.adminMsg}));
     const btn = el("button", {class:"primary", text:"Masuk"});
     btn.addEventListener("click", ()=>{
-      if(input.value.trim() === ADMIN_PASSCODE) setState({adminAuthed:true, adminMsg:""});
-      else setState({adminMsg:"Kode admin salah."});
+      if(input.value.trim() === ADMIN_PASSCODE){
+        setState({adminAuthed:true, adminMsg:"", adminTab:"hasil"});
+        loadAdminData();
+      } else setState({adminMsg:"Kode admin salah."});
     });
     wrap.appendChild(btn);
     return wrap;
   }
 
-  wrap.appendChild(el("h2", {text:"Buka kunci ulang"}));
-  wrap.appendChild(el("p", {class:"sub", text:"Pilih section, isi NIK (atau nama untuk Counter), pilih jenis test, lalu buka kunci supaya peserta bisa mengulang."}));
+  { const bc = barcodeEl(); bc.classList.add("small"); wrap.appendChild(bc); }
+  wrap.appendChild(el("h2", {text:"Panel admin"}));
+
+  const tabs = el("div", {class:"tabs"});
+  [["hasil","Nilai peserta"],["belum","Belum hadir"],["kunci","Buka kunci"]].forEach(t=>{
+    const b = el("button", {class:"tab" + (state.adminTab === t[0] ? " active" : ""), text:t[1]});
+    b.addEventListener("click", ()=> setState({adminTab:t[0], adminMsg:""}));
+    tabs.appendChild(b);
+  });
+  wrap.appendChild(tabs);
+
+  if(state.adminTab === "kunci") wrap.appendChild(renderAdminKunci());
+  else if(state.adminDataLoading || !state.adminData) wrap.appendChild(el("div", {class:"loading", text:"Memuat data..."}));
+  else if(state.adminTab === "belum") wrap.appendChild(renderAdminBelum());
+  else wrap.appendChild(renderAdminHasil());
+  return wrap;
+}
+
+function renderAdminHasil(){
+  const box = el("div");
+  const all = latestResults();
+
+  // filter
+  let rows = all.filter(r =>
+    (state.fSection === "all" || r.section === state.fSection) &&
+    (state.fJenis === "all" || r.jenis === state.fJenis) &&
+    (state.fStatus === "all" || (state.fStatus === "lulus" ? r.nilai >= PASS_GRADE : r.nilai < PASS_GRADE))
+  );
+  rows.sort((a,b)=> a.nilai - b.nilai);
+
+  const hadirIds = {};
+  state.adminData.hasil.forEach(h=>{ hadirIds[h.section + "|" + h.identifier] = true; });
+  const totalHadir = Object.keys(hadirIds).length;
+  const remedial = all.filter(r=> r.nilai < PASS_GRADE);
+  const lulus = all.length - remedial.length;
+
+  const stats = el("div", {class:"stat-grid"});
+  [["Peserta hadir", totalHadir, "var(--ink)"],["Lulus (\u2265" + PASS_GRADE + ")", lulus, "var(--good)"],["Perlu remedial", remedial.length, "var(--bad)"]].forEach(s=>{
+    const c = el("div", {class:"stat"});
+    c.appendChild(el("div", {class:"stat-num", text:String(s[1]), style:"color:" + s[2]}));
+    c.appendChild(el("div", {class:"stat-label", text:s[0]}));
+    stats.appendChild(c);
+  });
+  box.appendChild(stats);
+
+  const filters = el("div", {class:"filters"});
+  filters.appendChild(selectEl([["all","Semua section"],["counter","Counter"],["scanner","Scanner"],["auditor","Auditor"]], state.fSection, v=> setState({fSection:v})));
+  filters.appendChild(selectEl([["all","Semua test"],["pretest","Pre Test"],["posttest","Post Test"]], state.fJenis, v=> setState({fJenis:v})));
+  filters.appendChild(selectEl([["all","Semua status"],["lulus","Lulus"],["remedial","Remedial"]], state.fStatus, v=> setState({fStatus:v})));
+  box.appendChild(filters);
+
+  if(state.adminMsg) box.appendChild(el("div", {class: state.adminMsg.startsWith("Berhasil") || state.adminMsg.startsWith("Daftar") ? "success-text" : "error", text: state.adminMsg}));
+
+  const copyBtn = el("button", {class:"primary", text:"Salin daftar remedial (" + remedial.filter(r=> (state.fSection==="all"||r.section===state.fSection) && (state.fJenis==="all"||r.jenis===state.fJenis)).length + ")"});
+  copyBtn.addEventListener("click", async ()=>{
+    const list = remedial.filter(r=> (state.fSection==="all"||r.section===state.fSection) && (state.fJenis==="all"||r.jenis===state.fJenis));
+    if(!list.length){ setState({adminMsg:"Tidak ada peserta remedial pada filter ini."}); return; }
+    const lines = ["Daftar remedial (nilai < " + PASS_GRADE + ")", ""];
+    list.forEach((r,i)=>{
+      lines.push((i+1) + ". " + r.nama + " (" + r.identifier + ") - " + SECTION_INFO[r.section].label + " " + JENIS_INFO[r.jenis].label + ": " + r.nilai);
+    });
+    await copyText(lines.join("\n"));
+    setState({adminMsg:"Daftar remedial tersalin, tinggal paste ke WhatsApp."});
+  });
+  box.appendChild(copyBtn);
+
+  const list = el("div", {class:"result-list"});
+  if(rows.length === 0){
+    list.appendChild(el("div", {class:"loading", text:"Belum ada data untuk filter ini."}));
+  }
+  rows.forEach(r=>{
+    const info = SECTION_INFO[r.section];
+    const item = el("div", {class:"result-item", style:"--c:" + info.color});
+    const left = el("div", {class:"result-left"});
+    left.appendChild(el("div", {class:"result-name", text:r.nama}));
+    left.appendChild(el("div", {class:"result-meta", text: r.identifier + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 " + fmtTanggal(r.selesai_at)}));
+    item.appendChild(left);
+    const right = el("div", {class:"result-right"});
+    const pass = r.nilai >= PASS_GRADE;
+    right.appendChild(el("div", {class:"nilai-badge " + (pass ? "pass" : "fail"), text:String(r.nilai)}));
+    if(!pass){
+      const ub = el("button", {class:"mini-btn", text:"Buka kunci"});
+      ub.addEventListener("click", async ()=>{
+        try{
+          await sbUpsert("training_test_lock", {section:r.section, identifier:r.identifier, jenis:r.jenis, selesai:true, boleh_ulang:true}, "section,identifier,jenis");
+          setState({adminMsg:"Berhasil: " + r.nama + " bisa mengulang " + JENIS_INFO[r.jenis].label + "."});
+        }catch(err){ setState({adminMsg:"Gagal membuka kunci."}); }
+      });
+      right.appendChild(ub);
+    }
+    item.appendChild(right);
+    list.appendChild(item);
+  });
+  box.appendChild(list);
+  return box;
+}
+
+function renderAdminBelum(){
+  const box = el("div");
+  const hadir = {};
+  state.adminData.hasil.forEach(h=>{ hadir[h.section + "|" + h.identifier] = true; });
+  let rows = state.adminData.peserta.filter(p=> !hadir[p.section + "|" + p.nik]);
+  const total = state.adminData.peserta.length;
+  const filterSec = state.fSection;
+  if(filterSec !== "all") rows = rows.filter(p=> p.section === filterSec);
+
+  const stats = el("div", {class:"stat-grid two"});
+  [["Belum hadir", rows.length, "var(--bad)"],["Terdaftar", total, "var(--ink)"]].forEach(s=>{
+    const c = el("div", {class:"stat"});
+    c.appendChild(el("div", {class:"stat-num", text:String(s[1]), style:"color:" + s[2]}));
+    c.appendChild(el("div", {class:"stat-label", text:s[0]}));
+    stats.appendChild(c);
+  });
+  box.appendChild(stats);
+
+  const filters = el("div", {class:"filters one"});
+  filters.appendChild(selectEl([["all","Semua section"],["scanner","Scanner"],["auditor","Auditor"]], state.fSection === "counter" ? "all" : state.fSection, v=> setState({fSection:v})));
+  box.appendChild(filters);
+
+  const copyBtn = el("button", {class:"primary", text:"Salin daftar belum hadir (" + rows.length + ")"});
+  copyBtn.addEventListener("click", async ()=>{
+    if(!rows.length){ setState({adminMsg:"Semua peserta sudah hadir."}); return; }
+    const lines = ["Daftar belum mengerjakan training", ""];
+    rows.forEach((p,i)=> lines.push((i+1) + ". " + p.nama + " (" + p.nik + ") - " + SECTION_INFO[p.section].label));
+    await copyText(lines.join("\n"));
+    setState({adminMsg:"Daftar belum hadir tersalin, tinggal paste ke WhatsApp."});
+  });
+  box.appendChild(copyBtn);
+  if(state.adminMsg) box.appendChild(el("div", {class:"success-text", style:"margin-top:10px;", text:state.adminMsg}));
+
+  const list = el("div", {class:"result-list"});
+  if(rows.length === 0) list.appendChild(el("div", {class:"loading", text:"Semua peserta sudah hadir."}));
+  rows.forEach(p=>{
+    const info = SECTION_INFO[p.section];
+    const item = el("div", {class:"result-item", style:"--c:" + info.color});
+    const left = el("div", {class:"result-left"});
+    left.appendChild(el("div", {class:"result-name", text:p.nama}));
+    left.appendChild(el("div", {class:"result-meta", text:p.nik + " \u00b7 " + info.label}));
+    item.appendChild(left);
+    list.appendChild(item);
+  });
+  box.appendChild(list);
+  return box;
+}
+
+function renderAdminKunci(){
+  const box = el("div");
+  box.appendChild(el("p", {class:"sub", text:"Isi NIK (atau nama untuk Counter), pilih jenis test, lalu buka kunci supaya peserta bisa mengulang."}));
 
   const secField = el("div", {class:"admin-field"});
   secField.appendChild(el("label", {text:"Section"}));
-  const secSelect = el("select");
-  ["counter","scanner","auditor"].forEach(s=>{
-    const opt = el("option", {value:s, text: SECTION_INFO[s].label});
-    if(state.adminSection === s) opt.setAttribute("selected","true");
-    secSelect.appendChild(opt);
-  });
-  secSelect.addEventListener("change", e=>{ state.adminSection = e.target.value; });
-  secField.appendChild(secSelect);
-  wrap.appendChild(secField);
+  secField.appendChild(selectEl([["counter","Counter"],["scanner","Scanner"],["auditor","Auditor"]], state.adminSection, v=>{ state.adminSection = v; }));
+  box.appendChild(secField);
 
   const idField = el("div", {class:"admin-field"});
   idField.appendChild(el("label", {text:"NIK / Nama peserta"}));
-  const idInput = el("input", {type:"text", placeholder:"Contoh: 3201010101010001", value: state.adminIdentifier});
+  const idInput = el("input", {type:"text", placeholder:"Contoh: 2308171", value: state.adminIdentifier});
   idInput.addEventListener("input", e=>{ state.adminIdentifier = e.target.value; });
   idField.appendChild(idInput);
-  wrap.appendChild(idField);
+  box.appendChild(idField);
 
   const jenisField = el("div", {class:"admin-field"});
   jenisField.appendChild(el("label", {text:"Jenis test"}));
-  const jenisSelect = el("select");
-  ["pretest","posttest"].forEach(j=>{
-    const opt = el("option", {value:j, text: JENIS_INFO[j].label});
-    if(state.adminJenis === j) opt.setAttribute("selected","true");
-    jenisSelect.appendChild(opt);
-  });
-  jenisSelect.addEventListener("change", e=>{ state.adminJenis = e.target.value; });
-  jenisField.appendChild(jenisSelect);
-  wrap.appendChild(jenisField);
+  jenisField.appendChild(selectEl([["pretest","Pre Test"],["posttest","Post Test"]], state.adminJenis, v=>{ state.adminJenis = v; }));
+  box.appendChild(jenisField);
 
-  if(state.adminMsg) wrap.appendChild(el("div", {class: state.adminMsg.startsWith("Berhasil") ? "success-text" : "error", text: state.adminMsg}));
+  if(state.adminMsg) box.appendChild(el("div", {class: state.adminMsg.startsWith("Berhasil") ? "success-text" : "error", text: state.adminMsg}));
 
   const btn = el("button", {class:"primary", text: state.adminLoading ? "Memproses..." : "Buka Kunci Ulang", disabled: state.adminLoading});
   btn.addEventListener("click", async ()=>{
@@ -751,10 +974,10 @@ function renderAdmin(){
       setState({adminLoading:false, adminMsg:"Gagal membuka kunci. Coba lagi."});
     }
   });
-  wrap.appendChild(btn);
-
-  return wrap;
+  box.appendChild(btn);
+  return box;
 }
+
 
 render();
 </script>
