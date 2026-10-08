@@ -351,6 +351,10 @@ let state = {
   nik: "",
   identifier: "",
   inputVal: "",
+  inputBrand: "",
+  inputDept: "",
+  brand: "",
+  departemen: "",
   errorMsg: "",
   loading: false,
   modul: null,
@@ -430,7 +434,7 @@ function renderHome(){
   const grid = el("div", {class:"section-grid"});
   ["counter","scanner","auditor"].forEach(key=>{
     const info = SECTION_INFO[key];
-    const card = el("button", { class:"section-card", style:"--c:" + info.color, onClick: ()=> setState({screen:"login", section:key, inputVal:"", errorMsg:""}) });
+    const card = el("button", { class:"section-card", style:"--c:" + info.color, onClick: ()=> setState({screen:"login", section:key, inputVal:"", inputBrand:"", inputDept:"", errorMsg:""}) });
     const left = el("div");
     left.appendChild(el("div", {class:"label", text:info.label}));
     left.appendChild(el("div", {class:"desc", text:info.desc}));
@@ -452,14 +456,24 @@ function renderLogin(){
   wrap.appendChild(tagEl(info.label, info));
 
   const counterMode = isCounter();
-  wrap.appendChild(el("h2", {text: counterMode ? "Masukkan nama kamu" : "Masukkan NIK kamu"}));
+  wrap.appendChild(el("h2", {text: counterMode ? "Isi data diri kamu" : "Masukkan NIK kamu"}));
   wrap.appendChild(el("p", {class:"sub", text: counterMode
-    ? "Nama ini akan dipakai untuk mencatat progres dan nilai kamu."
+    ? "Data ini dipakai untuk mencatat progres dan nilai kamu."
     : "NIK kamu akan dicocokkan ke daftar peserta " + info.label + "."}));
 
   const input = el("input", { type:"text", placeholder: counterMode ? "Nama lengkap" : "Contoh: 3201xxxxxxxx", value: state.inputVal });
   input.addEventListener("input", e => { state.inputVal = e.target.value; });
   wrap.appendChild(input);
+
+  let brandInput = null, deptInput = null;
+  if(counterMode){
+    brandInput = el("input", { type:"text", placeholder:"Brand", value: state.inputBrand });
+    brandInput.addEventListener("input", e => { state.inputBrand = e.target.value; });
+    wrap.appendChild(brandInput);
+    deptInput = el("input", { type:"text", placeholder:"Departemen", value: state.inputDept });
+    deptInput.addEventListener("input", e => { state.inputDept = e.target.value; });
+    wrap.appendChild(deptInput);
+  }
 
   if(state.errorMsg) wrap.appendChild(el("div", {class:"error", text: state.errorMsg}));
 
@@ -468,7 +482,10 @@ function renderLogin(){
     const val = input.value.trim();
     if(!val){ setState({errorMsg: counterMode ? "Nama belum diisi." : "NIK belum diisi."}); return; }
     if(counterMode){
-      setState({nama: val, nik:"", identifier: val, errorMsg:""});
+      const br = brandInput.value.trim(), dp = deptInput.value.trim();
+      if(!br){ setState({errorMsg:"Brand belum diisi."}); return; }
+      if(!dp){ setState({errorMsg:"Departemen belum diisi."}); return; }
+      setState({nama: val, nik:"", identifier: val, brand: br, departemen: dp, errorMsg:""});
       loadDashboard();
       return;
     }
@@ -518,7 +535,7 @@ function renderDashboard(){
   const info = SECTION_INFO[state.section];
   const wrap = el("div");
   const nav = el("div", {class:"top-nav"});
-  nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", section:null, nama:"", nik:"", identifier:""})}));
+  nav.appendChild(el("button", {class:"back", text:"\u2190", onClick:()=> setState({screen:"home", section:null, nama:"", nik:"", identifier:"", brand:"", departemen:"", inputVal:"", inputBrand:"", inputDept:""})}));
   wrap.appendChild(nav);
   wrap.appendChild(tagEl(info.label + " \u00b7 " + state.nama, info));
   wrap.appendChild(el("h2", {text:"Menu training"}));
@@ -686,7 +703,8 @@ async function submitKuis(){
   try{
     await sbInsert("training_hasil", {
       section: state.section, nama: state.nama, nik: state.nik || null, identifier: state.identifier,
-      jenis: state.currentJenis, benar: benar, total: total, nilai: nilai
+      jenis: state.currentJenis, benar: benar, total: total, nilai: nilai,
+      brand: state.brand || null, departemen: state.departemen || null
     });
     await sbUpsert("training_test_lock", {
       section: state.section, identifier: state.identifier, jenis: state.currentJenis,
@@ -721,7 +739,7 @@ const PASS_GRADE = 80;
 async function loadAdminData(){
   setState({adminDataLoading:true});
   try{
-    const hasil = await sb("training_hasil?select=nama,identifier,section,jenis,nilai,selesai_at&order=selesai_at.desc&limit=5000");
+    const hasil = await sb("training_hasil?select=nama,identifier,section,jenis,nilai,selesai_at,brand,departemen&order=selesai_at.desc&limit=5000");
     const peserta = await sb("training_peserta_nik?select=nik,nama,section&limit=5000");
     setState({adminDataLoading:false, adminData:{hasil, peserta}});
   }catch(err){
@@ -851,7 +869,7 @@ function renderAdminHasil(){
     if(!list.length){ setState({adminMsg:"Tidak ada peserta remedial pada filter ini."}); return; }
     const lines = ["Daftar remedial (nilai < " + PASS_GRADE + ")", ""];
     list.forEach((r,i)=>{
-      lines.push((i+1) + ". " + r.nama + " (" + r.identifier + ") - " + SECTION_INFO[r.section].label + " " + JENIS_INFO[r.jenis].label + ": " + r.nilai);
+      lines.push((i+1) + ". " + r.nama + " (" + (r.section === "counter" ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + ") - " + SECTION_INFO[r.section].label + " " + JENIS_INFO[r.jenis].label + ": " + r.nilai);
     });
     await copyText(lines.join("\n"));
     setState({adminMsg:"Daftar remedial tersalin, tinggal paste ke WhatsApp."});
@@ -867,7 +885,7 @@ function renderAdminHasil(){
     const item = el("div", {class:"result-item", style:"--c:" + info.color});
     const left = el("div", {class:"result-left"});
     left.appendChild(el("div", {class:"result-name", text:r.nama}));
-    left.appendChild(el("div", {class:"result-meta", text: r.identifier + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 " + fmtTanggal(r.selesai_at)}));
+    left.appendChild(el("div", {class:"result-meta", text: (r.section === "counter" && (r.brand || r.departemen) ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 " + fmtTanggal(r.selesai_at)}));
     item.appendChild(left);
     const right = el("div", {class:"result-right"});
     const pass = r.nilai >= PASS_GRADE;
