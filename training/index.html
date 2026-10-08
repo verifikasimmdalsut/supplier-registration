@@ -653,6 +653,7 @@ function renderKuis(){
     card.appendChild(el("div", {class:"soal-teks", text: soal.pertanyaan}));
     ["a","b","c","d"].forEach(letter=>{
       const teks = soal["pilihan_" + letter];
+      if(!teks) return;
       const isSel = state.jawaban[soal.id] === letter.toUpperCase();
       const opt = el("div", {class:"pilihan" + (isSel ? " selected" : "")});
       opt.appendChild(el("div", {class:"huruf", text: letter.toUpperCase()}));
