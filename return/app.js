@@ -9,7 +9,10 @@ const CSV_URL =
 
 let RETURN_DATA = [];
 
+/* status di sheet: "PENDING ACCEPTED GRN" (satu status utuh),
+   "PRE-GRN-PRINTED", dan "ACCEPTED GRN" */
 const ALLOWED_STATUS = [
+  "PENDING ACCEPTED GRN",
   "PENDING",
   "ACCEPTED GRN",
   "PRE-GRN-PRINTED"
@@ -415,7 +418,7 @@ async function loadReturnData(){
     }
 
     const status =
-      (r[col.status] || "").trim().toUpperCase();
+      (r[col.status] || "").trim().replace(/\s+/g," ").toUpperCase();
 
     /* hanya tampilkan status yang relevan buat supplier */
     if(!ALLOWED_STATUS.includes(status)){
