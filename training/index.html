@@ -175,6 +175,11 @@
   }
 
 
+  .pdf-btn{
+    display:block; text-align:center; text-decoration:none;
+    background:var(--ink); color:#fff; font-weight:600; font-size:15px;
+    padding:14px 16px; border-radius:10px; margin:6px 0 16px;
+  }
   .materi-h{ font-family:var(--font-display); font-size:16px; font-weight:600; color:var(--ink); margin:22px 0 8px; }
   .materi-h:first-child{ margin-top:0; }
   .materi-p{ margin:0 0 8px; line-height:1.65; }
@@ -599,7 +604,7 @@ function renderDashboard(){
 async function loadMateri(){
   setState({loading:true});
   try{
-    const rows = await sb("training_modul?section=eq." + state.section + "&select=judul,konten");
+    const rows = await sb("training_modul?section=eq." + state.section + "&select=judul,konten,pdf_url");
     setState({loading:false, modul: rows[0] || {judul:"Materi belum tersedia", konten:"Materi untuk bagian ini belum diisi admin."}});
   }catch(err){
     setState({loading:false, modul: {judul:"Gagal memuat materi", konten:"Terjadi kesalahan saat mengambil materi. Coba lagi."}});
@@ -640,6 +645,10 @@ function renderMateri(){
     return wrap;
   }
   wrap.appendChild(el("h2", {text: state.modul.judul}));
+  if(state.modul.pdf_url){
+    const pdfBtn = el("a", {class:"pdf-btn", href: state.modul.pdf_url, target:"_blank", rel:"noopener", text:"Buka materi lengkap (PDF)"});
+    wrap.appendChild(pdfBtn);
+  }
   wrap.appendChild(renderKonten(state.modul.konten));
 
   const btn = el("button", {class:"primary", text: state.progress.sudah_baca_materi ? "Kembali ke menu" : "Saya sudah baca materi ini", disabled: state.loading});
