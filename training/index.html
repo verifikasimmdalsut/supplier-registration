@@ -669,7 +669,7 @@ function renderMateri(){
 async function loadKuis(){
   setState({loading:true, screen:"kuis", jawaban:{}});
   try{
-    const rows = await sb("training_soal?section=eq." + state.section + "&select=id,pertanyaan,pilihan_a,pilihan_b,pilihan_c,pilihan_d,jawaban_benar&order=urutan.asc");
+    const rows = await sb("training_soal?section=eq." + state.section + "&jenis=eq." + state.currentJenis + "&select=id,pertanyaan,pilihan_a,pilihan_b,pilihan_c,pilihan_d,jawaban_benar&order=urutan.asc");
     setState({loading:false, soalList: rows});
   }catch(err){
     setState({loading:false, soalList: []});
