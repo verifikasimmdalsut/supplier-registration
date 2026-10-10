@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Rekap Training Stocktake</title>
+<style>
+:root{--mag:#a3226f;--pink:#d6409f;--mute:#7a5a72;--line:#f0dce9;--soft:#faf5f9;--red:#c0262d}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f6f1f5;color:#2a1f29;line-height:1.4}
+.wrap{max-width:760px;margin:0 auto;background:#fff;min-height:100vh}
+.hd{background:linear-gradient(135deg,var(--mag),var(--pink));color:#fff;padding:22px 18px}
+.hd small{opacity:.85;letter-spacing:.5px;font-size:13px}
+.hd h1{font-size:24px;margin-top:4px}
+.hd .d{font-size:14px;opacity:.9;margin-top:4px}
+.bd{padding:16px 16px 28px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.k{border:2px solid var(--line);border-radius:14px;padding:12px}
+.k .t{font-size:13px;color:var(--mute);font-weight:600}
+.k .n{font-size:30px;font-weight:800;color:var(--mag);margin-top:2px}
+.k .n i{font-size:15px;font-style:normal;color:#9b8795;font-weight:600}
+.k .s{font-size:12px;color:var(--mute)}
+.bar{height:7px;background:var(--line);border-radius:5px;margin-top:8px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--pink)}
+h2{font-size:18px;margin:24px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{background:#fde8e8;color:var(--red);font-size:13px;padding:2px 10px;border-radius:20px;font-weight:700}
+.tag.g{background:#fff1d6;color:#8a5a00}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--soft);margin-bottom:6px;font-size:15px}
+.row .m{font-size:13px;color:var(--mute)}
+.sc{background:var(--red);color:#fff;border-radius:8px;padding:2px 10px;font-weight:800;font-size:16px;flex:none}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tabs button{flex:1;border:2px solid var(--line);background:#fff;border-radius:10px;padding:9px 6px;font-size:14px;font-weight:700;color:var(--mute);cursor:pointer}
+.tabs button.on{background:var(--mag);border-color:var(--mag);color:#fff}
+input[type=search]{width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:10px;font-size:15px;margin-bottom:10px}
+.no{color:#9b8795;font-size:13px;margin-right:8px;min-width:28px;display:inline-block}
+.empty{color:var(--mute);font-size:14px;padding:8px 2px}
+.mat{display:block;text-align:center;margin-top:22px;padding:13px;border-radius:12px;background:var(--mag);color:#fff;font-weight:700;text-decoration:none}
+.ft{font-size:12px;color:#9b8795;text-align:center;margin-top:14px}
+.err{padding:30px 18px;text-align:center;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd"><small>MMD ALS • TRAINING</small><h1>Rekap Training Stocktake</h1><div class="d" id="tgl">Memuat…</div></div>
+  <div class="bd" id="app"><div class="err">Memuat data…</div></div>
+</div>
+<script>
+const API = "https://akrjxgtevgwadhslkhee.supabase.co/functions/v1/training-rekap";
+const MATERI = "https://registrasisupplierals.my.id/training/";
+const LBL = {counter:"Counter",scanner:"Scanner",auditor:"Auditor"};
+const JN = {pretest:"Pre Test",posttest:"Post Test"};
+let DATA=null, tab="scanner", q="";
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function kpi(t,n,u,s,p){
+  return `<div class="k"><div class="t">${t}</div><div class="n">${n} <i>${u}</i></div><div class="s">${s}</div><div class="bar"><b style="width:${Math.min(100,Math.round(p))}%"></b></div></div>`;
+}
+
+function render(){
+  const d = DATA, S = d.sections;
+  const sc = S.scanner, au = S.auditor, c = S.counter;
+  const pct = (a,b)=> b ? a/b*100 : 0;
+
+  const rem = d.remedial.length
+    ? d.remedial.map(r=>`<div class="row"><div>${esc(r.nama)} <span class="m">(${esc(r.info)})</span><div class="m">${LBL[r.section]} • ${JN[r.jenis]}</div></div><div class="sc">${r.nilai}</div></div>`).join("")
+    : `<div class="empty">Tidak ada remedial.</div>`;
+
+  const list = (S[tab].belum || []);
+  const qq = q.trim().toLowerCase();
+  const shown = qq ? list.filter(p => p.nama.toLowerCase().includes(qq) || String(p.id).includes(qq)) : list;
+  const belumRows = shown.length
+    ? shown.map((p,i)=>`<div class="row"><div><span class="no">${i+1}.</span>${esc(p.nama)}</div><div class="m">${esc(p.id)}</div></div>`).join("")
+    : `<div class="empty">${list.length ? "Tidak ada yang cocok." : "Semua sudah melaksanakan 👍"}</div>`;
+
+  document.getElementById("app").innerHTML = `
+    <div class="kpis">
+      ${kpi("Scanner", sc.pre, "/ "+sc.total, `Pre ${sc.pre} • Post ${sc.post}`, pct(sc.pre,sc.total))}
+      ${kpi("Auditor", au.pre, "/ "+au.total, `Pre ${au.pre} • Post ${au.post}`, pct(au.pre,au.total))}
+      ${kpi("Counter", c.hadir, "hadir", `${c.hadir} peserta`, c.hadir?100:0)}
+    </div>
+    <h2>Remedial <span class="tag">${d.remedial.length} orang</span></h2>
+    <div class="m" style="font-size:13px;color:var(--mute);margin:-4px 0 8px">Nilai di bawah ${d.pass}</div>
+    ${rem}
+    <h2>Belum melaksanakan training <span class="tag g">${sc.belum.length} Scanner • ${au.belum.length} Auditor</span></h2>
+    <div class="tabs">
+      <button data-t="scanner" class="${tab==="scanner"?"on":""}">Scanner (${sc.belum.length})</button>
+      <button data-t="auditor" class="${tab==="auditor"?"on":""}">Auditor (${au.belum.length})</button>
+    </div>
+    <input type="search" id="q" placeholder="Cari nama atau NIK…" value="${esc(q)}">
+    <div id="belum">${belumRows}</div>
+    <a class="mat" href="${MATERI}">📖 Buka materi training</a>
+    <div class="ft">Diperbarui ${new Date(d.generated_at).toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})} WIB</div>`;
+
+  document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{tab=b.dataset.t;q="";render();});
+  const qi=document.getElementById("q");
+  qi.oninput=()=>{q=qi.value;const pos=qi.selectionStart;render();const n=document.getElementById("q");n.focus();n.setSelectionRange(pos,pos);};
+}
+
+(async function(){
+  const k = new URLSearchParams(location.search).get("k");
+  document.getElementById("tgl").textContent = new Date().toLocaleDateString("id-ID",{timeZone:"Asia/Jakarta",weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  if(!k){ document.getElementById("app").innerHTML='<div class="err">Link tidak lengkap. Buka lewat link yang dikirim di grup WA.</div>'; return; }
+  try{
+    const r = await fetch(API+"?k="+encodeURIComponent(k), {cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    DATA = await r.json();
+    render();
+  }catch(e){
+    document.getElementById("app").innerHTML='<div class="err">Data tidak bisa dimuat ('+esc(e.message)+'). Coba refresh, atau minta link terbaru ke admin MMD.</div>';
+  }
+})();
+</script>
+</body>
+</html>
