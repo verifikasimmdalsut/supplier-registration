@@ -170,11 +170,16 @@
     padding:20px;
     font-size:15px;
     line-height:1.7;
-    white-space:pre-wrap;
-    margin-bottom:20px;
+        margin-bottom:20px;
     flex:1;
   }
 
+
+  .materi-h{ font-family:var(--font-display); font-size:16px; font-weight:600; color:var(--ink); margin:22px 0 8px; }
+  .materi-h:first-child{ margin-top:0; }
+  .materi-p{ margin:0 0 8px; line-height:1.65; }
+  .materi-ul{ margin:0 0 8px; padding-left:20px; }
+  .materi-ul li{ margin-bottom:6px; line-height:1.6; }
   .menu-card{
     background:var(--surface);
     border:1px solid var(--border);
@@ -601,6 +606,27 @@ async function loadMateri(){
   }
 }
 
+
+function renderKonten(konten){
+  const box = el("div", {class:"materi-box"});
+  let ul = null;
+  String(konten || "").split("\n").forEach(raw=>{
+    const line = raw.trim();
+    if(!line){ ul = null; return; }
+    if(line.startsWith("## ")){
+      ul = null;
+      box.appendChild(el("h3", {class:"materi-h", text: line.slice(3)}));
+    } else if(line.startsWith("- ")){
+      if(!ul){ ul = el("ul", {class:"materi-ul"}); box.appendChild(ul); }
+      ul.appendChild(el("li", {text: line.slice(2)}));
+    } else {
+      ul = null;
+      box.appendChild(el("p", {class:"materi-p", text: line}));
+    }
+  });
+  return box;
+}
+
 function renderMateri(){
   const info = SECTION_INFO[state.section];
   const wrap = el("div");
@@ -614,7 +640,7 @@ function renderMateri(){
     return wrap;
   }
   wrap.appendChild(el("h2", {text: state.modul.judul}));
-  wrap.appendChild(el("div", {class:"materi-box", text: state.modul.konten}));
+  wrap.appendChild(renderKonten(state.modul.konten));
 
   const btn = el("button", {class:"primary", text: state.progress.sudah_baca_materi ? "Kembali ke menu" : "Saya sudah baca materi ini", disabled: state.loading});
   btn.addEventListener("click", async ()=>{
