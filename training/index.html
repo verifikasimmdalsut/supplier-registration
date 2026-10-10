@@ -648,8 +648,10 @@ function renderMateri(){
   if(state.modul.pdf_url){
     const pdfBtn = el("a", {class:"pdf-btn", href: state.modul.pdf_url, target:"_blank", rel:"noopener", text:"Buka materi lengkap (PDF)"});
     wrap.appendChild(pdfBtn);
+    wrap.appendChild(el("p", {class:"sub", text:"Materi dibaca lewat file PDF. Setelah selesai, kembali ke halaman ini dan tekan tombol di bawah."}));
+  } else {
+    wrap.appendChild(renderKonten(state.modul.konten));
   }
-  wrap.appendChild(renderKonten(state.modul.konten));
 
   const btn = el("button", {class:"primary", text: state.progress.sudah_baca_materi ? "Kembali ke menu" : "Saya sudah baca materi ini", disabled: state.loading});
   btn.addEventListener("click", async ()=>{
