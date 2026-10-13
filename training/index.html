@@ -309,6 +309,16 @@
   .nilai-badge.pass{ background:var(--good-soft); color:var(--good); }
   .nilai-badge.fail{ background:#FBE7E3; color:var(--bad); }
   .mini-btn{ background:var(--surface); border:1px solid var(--border); color:var(--ink); font-size:12px; font-weight:600; padding:7px 10px; border-radius:8px; cursor:pointer; font-family:var(--font-body); }
+  .menu-btn.wait{ background:var(--surface-2); color:var(--text-muted); }
+  .menu-btn.ask{ background:var(--ink); color:#fff; }
+  .badge-wait{ font-family:var(--font-display); font-size:12px; font-weight:600; color:#8a5a00; background:var(--accent-soft); padding:5px 12px; border-radius:20px; white-space:nowrap; }
+  .gel-chip{ display:inline-block; font-size:12px; font-weight:600; color:var(--text-muted); background:var(--surface-2); padding:3px 10px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+  .ap-actions{ display:flex; gap:6px; }
+  .mini-btn.ok{ background:var(--good-soft); color:var(--good); border-color:transparent; }
+  .mini-btn.no{ background:#FBE7E3; color:var(--bad); border-color:transparent; }
+  .row-gap{ display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+  .row-gap select{ margin-bottom:0; }
+  .row-gap button{ width:auto; margin:0; white-space:nowrap; padding:12px 16px; }
   .admin-field label{ font-size:13px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px; }
 </style>
 </head>
@@ -344,6 +354,15 @@ async function sbUpsert(table, body, conflictCols){
   if(!res.ok) throw new Error("Gagal update data");
 }
 
+async function sbPatch(path, body){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/" + path, {
+    method:"PATCH",
+    headers:{ "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type":"application/json", "Prefer":"return=minimal" },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok) throw new Error("Gagal update data");
+}
+
 const SECTION_INFO = {
   counter: { label:"Counter", desc:"Login pakai nama, tanpa NIK", color:"var(--c-counter)", soft:"var(--c-counter-soft)" },
   scanner: { label:"Scanner", desc:"Login pakai NIK terdaftar", color:"var(--c-scanner)", soft:"var(--c-scanner-soft)" },
@@ -373,6 +392,8 @@ let state = {
     pretest: { selesai:false, boleh_ulang:false, nilai:null },
     posttest: { selesai:false, boleh_ulang:false, nilai:null }
   },
+  gelombang: 1,
+  approvals: { pretest:null, posttest:null },
   currentJenis: null,
   soalList: [],
   jawaban: {},
@@ -389,7 +410,13 @@ let state = {
   adminDataLoading: false,
   fSection: "all",
   fJenis: "all",
-  fStatus: "all"
+  fStatus: "all",
+  fGel: "aktif",
+  adminGelombang: 1,
+  apSection: "all",
+  apJenis: "all",
+  apStatus: "menunggu",
+  apSearch: ""
 };
 
 function setState(patch){ state = Object.assign({}, state, patch); render(); }
@@ -517,12 +544,31 @@ function renderLogin(){
   return wrap;
 }
 
+async function fetchApprovals(){
+  const g = state.gelombang;
+  const rows = await sb("training_approval?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&gelombang=eq." + g + "&select=jenis,status");
+  const ap = { pretest:null, posttest:null };
+  rows.forEach(r=>{ ap[r.jenis] = r.status; });
+  return ap;
+}
+
+async function fetchGelombang(){
+  try{
+    const r = await sb("training_setting?key=eq.gelombang_aktif&select=value");
+    const n = r.length ? parseInt(r[0].value, 10) : 1;
+    return n > 0 ? n : 1;
+  }catch(e){ return 1; }
+}
+
 async function loadDashboard(){
   setState({loading:true, screen:"dashboard"});
   try{
+    const gelombang = await fetchGelombang();
+    state.gelombang = gelombang;
     const progRows = await sb("training_progress?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&select=sudah_baca_materi");
     const lockRows = await sb("training_test_lock?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&select=jenis,selesai,boleh_ulang");
-    const hasilRows = await sb("training_hasil?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&select=jenis,nilai,selesai_at&order=selesai_at.desc");
+    const hasilRows = await sb("training_hasil?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&gelombang=eq." + gelombang + "&select=jenis,nilai,selesai_at&order=selesai_at.desc");
+    const approvals = await fetchApprovals();
 
     const locks = { pretest:{selesai:false, boleh_ulang:false, nilai:null}, posttest:{selesai:false, boleh_ulang:false, nilai:null} };
     lockRows.forEach(r=>{ locks[r.jenis].selesai = r.selesai; locks[r.jenis].boleh_ulang = r.boleh_ulang; });
@@ -533,12 +579,60 @@ async function loadDashboard(){
 
     setState({
       loading:false,
+      gelombang,
+      approvals,
       progress: { sudah_baca_materi: progRows.length ? progRows[0].sudah_baca_materi : false },
       locks
     });
   }catch(err){
     setState({loading:false});
   }
+}
+
+// cek status persetujuan diam-diam (tanpa layar "memuat") selama peserta menunggu
+async function refreshApprovalsQuiet(){
+  if(state.screen !== "dashboard" || state.loading) return;
+  if(state.approvals.pretest !== "menunggu" && state.approvals.posttest !== "menunggu") return;
+  try{
+    const approvals = await fetchApprovals();
+    if(state.screen === "dashboard" && (approvals.pretest !== state.approvals.pretest || approvals.posttest !== state.approvals.posttest)){
+      setState({approvals});
+    }
+  }catch(e){ /* abaikan, coba lagi di putaran berikutnya */ }
+}
+setInterval(refreshApprovalsQuiet, 8000);
+
+async function requestTest(jenis){
+  setState({loading:true});
+  const body = {
+    section: state.section, identifier: state.identifier, nama: state.nama,
+    brand: state.brand || null, departemen: state.departemen || null,
+    jenis: jenis, gelombang: state.gelombang, status: "menunggu"
+  };
+  try{
+    try{
+      await sbInsert("training_approval", body);
+    }catch(e){
+      // sudah ada barisnya (mis. pernah ditolak): ajukan ulang, tapi jangan menimpa yang sudah disetujui
+      await sbPatch("training_approval?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&jenis=eq." + jenis + "&gelombang=eq." + state.gelombang + "&status=eq.ditolak",
+        { status:"menunggu", requested_at: new Date().toISOString(), decided_at: null });
+    }
+  }catch(err){ /* status dibaca ulang di bawah */ }
+  await loadDashboard();
+}
+
+async function startTest(jenis){
+  const lock = state.locks[jenis];
+  const retake = lock.selesai && lock.boleh_ulang;
+  if(!retake){
+    setState({loading:true});
+    let st = null;
+    try{ st = (await fetchApprovals())[jenis]; }catch(e){}
+    if(st !== "disetujui"){ await loadDashboard(); return; }
+    setState({loading:false});
+  }
+  setState({currentJenis: jenis});
+  loadKuis();
 }
 
 function renderDashboard(){
@@ -555,7 +649,7 @@ function renderDashboard(){
     return wrap;
   }
 
-  wrap.appendChild(el("p", {class:"sub", text:"Pre Test bisa langsung dikerjakan. Post Test baru bisa diisi setelah Pre Test selesai."}));
+  wrap.appendChild(el("p", {class:"sub", text:"Materi bisa dibaca kapan saja. Pre Test dan Post Test perlu persetujuan admin dulu. Post Test baru bisa diajukan setelah Pre Test selesai."}));
 
   // Materi card
   const materiCard = el("div", {class:"menu-card", style:"--c:" + info.color});
@@ -568,31 +662,46 @@ function renderDashboard(){
   materiCard.appendChild(materiBtn);
   wrap.appendChild(materiCard);
 
-  // Pretest & Posttest cards
-  const pretestDone = state.locks.pretest.selesai && !state.locks.pretest.boleh_ulang;
+  // Pretest & Posttest cards (butuh persetujuan admin)
+  const pretestDone = state.approvals.pretest === "dipakai" && !state.locks.pretest.boleh_ulang;
+  wrap.appendChild(el("div", {class:"sub", style:"margin:-8px 0 14px;", text:"Gelombang " + state.gelombang}));
   ["pretest","posttest"].forEach(jenis=>{
     const jinfo = JENIS_INFO[jenis];
     const lock = state.locks[jenis];
-    const gatedByPretest = jenis === "posttest" && !pretestDone && !(lock.selesai && !lock.boleh_ulang);
+    const ap = state.approvals[jenis];
+    const retake = lock.selesai && lock.boleh_ulang;
+    const done = ap === "dipakai" && !retake;
+    const gatedByPretest = jenis === "posttest" && !pretestDone && !done && !retake;
     const card = el("div", {class:"menu-card" + (gatedByPretest ? " disabled" : ""), style:"--c:" + info.color});
     const left = el("div", {class:"menu-left"});
     left.appendChild(el("div", {class:"menu-title", text: jinfo.label}));
-    let desc = jinfo.desc;
-    if(gatedByPretest) desc = "Selesaikan Pre Test dulu";
-    else if(lock.selesai && !lock.boleh_ulang) desc = "Sudah dikerjakan, hubungi admin untuk mengulang";
-    else if(lock.selesai && lock.boleh_ulang) desc = "Sudah dibuka admin untuk mengulang";
+    let desc = "Perlu persetujuan admin sebelum mulai";
+    if(retake) desc = "Sudah dibuka admin untuk mengulang";
+    else if(done) desc = "Sudah dikerjakan, hubungi admin untuk mengulang";
+    else if(gatedByPretest) desc = "Selesaikan Pre Test dulu";
+    else if(ap === "disetujui") desc = "Disetujui admin, silakan mulai";
+    else if(ap === "menunggu") desc = "Menunggu persetujuan admin (halaman ini memeriksa otomatis)";
+    else if(ap === "ditolak") desc = "Permintaan ditolak admin. Hubungi admin atau ajukan lagi";
     left.appendChild(el("div", {class:"menu-desc", text: desc}));
     card.appendChild(left);
 
-    if(lock.selesai && !lock.boleh_ulang){
+    if(done){
       card.appendChild(el("div", {class:"badge-score", text:"Nilai " + (lock.nilai != null ? lock.nilai : "-")}));
+    } else if(retake){
+      const btn = el("button", {class:"menu-btn", text:"Ulang"});
+      btn.addEventListener("click", ()=> startTest(jenis));
+      card.appendChild(btn);
+    } else if(gatedByPretest){
+      card.appendChild(el("button", {class:"menu-btn", text:"Ajukan", disabled:true}));
+    } else if(ap === "disetujui"){
+      const btn = el("button", {class:"menu-btn", text:"Mulai"});
+      btn.addEventListener("click", ()=> startTest(jenis));
+      card.appendChild(btn);
+    } else if(ap === "menunggu"){
+      card.appendChild(el("div", {class:"badge-wait", text:"Menunggu admin"}));
     } else {
-      const canOpen = !gatedByPretest;
-      const btnText = lock.selesai && lock.boleh_ulang ? "Ulang" : "Mulai";
-      const btn = el("button", {class:"menu-btn", text: btnText, disabled: !canOpen});
-      if(canOpen){
-        btn.addEventListener("click", ()=>{ setState({currentJenis: jenis}); loadKuis(); });
-      }
+      const btn = el("button", {class:"menu-btn ask", text: ap === "ditolak" ? "Ajukan lagi" : "Ajukan"});
+      btn.addEventListener("click", ()=> requestTest(jenis));
       card.appendChild(btn);
     }
     wrap.appendChild(card);
@@ -741,16 +850,22 @@ async function submitKuis(){
     await sbInsert("training_hasil", {
       section: state.section, nama: state.nama, nik: state.nik || null, identifier: state.identifier,
       jenis: state.currentJenis, benar: benar, total: total, nilai: nilai,
-      brand: state.brand || null, departemen: state.departemen || null
+      brand: state.brand || null, departemen: state.departemen || null,
+      gelombang: state.gelombang
     });
     await sbUpsert("training_test_lock", {
       section: state.section, identifier: state.identifier, jenis: state.currentJenis,
       selesai: true, boleh_ulang: false
     }, "section,identifier,jenis");
   }catch(err){ /* tetap tampilkan nilai walau gagal simpan */ }
+  try{
+    await sbPatch("training_approval?section=eq." + state.section + "&identifier=eq." + encodeURIComponent(state.identifier) + "&jenis=eq." + state.currentJenis + "&gelombang=eq." + state.gelombang, { status:"dipakai" });
+  }catch(err){ /* abaikan */ }
   const locks = Object.assign({}, state.locks);
+  const approvals = Object.assign({}, state.approvals);
+  approvals[state.currentJenis] = "dipakai";
   locks[state.currentJenis] = { selesai:true, boleh_ulang:false, nilai:nilai };
-  setState({loading:false, screen:"hasil", hasil:{benar, total, nilai}, locks});
+  setState({loading:false, screen:"hasil", hasil:{benar, total, nilai}, locks, approvals});
 }
 
 function renderHasil(){
@@ -776,20 +891,54 @@ const PASS_GRADE = 80;
 async function loadAdminData(){
   setState({adminDataLoading:true});
   try{
-    const hasil = await sb("training_hasil?select=nama,identifier,section,jenis,nilai,selesai_at,brand,departemen&order=selesai_at.desc&limit=5000");
+    const gelombang = await fetchGelombang();
+    const hasil = await sb("training_hasil?select=nama,identifier,section,jenis,nilai,selesai_at,brand,departemen,gelombang&order=selesai_at.desc&limit=5000");
     const peserta = await sb("training_peserta_nik?select=nik,nama,section&limit=5000");
-    setState({adminDataLoading:false, adminData:{hasil, peserta}});
+    const approvals = await sb("training_approval?select=id,section,identifier,nama,brand,departemen,jenis,gelombang,status,requested_at&order=requested_at.asc&limit=5000");
+    setState({adminDataLoading:false, adminGelombang:gelombang, adminData:{hasil, peserta, approvals}});
   }catch(err){
     setState({adminDataLoading:false, adminMsg:"Gagal memuat data nilai."});
   }
 }
 
+function selGel(){
+  if(state.fGel === "all") return null;
+  if(state.fGel === "aktif") return state.adminGelombang;
+  return parseInt(state.fGel, 10);
+}
+function hasilFiltered(){
+  const g = selGel();
+  return state.adminData.hasil.filter(h => g === null || h.gelombang === g);
+}
+function gelLabel(){
+  const g = selGel();
+  return g === null ? "Semua gelombang" : "Gelombang " + g;
+}
+function gelSelect(){
+  const opts = [["aktif","Gelombang aktif (" + state.adminGelombang + ")"],["all","Semua gelombang"]];
+  for(let i=1;i<=Math.max(3, state.adminGelombang);i++) opts.push([String(i), "Gelombang " + i]);
+  return selectEl(opts, state.fGel, v=> setState({fGel:v}));
+}
+
+// muat ulang daftar persetujuan saja (dipakai polling di panel admin)
+async function refreshAdminApprovals(){
+  if(state.screen !== "admin" || !state.adminAuthed || !state.adminData) return;
+  try{
+    const approvals = await sb("training_approval?select=id,section,identifier,nama,brand,departemen,jenis,gelombang,status,requested_at&order=requested_at.asc&limit=5000");
+    if(JSON.stringify(approvals) !== JSON.stringify(state.adminData.approvals)){
+      state.adminData = Object.assign({}, state.adminData, {approvals});
+      if(state.adminTab === "persetujuan") render();
+    }
+  }catch(e){}
+}
+setInterval(()=>{ if(state.adminTab === "persetujuan") refreshAdminApprovals(); }, 15000);
+
 function latestResults(){
-  // ambil percobaan terbaru per (section, identifier, jenis)
+  // ambil percobaan terbaru per (section, identifier, jenis, gelombang)
   const seen = {};
   const out = [];
-  state.adminData.hasil.forEach(h=>{
-    const k = h.section + "|" + h.identifier + "|" + h.jenis;
+  hasilFiltered().forEach(h=>{
+    const k = h.section + "|" + h.identifier + "|" + h.jenis + "|" + h.gelombang;
     if(!seen[k]){ seen[k] = true; out.push(h); }
   });
   return out;
@@ -831,7 +980,7 @@ function renderAdmin(){
 
   if(!state.adminAuthed){
     wrap.appendChild(el("h2", {text:"Masuk admin"}));
-    wrap.appendChild(el("p", {class:"sub", text:"Masukkan kode admin untuk melihat nilai peserta dan membuka kunci remedial."}));
+    wrap.appendChild(el("p", {class:"sub", text:"Masukkan kode admin untuk menyetujui peserta, melihat nilai, dan membuka kunci remedial."}));
     const input = el("input", {type:"text", placeholder:"Kode admin", value: state.adminPasscodeInput});
     input.addEventListener("input", e=>{ state.adminPasscodeInput = e.target.value; });
     wrap.appendChild(input);
@@ -839,7 +988,7 @@ function renderAdmin(){
     const btn = el("button", {class:"primary", text:"Masuk"});
     btn.addEventListener("click", ()=>{
       if(input.value.trim() === ADMIN_PASSCODE){
-        setState({adminAuthed:true, adminMsg:"", adminTab:"hasil"});
+        setState({adminAuthed:true, adminMsg:"", adminTab:"persetujuan"});
         loadAdminData();
       } else setState({adminMsg:"Kode admin salah."});
     });
@@ -851,7 +1000,8 @@ function renderAdmin(){
   wrap.appendChild(el("h2", {text:"Panel admin"}));
 
   const tabs = el("div", {class:"tabs"});
-  [["hasil","Nilai peserta"],["belum","Belum hadir"],["kunci","Buka kunci"]].forEach(t=>{
+  const pendingN = state.adminData ? state.adminData.approvals.filter(a=> a.status === "menunggu").length : 0;
+  [["persetujuan","Persetujuan" + (pendingN ? " (" + pendingN + ")" : "")],["hasil","Nilai peserta"],["belum","Belum hadir"],["kunci","Buka kunci"]].forEach(t=>{
     const b = el("button", {class:"tab" + (state.adminTab === t[0] ? " active" : ""), text:t[1]});
     b.addEventListener("click", ()=> setState({adminTab:t[0], adminMsg:""}));
     tabs.appendChild(b);
@@ -860,6 +1010,7 @@ function renderAdmin(){
 
   if(state.adminTab === "kunci") wrap.appendChild(renderAdminKunci());
   else if(state.adminDataLoading || !state.adminData) wrap.appendChild(el("div", {class:"loading", text:"Memuat data..."}));
+  else if(state.adminTab === "persetujuan") wrap.appendChild(renderAdminPersetujuan());
   else if(state.adminTab === "belum") wrap.appendChild(renderAdminBelum());
   else wrap.appendChild(renderAdminHasil());
   return wrap;
@@ -878,7 +1029,7 @@ function renderAdminHasil(){
   rows.sort((a,b)=> a.nilai - b.nilai);
 
   const hadirIds = {};
-  state.adminData.hasil.forEach(h=>{ hadirIds[h.section + "|" + h.identifier] = true; });
+  hasilFiltered().forEach(h=>{ hadirIds[h.section + "|" + h.identifier] = true; });
   const totalHadir = Object.keys(hadirIds).length;
   const remedial = all.filter(r=> r.nilai < PASS_GRADE);
   const lulus = all.length - remedial.length;
@@ -892,6 +1043,9 @@ function renderAdminHasil(){
   });
   box.appendChild(stats);
 
+  const gelRow = el("div", {class:"filters one", style:"margin-bottom:8px;"});
+  gelRow.appendChild(gelSelect());
+  box.appendChild(gelRow);
   const filters = el("div", {class:"filters"});
   filters.appendChild(selectEl([["all","Semua section"],["counter","Counter"],["scanner","Scanner"],["auditor","Auditor"]], state.fSection, v=> setState({fSection:v})));
   filters.appendChild(selectEl([["all","Semua test"],["pretest","Pre Test"],["posttest","Post Test"]], state.fJenis, v=> setState({fJenis:v})));
@@ -904,7 +1058,7 @@ function renderAdminHasil(){
   copyBtn.addEventListener("click", async ()=>{
     const list = remedial.filter(r=> (state.fSection==="all"||r.section===state.fSection) && (state.fJenis==="all"||r.jenis===state.fJenis));
     if(!list.length){ setState({adminMsg:"Tidak ada peserta remedial pada filter ini."}); return; }
-    const lines = ["Daftar remedial (nilai < " + PASS_GRADE + ")", ""];
+    const lines = ["Daftar remedial (nilai < " + PASS_GRADE + ") - " + gelLabel(), ""];
     list.forEach((r,i)=>{
       lines.push((i+1) + ". " + r.nama + " (" + (r.section === "counter" ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + ") - " + SECTION_INFO[r.section].label + " " + JENIS_INFO[r.jenis].label + ": " + r.nilai);
     });
@@ -922,7 +1076,7 @@ function renderAdminHasil(){
     const item = el("div", {class:"result-item", style:"--c:" + info.color});
     const left = el("div", {class:"result-left"});
     left.appendChild(el("div", {class:"result-name", text:r.nama}));
-    left.appendChild(el("div", {class:"result-meta", text: (r.section === "counter" && (r.brand || r.departemen) ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 " + fmtTanggal(r.selesai_at)}));
+    left.appendChild(el("div", {class:"result-meta", text: (r.section === "counter" && (r.brand || r.departemen) ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 G" + r.gelombang + " \u00b7 " + fmtTanggal(r.selesai_at)}));
     item.appendChild(left);
     const right = el("div", {class:"result-right"});
     const pass = r.nilai >= PASS_GRADE;
@@ -944,10 +1098,143 @@ function renderAdminHasil(){
   return box;
 }
 
+const AP_STATUS_LABEL = { menunggu:"Menunggu", disetujui:"Disetujui", ditolak:"Ditolak", dipakai:"Selesai" };
+
+async function decideApproval(ids, status){
+  const stamp = new Date().toISOString();
+  setState({adminLoading:true, adminMsg:""});
+  try{
+    for(const id of ids){
+      await sbPatch("training_approval?id=eq." + id, { status:status, decided_at: stamp });
+    }
+    const approvals = await sb("training_approval?select=id,section,identifier,nama,brand,departemen,jenis,gelombang,status,requested_at&order=requested_at.asc&limit=5000");
+    setState({adminLoading:false, adminData:Object.assign({}, state.adminData, {approvals}),
+      adminMsg:"Berhasil: " + ids.length + " permintaan " + (status === "disetujui" ? "disetujui." : "ditolak.")});
+  }catch(err){
+    setState({adminLoading:false, adminMsg:"Gagal memperbarui. Coba lagi."});
+  }
+}
+
+async function saveGelombang(n){
+  setState({adminLoading:true, adminMsg:""});
+  try{
+    await sbPatch("training_setting?key=eq.gelombang_aktif", { value:String(n), updated_at:new Date().toISOString() });
+    setState({adminLoading:false, adminGelombang:n, fGel:"aktif", adminMsg:"Berhasil: gelombang aktif sekarang " + n + ". Peserta yang masuk setelah ini ikut gelombang " + n + "."});
+  }catch(err){
+    setState({adminLoading:false, adminMsg:"Gagal mengubah gelombang."});
+  }
+}
+
+function renderAdminPersetujuan(){
+  const box = el("div");
+  const g = state.adminGelombang;
+  const all = state.adminData.approvals.filter(a=> a.gelombang === g);
+
+  // gelombang aktif
+  box.appendChild(el("p", {class:"sub", style:"margin-bottom:8px;", text:"Gelombang aktif menentukan permintaan dan nilai mana yang dihitung. Ubah hanya saat memulai proses training berikutnya."}));
+  const gRow = el("div", {class:"row-gap"});
+  const gSel = selectEl([["1","Gelombang 1"],["2","Gelombang 2"],["3","Gelombang 3"],["4","Gelombang 4"]], String(g), v=>{ state.gelombangPilih = parseInt(v,10); });
+  state.gelombangPilih = g;
+  gRow.appendChild(gSel);
+  const gBtn = el("button", {class:"ghost", text:"Terapkan"});
+  gBtn.addEventListener("click", ()=>{
+    const n = state.gelombangPilih || g;
+    if(n === g) return;
+    if(confirm("Ganti gelombang aktif ke " + n + "? Peserta yang membuka training setelah ini masuk gelombang " + n + ".")) saveGelombang(n);
+  });
+  gRow.appendChild(gBtn);
+  box.appendChild(gRow);
+
+  const cnt = s2 => all.filter(a=> a.status === s2).length;
+  const stats = el("div", {class:"stat-grid"});
+  [["Menunggu", cnt("menunggu"), "var(--accent)"],["Disetujui", cnt("disetujui"), "var(--ink)"],["Selesai", cnt("dipakai"), "var(--good)"]].forEach(x=>{
+    const c = el("div", {class:"stat"});
+    c.appendChild(el("div", {class:"stat-num", text:String(x[1]), style:"color:" + x[2]}));
+    c.appendChild(el("div", {class:"stat-label", text:x[0] + " (G" + g + ")"}));
+    stats.appendChild(c);
+  });
+  box.appendChild(stats);
+
+  const filters = el("div", {class:"filters"});
+  filters.appendChild(selectEl([["all","Semua section"],["counter","Counter"],["scanner","Scanner"],["auditor","Auditor"]], state.apSection, v=> setState({apSection:v})));
+  filters.appendChild(selectEl([["all","Pre + Post"],["pretest","Pre Test"],["posttest","Post Test"]], state.apJenis, v=> setState({apJenis:v})));
+  filters.appendChild(selectEl([["menunggu","Menunggu"],["disetujui","Disetujui"],["ditolak","Ditolak"],["dipakai","Selesai"],["all","Semua status"]], state.apStatus, v=> setState({apStatus:v})));
+  box.appendChild(filters);
+
+  const search = el("input", {type:"text", placeholder:"Cari nama / NIK", value: state.apSearch});
+  search.addEventListener("input", e=>{
+    state.apSearch = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const n = document.querySelector('input[placeholder="Cari nama / NIK"]');
+    if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(x){} }
+  });
+  box.appendChild(search);
+
+  const q = state.apSearch.trim().toLowerCase();
+  const rows = all.filter(a=>
+    (state.apSection === "all" || a.section === state.apSection) &&
+    (state.apJenis === "all" || a.jenis === state.apJenis) &&
+    (state.apStatus === "all" || a.status === state.apStatus) &&
+    (!q || a.nama.toLowerCase().includes(q) || String(a.identifier).toLowerCase().includes(q))
+  );
+
+  if(state.adminMsg) box.appendChild(el("div", {class: state.adminMsg.startsWith("Berhasil") ? "success-text" : "error", text: state.adminMsg}));
+
+  const waiting = rows.filter(a=> a.status === "menunggu");
+  const bulk = el("button", {class:"primary", text: state.adminLoading ? "Memproses..." : "Setujui semua yang menunggu (" + waiting.length + ")", disabled: state.adminLoading || waiting.length === 0});
+  bulk.addEventListener("click", ()=>{
+    if(confirm("Setujui " + waiting.length + " permintaan sesuai filter saat ini?")) decideApproval(waiting.map(a=> a.id), "disetujui");
+  });
+  box.appendChild(bulk);
+
+  const refresh = el("button", {class:"ghost", text:"Muat ulang (otomatis tiap 15 detik)"});
+  refresh.addEventListener("click", ()=> loadAdminData());
+  box.appendChild(refresh);
+
+  const list = el("div", {class:"result-list"});
+  if(rows.length === 0) list.appendChild(el("div", {class:"loading", text:"Tidak ada permintaan untuk filter ini."}));
+  rows.forEach(a=>{
+    const info = SECTION_INFO[a.section];
+    const item = el("div", {class:"result-item", style:"--c:" + info.color});
+    const left = el("div", {class:"result-left"});
+    left.appendChild(el("div", {class:"result-name", text:a.nama}));
+    const who = a.section === "counter" && (a.brand || a.departemen) ? (a.brand || "-") + " / " + (a.departemen || "-") : a.identifier;
+    left.appendChild(el("div", {class:"result-meta", text: who + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[a.jenis].label + " \u00b7 " + fmtTanggal(a.requested_at)}));
+    item.appendChild(left);
+    const right = el("div", {class:"result-right"});
+    if(a.status === "menunggu" || a.status === "ditolak"){
+      const acts = el("div", {class:"ap-actions"});
+      const ok = el("button", {class:"mini-btn ok", text:"Setujui", disabled: state.adminLoading});
+      ok.addEventListener("click", ()=> decideApproval([a.id], "disetujui"));
+      acts.appendChild(ok);
+      if(a.status === "menunggu"){
+        const no = el("button", {class:"mini-btn no", text:"Tolak", disabled: state.adminLoading});
+        no.addEventListener("click", ()=> decideApproval([a.id], "ditolak"));
+        acts.appendChild(no);
+      } else {
+        acts.appendChild(el("span", {class:"badge-wait", text:"Ditolak"}));
+      }
+      right.appendChild(acts);
+    } else if(a.status === "disetujui"){
+      right.appendChild(el("span", {class:"badge-score", text:"Disetujui"}));
+      const no = el("button", {class:"mini-btn no", text:"Batalkan", disabled: state.adminLoading});
+      no.addEventListener("click", ()=> decideApproval([a.id], "ditolak"));
+      right.appendChild(no);
+    } else {
+      right.appendChild(el("span", {class:"badge-score", text:"Selesai"}));
+    }
+    item.appendChild(right);
+    list.appendChild(item);
+  });
+  box.appendChild(list);
+  return box;
+}
+
 function renderAdminBelum(){
   const box = el("div");
   const hadir = {};
-  state.adminData.hasil.forEach(h=>{ hadir[h.section + "|" + h.identifier] = true; });
+  hasilFiltered().forEach(h=>{ hadir[h.section + "|" + h.identifier] = true; });
   let rows = state.adminData.peserta.filter(p=> !hadir[p.section + "|" + p.nik]);
   const total = state.adminData.peserta.length;
   const filterSec = state.fSection;
@@ -963,13 +1250,14 @@ function renderAdminBelum(){
   box.appendChild(stats);
 
   const filters = el("div", {class:"filters one"});
+  filters.appendChild(gelSelect());
   filters.appendChild(selectEl([["all","Semua section"],["scanner","Scanner"],["auditor","Auditor"]], state.fSection === "counter" ? "all" : state.fSection, v=> setState({fSection:v})));
   box.appendChild(filters);
 
   const copyBtn = el("button", {class:"primary", text:"Salin daftar belum hadir (" + rows.length + ")"});
   copyBtn.addEventListener("click", async ()=>{
     if(!rows.length){ setState({adminMsg:"Semua peserta sudah hadir."}); return; }
-    const lines = ["Daftar belum mengerjakan training", ""];
+    const lines = ["Daftar belum mengerjakan training - " + gelLabel(), ""];
     rows.forEach((p,i)=> lines.push((i+1) + ". " + p.nama + " (" + p.nik + ") - " + SECTION_INFO[p.section].label));
     await copyText(lines.join("\n"));
     setState({adminMsg:"Daftar belum hadir tersalin, tinggal paste ke WhatsApp."});
