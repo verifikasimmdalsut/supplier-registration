@@ -18,6 +18,8 @@ const kodeAksesInput = document.getElementById('kode_akses_security');
 
 let verifiedSupplier = null;
 let searchTimer = null;
+let ticketContext = null;
+let kritikTersimpan = null;
 
 // Mapping nilai warna_antrian ke class CSS tiket
 const TICKET_COLOR_CLASS = {
@@ -260,6 +262,16 @@ if(lastQueue && lastQueue.nomor_antrian){
 
     if(insertError) throw insertError;
 
+    // Konteks untuk kritik & saran (opsional, diisi di modal tiket)
+    ticketContext = {
+      kode_supplier: verifiedSupplier.code,
+      nama_supplier: verifiedSupplier.name,
+      warna_antrian: warnaAntrian,
+      nomor_antrian: nomorAntrian,
+    };
+    kritikTersimpan = null;
+    document.getElementById('kritik_saran').value = '';
+
     // Isi & tampilkan modal tiket
     const ticketContent = document.getElementById('ticketModalContent');
     ticketContent.className = 'modal-content ticket-modal ' + (TICKET_COLOR_CLASS[warnaAntrian] || '');
@@ -292,5 +304,20 @@ if(lastQueue && lastQueue.nomor_antrian){
   }finally{
     btnDaftar.disabled = false;
     btnDaftar.innerHTML = originalHtml;
+  }
+});
+
+// --- Kritik & saran (opsional, diisi di tiket) ---
+const kritikEl = document.getElementById('kritik_saran');
+
+document.getElementById('btnCekStatus').addEventListener('click', () => {
+  const isi = kritikEl.value.trim();
+  // Simpan di belakang layar hanya kalau diisi; link tetap terbuka normal. Hindari simpan ganda.
+  if(isi && ticketContext && kritikTersimpan !== isi){
+    kritikTersimpan = isi;
+    sb.from('kritik_saran').insert({ ...ticketContext, isi })
+      .then(({ error }) => {
+        if(error){ console.error('Gagal simpan kritik saran:', error); kritikTersimpan = null; }
+      });
   }
 });
