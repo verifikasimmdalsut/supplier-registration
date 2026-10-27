@@ -270,7 +270,16 @@ if(lastQueue && lastQueue.nomor_antrian){
       nomor_antrian: nomorAntrian,
     };
     kritikTersimpan = null;
-    document.getElementById('kritik_saran').value = '';
+    const kEl = document.getElementById('kritik_saran');
+    kEl.value = '';
+    kEl.disabled = false;
+    kEl.classList.remove('is-invalid');
+    document.getElementById('err_kritik_saran').textContent = '';
+    document.getElementById('kritikStatus').style.display = 'none';
+    const kBtn = document.getElementById('btnKirimKritik');
+    kBtn.style.display = '';
+    kBtn.disabled = false;
+    kBtn.innerHTML = '✉️ Kirim Kritik dan Saran';
 
     // Isi & tampilkan modal tiket
     const ticketContent = document.getElementById('ticketModalContent');
@@ -307,17 +316,43 @@ if(lastQueue && lastQueue.nomor_antrian){
   }
 });
 
-// --- Kritik & saran (opsional, diisi di tiket) ---
+// --- Kritik & saran (opsional, tombol kirim terpisah di tiket) ---
 const kritikEl = document.getElementById('kritik_saran');
+const kritikErr = document.getElementById('err_kritik_saran');
+const kritikStatus = document.getElementById('kritikStatus');
+const btnKirimKritik = document.getElementById('btnKirimKritik');
 
-document.getElementById('btnCekStatus').addEventListener('click', () => {
+kritikEl.addEventListener('input', () => {
+  kritikEl.classList.remove('is-invalid');
+  kritikErr.textContent = '';
+});
+
+btnKirimKritik.addEventListener('click', async () => {
   const isi = kritikEl.value.trim();
-  // Simpan di belakang layar hanya kalau diisi; link tetap terbuka normal. Hindari simpan ganda.
-  if(isi && ticketContext && kritikTersimpan !== isi){
-    kritikTersimpan = isi;
-    sb.from('kritik_saran').insert({ ...ticketContext, isi })
-      .then(({ error }) => {
-        if(error){ console.error('Gagal simpan kritik saran:', error); kritikTersimpan = null; }
-      });
+  if(!isi){
+    kritikEl.classList.add('is-invalid');
+    kritikErr.textContent = 'Tulis dulu kritik atau sarannya.';
+    return;
   }
+  if(!ticketContext) return;
+
+  const labelAwal = btnKirimKritik.innerHTML;
+  btnKirimKritik.disabled = true;
+  btnKirimKritik.innerHTML = 'Mengirim...';
+
+  const { error } = await sb.from('kritik_saran').insert({ ...ticketContext, isi });
+
+  if(error){
+    console.error('Gagal simpan kritik saran:', error);
+    kritikErr.textContent = 'Gagal mengirim. Coba lagi.';
+    btnKirimKritik.disabled = false;
+    btnKirimKritik.innerHTML = labelAwal;
+    return;
+  }
+
+  kritikEl.disabled = true;
+  btnKirimKritik.style.display = 'none';
+  kritikStatus.textContent = '✅ Terima kasih, kritik dan saran Anda sudah terkirim.';
+  kritikStatus.style.display = 'block';
+  kritikTersimpan = isi;
 });
