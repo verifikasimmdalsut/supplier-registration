@@ -714,19 +714,19 @@ function renderDashboard(){
       card.appendChild(el("div", {class:"badge-score", text:"Nilai " + (lock.nilai != null ? lock.nilai : "-")}));
     } else if(retake){
       const btn = el("button", {class:"menu-btn", text:"Ulang"});
-      btn.addEventListener("click", ()=> startTest(jenis));
+      btn.addEventListener("click", ()=>{ if(confirm("Mulai " + JENIS_INFO[jenis].label + " sekarang? Jawaban yang sudah dikirim tidak bisa diubah.")) startTest(jenis); });
       card.appendChild(btn);
     } else if(gatedByPretest){
       card.appendChild(el("button", {class:"menu-btn", text:"Ajukan", disabled:true}));
     } else if(ap === "disetujui"){
       const btn = el("button", {class:"menu-btn", text:"Mulai"});
-      btn.addEventListener("click", ()=> startTest(jenis));
+      btn.addEventListener("click", ()=>{ if(confirm("Mulai " + JENIS_INFO[jenis].label + " sekarang? Jawaban yang sudah dikirim tidak bisa diubah.")) startTest(jenis); });
       card.appendChild(btn);
     } else if(ap === "menunggu"){
       card.appendChild(el("div", {class:"badge-wait", text:"Menunggu admin"}));
     } else {
       const btn = el("button", {class:"menu-btn ask", text: ap === "ditolak" ? "Ajukan lagi" : "Ajukan"});
-      btn.addEventListener("click", ()=> requestTest(jenis));
+      btn.addEventListener("click", ()=>{ if(confirm("Ajukan " + JENIS_INFO[jenis].label + " ke admin?")) requestTest(jenis); });
       card.appendChild(btn);
     }
     wrap.appendChild(card);
