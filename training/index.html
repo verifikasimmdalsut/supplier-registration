@@ -440,10 +440,7 @@ let state = {
   detailKey: "",
   detailRows: null,
   detailLoading: false,
-  anData: null,
-  anLoading: false,
-  anSection: "all",
-  anJenis: "all"
+  salahMap: {}
 };
 
 function setState(patch){ state = Object.assign({}, state, patch); render(); }
@@ -942,7 +939,18 @@ async function loadAdminData(){
     const hasil = await sb("training_hasil?select=nama,identifier,section,jenis,nilai,selesai_at,brand,departemen,gelombang&order=selesai_at.desc&limit=5000");
     const peserta = await sb("training_peserta_nik?select=nik,nama,section&limit=5000");
     const approvals = await sb("training_approval?select=id,section,identifier,nama,brand,departemen,jenis,gelombang,status,requested_at&order=requested_at.asc&limit=5000");
-    setState({adminDataLoading:false, adminGelombang:gelombang, adminData:{hasil, peserta, approvals}});
+    const salahMap = {};
+    try{
+      const salah = await sb("training_jawaban?benar=eq.false&select=section,identifier,jenis,gelombang,urutan,selesai_at&order=selesai_at.desc&limit=1000");
+      const latest = {};
+      salah.forEach(x=>{
+        const k = [x.section, x.identifier, x.jenis, x.gelombang].join("|");
+        if(!latest[k]) latest[k] = x.selesai_at;
+        if(latest[k] === x.selesai_at){ (salahMap[k] = salahMap[k] || []).push(x.urutan); }
+      });
+      Object.keys(salahMap).forEach(k=> salahMap[k].sort((a,b)=> a - b));
+    }catch(e){ /* rincian salah tidak wajib */ }
+    setState({adminDataLoading:false, adminGelombang:gelombang, adminData:{hasil, peserta, approvals}, salahMap});
   }catch(err){
     setState({adminDataLoading:false, adminMsg:"Gagal memuat data nilai."});
   }
@@ -1048,16 +1056,15 @@ function renderAdmin(){
 
   const tabs = el("div", {class:"tabs"});
   const pendingN = state.adminData ? state.adminData.approvals.filter(a=> a.status === "menunggu").length : 0;
-  [["persetujuan","Persetujuan" + (pendingN ? " (" + pendingN + ")" : "")],["hasil","Nilai peserta"],["belum","Belum hadir"],["kunci","Buka kunci"],["analisis","Analisis soal"],["so","Registrasi SO"]].forEach(t=>{
+  [["persetujuan","Persetujuan" + (pendingN ? " (" + pendingN + ")" : "")],["hasil","Nilai peserta"],["belum","Belum hadir"],["kunci","Buka kunci"],["so","Registrasi SO"]].forEach(t=>{
     const b = el("button", {class:"tab" + (state.adminTab === t[0] ? " active" : ""), text:t[1]});
-    b.addEventListener("click", ()=>{ setState({adminTab:t[0], adminMsg:""}); if(t[0] === "so") loadAdminSO(); if(t[0] === "analisis") loadAnalisis(); });
+    b.addEventListener("click", ()=>{ setState({adminTab:t[0], adminMsg:""}); if(t[0] === "so") loadAdminSO(); });
     tabs.appendChild(b);
   });
   wrap.appendChild(tabs);
 
   if(state.adminTab === "kunci") wrap.appendChild(renderAdminKunci());
   else if(state.adminTab === "so") wrap.appendChild(renderAdminSO());
-  else if(state.adminTab === "analisis") wrap.appendChild(renderAdminAnalisis());
   else if(state.adminDataLoading || !state.adminData) wrap.appendChild(el("div", {class:"loading", text:"Memuat data..."}));
   else if(state.adminTab === "persetujuan") wrap.appendChild(renderAdminPersetujuan());
   else if(state.adminTab === "belum") wrap.appendChild(renderAdminBelum());
@@ -1109,7 +1116,7 @@ function renderAdminHasil(){
     if(!list.length){ setState({adminMsg:"Tidak ada peserta remedial pada filter ini."}); return; }
     const lines = ["Daftar remedial (nilai < " + PASS_GRADE + ") - " + gelLabel(), ""];
     list.forEach((r,i)=>{
-      lines.push((i+1) + ". " + r.nama + " (" + (r.section === "counter" ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + ") - " + SECTION_INFO[r.section].label + " " + JENIS_INFO[r.jenis].label + ": " + r.nilai);
+      lines.push((i+1) + ". " + r.nama + " (" + (r.section === "counter" ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + ") - " + SECTION_INFO[r.section].label + " " + JENIS_INFO[r.jenis].label + ": " + r.nilai + (state.salahMap[[r.section, r.identifier, r.jenis, r.gelombang].join("|")] ? " (salah no " + state.salahMap[[r.section, r.identifier, r.jenis, r.gelombang].join("|")].join(", ") + ")" : ""));
     });
     await copyText(lines.join("\n"));
     setState({adminMsg:"Daftar remedial tersalin, tinggal paste ke WhatsApp."});
@@ -1126,6 +1133,8 @@ function renderAdminHasil(){
     const left = el("div", {class:"result-left"});
     left.appendChild(el("div", {class:"result-name", text:r.nama}));
     left.appendChild(el("div", {class:"result-meta", text: (r.section === "counter" && (r.brand || r.departemen) ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 G" + r.gelombang + " \u00b7 " + fmtTanggal(r.selesai_at)}));
+    const kSalah = [r.section, r.identifier, r.jenis, r.gelombang].join("|");
+    if(state.salahMap[kSalah]) left.appendChild(el("div", {class:"result-meta", style:"color:var(--bad);font-weight:600;", text:"Salah di no " + state.salahMap[kSalah].join(", ")}));
     item.appendChild(left);
     const right = el("div", {class:"result-right"});
     const pass = r.nilai >= PASS_GRADE;
@@ -1141,7 +1150,7 @@ function renderAdminHasil(){
       right.appendChild(ub);
     }
     const key = [r.section, r.identifier, r.jenis, r.gelombang].join("|");
-    const db = el("button", {class:"mini-btn", text: state.detailKey === key ? "Tutup" : "Rincian"});
+    const db = el("button", {class:"mini-btn", text: state.detailKey === key ? "Tutup" : "Lihat salah"});
     db.addEventListener("click", ()=>{
       if(state.detailKey === key){ setState({detailKey:"", detailRows:null}); return; }
       loadDetail(r, key);
@@ -1186,44 +1195,6 @@ function renderDetail(){
     row.appendChild(el("div", {class:"menu-desc", text:"Jawaban peserta: " + (x.jawaban ? opt(x.jawaban) : "-")}));
     if(!x.benar) row.appendChild(el("div", {class:"menu-desc", style:"color:var(--good);", text:"Kunci: " + opt(x.jawaban_benar)}));
     box.appendChild(row);
-  });
-  return box;
-}
-
-// ===== ANALISIS SOAL =====
-async function loadAnalisis(){
-  setState({anLoading:true});
-  try{
-    const rows = await sb("training_analisis_soal?select=*&limit=2000");
-    setState({anLoading:false, anData:rows});
-  }catch(e){
-    setState({anLoading:false, anData:[], adminMsg:"Gagal memuat analisis soal."});
-  }
-}
-
-function renderAdminAnalisis(){
-  const box = el("div");
-  if(state.anLoading || !state.anData){ box.appendChild(el("div", {class:"loading", text:"Memuat analisis..."})); return box; }
-  const filters = el("div", {class:"filters"});
-  filters.appendChild(selectEl([["all","Semua section"],["counter","Counter"],["scanner","Scanner"],["auditor","Auditor"]], state.anSection, v=> setState({anSection:v})));
-  filters.appendChild(selectEl([["all","Semua test"],["pretest","Pre Test"],["posttest","Post Test"]], state.anJenis, v=> setState({anJenis:v})));
-  box.appendChild(filters);
-  box.appendChild(el("p", {class:"sub", text:"Soal yang paling banyak salah ada di atas. Kalau lebih dari 50% peserta salah di soal yang sama, cek apakah kunci jawabannya benar. Hanya tes yang dikerjakan setelah pencatatan aktif yang terhitung."}));
-  const rows = state.anData.filter(r=> (state.anSection === "all" || r.section === state.anSection) && (state.anJenis === "all" || r.jenis === state.anJenis))
-    .map(r=> Object.assign({}, r, {pct: r.total ? Math.round(r.salah / r.total * 100) : 0}))
-    .sort((a,b)=> b.pct - a.pct || b.salah - a.salah);
-  if(!rows.length) box.appendChild(el("div", {class:"loading", text:"Belum ada data jawaban."}));
-  rows.forEach(r=>{
-    const info = SECTION_INFO[r.section];
-    const item = el("div", {class:"result-item", style:"--c:" + info.color});
-    const left = el("div", {class:"result-left"});
-    left.appendChild(el("div", {class:"result-name", text:"No " + r.urutan + ": " + (r.pertanyaan || "").slice(0, 90)}));
-    left.appendChild(el("div", {class:"result-meta", text: info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 G" + r.gelombang + " \u00b7 " + r.salah + " salah dari " + r.total}));
-    item.appendChild(left);
-    const right = el("div", {class:"result-right"});
-    right.appendChild(el("div", {class:"nilai-badge " + (r.pct >= 50 ? "fail" : "pass"), text: r.pct + "%"}));
-    item.appendChild(right);
-    box.appendChild(item);
   });
   return box;
 }
