@@ -422,7 +422,7 @@ let state = {
   fSection: "all",
   fJenis: "all",
   fStatus: "all",
-  fGel: "aktif",
+  fTgl: "all",
   adminGelombang: 1,
   apSection: "all",
   apJenis: "all",
@@ -583,13 +583,7 @@ async function fetchApprovals(){
   return ap;
 }
 
-async function fetchGelombang(){
-  try{
-    const r = await sb("training_setting?key=eq.gelombang_aktif&select=value");
-    const n = r.length ? parseInt(r[0].value, 10) : 1;
-    return n > 0 ? n : 1;
-  }catch(e){ return 1; }
-}
+async function fetchGelombang(){ return 1; }
 
 async function loadDashboard(){
   setState({loading:true, screen:"dashboard"});
@@ -695,7 +689,7 @@ function renderDashboard(){
 
   // Pretest & Posttest cards (butuh persetujuan admin)
   const pretestDone = state.approvals.pretest === "dipakai" && !state.locks.pretest.boleh_ulang;
-  wrap.appendChild(el("div", {class:"sub", style:"margin:-8px 0 14px;", text:"Gelombang " + state.gelombang}));
+  wrap.appendChild(el("div", {class:"sub", style:"margin:-8px 0 14px;", text:"Remedial: minta ulang jika nilai < " + PASS_GRADE}));
   ["pretest","posttest"].forEach(jenis=>{
     const jinfo = JENIS_INFO[jenis];
     const lock = state.locks[jenis];
@@ -956,23 +950,26 @@ async function loadAdminData(){
   }
 }
 
-function selGel(){
-  if(state.fGel === "all") return null;
-  if(state.fGel === "aktif") return state.adminGelombang;
-  return parseInt(state.fGel, 10);
+function tglKey(iso){
+  try{ return new Date(iso).toLocaleDateString("en-CA", {timeZone:"Asia/Jakarta"}); }catch(e){ return String(iso).slice(0,10); }
+}
+function tglLabel(key){
+  return new Date(key + "T00:00:00").toLocaleDateString("id-ID", {day:"numeric", month:"long", year:"numeric"});
 }
 function hasilFiltered(){
-  const g = selGel();
-  return state.adminData.hasil.filter(h => g === null || h.gelombang === g);
+  const t = state.fTgl;
+  return state.adminData.hasil.filter(h => t === "all" || tglKey(h.selesai_at) === t);
 }
 function gelLabel(){
-  const g = selGel();
-  return g === null ? "Semua gelombang" : "Gelombang " + g;
+  return state.fTgl === "all" ? "Semua tanggal" : tglLabel(state.fTgl);
 }
 function gelSelect(){
-  const opts = [["aktif","Gelombang aktif (" + state.adminGelombang + ")"],["all","Semua gelombang"]];
-  for(let i=1;i<=Math.max(3, state.adminGelombang);i++) opts.push([String(i), "Gelombang " + i]);
-  return selectEl(opts, state.fGel, v=> setState({fGel:v}));
+  const set = {};
+  state.adminData.hasil.forEach(h=>{ set[tglKey(h.selesai_at)] = true; });
+  (state.adminData.approvals || []).forEach(a=>{ set[tglKey(a.requested_at)] = true; });
+  const opts = [["all","Semua tanggal"]];
+  Object.keys(set).sort().reverse().forEach(k=> opts.push([k, tglLabel(k)]));
+  return selectEl(opts, state.fTgl, v=> setState({fTgl:v}));
 }
 
 // muat ulang daftar persetujuan saja (dipakai polling di panel admin)
@@ -1132,7 +1129,7 @@ function renderAdminHasil(){
     const item = el("div", {class:"result-item", style:"--c:" + info.color});
     const left = el("div", {class:"result-left"});
     left.appendChild(el("div", {class:"result-name", text:r.nama}));
-    left.appendChild(el("div", {class:"result-meta", text: (r.section === "counter" && (r.brand || r.departemen) ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 G" + r.gelombang + " \u00b7 " + fmtTanggal(r.selesai_at)}));
+    left.appendChild(el("div", {class:"result-meta", text: (r.section === "counter" && (r.brand || r.departemen) ? (r.brand || "-") + " / " + (r.departemen || "-") : r.identifier) + " \u00b7 " + info.label + " \u00b7 " + JENIS_INFO[r.jenis].label + " \u00b7 " + fmtTanggal(r.selesai_at)}));
     const kSalah = [r.section, r.identifier, r.jenis, r.gelombang].join("|");
     if(state.salahMap[kSalah]) left.appendChild(el("div", {class:"result-meta", style:"color:var(--bad);font-weight:600;", text:"Salah di no " + state.salahMap[kSalah].join(", ")}));
     item.appendChild(left);
@@ -1228,22 +1225,9 @@ async function saveGelombang(n){
 
 function renderAdminPersetujuan(){
   const box = el("div");
-  const g = state.adminGelombang;
-  const all = state.adminData.approvals.filter(a=> a.gelombang === g);
-
-  // gelombang aktif
-  box.appendChild(el("p", {class:"sub", style:"margin-bottom:8px;", text:"Gelombang aktif menentukan permintaan dan nilai mana yang dihitung. Ubah hanya saat memulai proses training berikutnya."}));
-  const gRow = el("div", {class:"row-gap"});
-  const gSel = selectEl([["1","Gelombang 1"],["2","Gelombang 2"],["3","Gelombang 3"],["4","Gelombang 4"]], String(g), v=>{ state.gelombangPilih = parseInt(v,10); });
-  state.gelombangPilih = g;
-  gRow.appendChild(gSel);
-  const gBtn = el("button", {class:"ghost", text:"Terapkan"});
-  gBtn.addEventListener("click", ()=>{
-    const n = state.gelombangPilih || g;
-    if(n === g) return;
-    if(confirm("Ganti gelombang aktif ke " + n + "? Peserta yang membuka training setelah ini masuk gelombang " + n + ".")) saveGelombang(n);
-  });
-  gRow.appendChild(gBtn);
+  const all = state.adminData.approvals.filter(a=> state.fTgl === "all" || tglKey(a.requested_at) === state.fTgl);
+  const gRow = el("div", {class:"filters one", style:"margin-bottom:8px;"});
+  gRow.appendChild(gelSelect());
   box.appendChild(gRow);
 
   const cnt = s2 => all.filter(a=> a.status === s2).length;
@@ -1251,7 +1235,7 @@ function renderAdminPersetujuan(){
   [["Menunggu", cnt("menunggu"), "var(--accent)"],["Disetujui", cnt("disetujui"), "var(--ink)"],["Selesai", cnt("dipakai"), "var(--good)"]].forEach(x=>{
     const c = el("div", {class:"stat"});
     c.appendChild(el("div", {class:"stat-num", text:String(x[1]), style:"color:" + x[2]}));
-    c.appendChild(el("div", {class:"stat-label", text:x[0] + " (G" + g + ")"}));
+    c.appendChild(el("div", {class:"stat-label", text:x[0]}));
     stats.appendChild(c);
   });
   box.appendChild(stats);
