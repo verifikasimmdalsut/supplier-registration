@@ -317,6 +317,10 @@
   .chip{ display:inline-block; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:600; background:var(--accent-soft); color:#8A5200; margin-right:6px; }
   .chip.good{ background:var(--good-soft); color:var(--good); }
   .chip.muted{ background:var(--surface-2); color:var(--text-muted); }
+  .thumbs{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .thumb{ position:relative; width:84px; height:84px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb button{ position:absolute; top:2px; right:2px; width:22px; height:22px; padding:0; border-radius:50%; font-size:12px; line-height:1; background:rgba(0,0,0,.6); color:#fff; border:0; }
   .gond{ border-top:1px dashed var(--border); padding:8px 0; font-size:13px; }
   .gond b{ font-family:var(--font-display); color:var(--ink); font-size:15px; }
   .so-card input[type=text]{ margin-bottom:8px; }
@@ -453,6 +457,7 @@ function render(){
   else if(state.screen === "login") app.appendChild(renderLogin());
   else if(state.screen === "menu") app.appendChild(renderMenu());
   else if(state.screen === "so") app.appendChild(renderSO());
+  else if(state.screen === "layout") app.appendChild(renderLayout());
   else if(state.screen === "dashboard") app.appendChild(renderDashboard());
   else if(state.screen === "materi") app.appendChild(renderMateri());
   else if(state.screen === "kuis") app.appendChild(renderKuis());
@@ -1445,15 +1450,169 @@ function renderMenu(){
   b1.addEventListener("click", ()=> loadDashboard());
   addCard("Training", "Materi, Pre Test, dan Post Test", b1);
 
-  if(state.layoutUrl){
-    addCard("Layout", "Gambar layout area dan gondola", el("a", {class:"menu-btn", href:state.layoutUrl, target:"_blank", rel:"noopener", text:"Buka"}));
-  } else {
-    addCard("Layout", "Link layout belum tersedia", el("button", {class:"menu-btn", text:"Buka", disabled:true}));
-  }
+  const bl = el("button", {class:"menu-btn", text:"Buka"});
+  bl.addEventListener("click", ()=> loadLayout());
+  addCard("Layout", "Link layout dan upload foto bukti cek gondola", bl);
 
   const b3 = el("button", {class:"menu-btn", text:"Buka"});
   b3.addEventListener("click", ()=> loadSO());
   addCard("Registrasi SO", "Gondola tugas dan registrasi sarana bantu", b3);
+  return wrap;
+}
+
+// ===== LAYOUT + BUKTI CEK GONDOLA (PESERTA) =====
+const BUKTI_BUCKET = "so-bukti";
+function buktiUrl(path){ return SUPABASE_URL + "/storage/v1/object/public/" + BUKTI_BUCKET + "/" + path; }
+
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      const max = 1280, sc = Math.min(1, max / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      cv.toBlob(b=> b ? resolve(b) : reject(new Error("gagal")), "image/jpeg", 0.75);
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error("gambar tidak terbaca")); };
+    img.src = url;
+  });
+}
+
+async function loadLayout(){
+  setState({screen:"layout", layLoading:true, layMsg:"", layData:null});
+  try{
+    const role = state.section, nik = encodeURIComponent(state.nik);
+    const col = role === "scanner" ? "scanner_nik" : role === "auditor" ? "auditor_nik" : "counter_nik";
+    const kegiatan = await sb("so_kegiatan?select=*&order=tanggal.asc");
+    const items = [];
+    for(const k of kegiatan){
+      let pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + nik + "&select=gondola,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
+      let sub = null;
+      if(pen.length === 0 && role !== "counter"){
+        const rg = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&nik=eq." + nik + "&role=eq." + role + "&pengganti_nik=not.is.null&select=pengganti_nik,pengganti_nama&limit=1");
+        if(rg[0]){
+          sub = {nik: rg[0].pengganti_nik, nama: rg[0].pengganti_nama};
+          pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + encodeURIComponent(sub.nik) + "&select=gondola,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
+        }
+      }
+      const bukti = pen.length ? await sb("so_bukti?kegiatan_id=eq." + k.id + "&nik=eq." + nik + "&role=eq." + role + "&select=id,path,uploaded_at&order=uploaded_at.asc") : [];
+      items.push({k, pen, bukti, sub});
+    }
+    setState({layLoading:false, layData:items});
+  }catch(e){
+    setState({layLoading:false, layData:[], layMsg:"Gagal memuat data. Coba lagi."});
+  }
+}
+
+async function uploadBukti(k, files){
+  const role = state.section;
+  if(!files.length) return;
+  setState({layBusy:true, layMsg:""});
+  let ok = 0;
+  try{
+    for(let i=0;i<files.length;i++){
+      const blob = await compressImage(files[i]);
+      const path = k.id + "/" + role + "_" + state.nik + "_" + Date.now() + "_" + i + ".jpg";
+      const res = await fetch(SUPABASE_URL + "/storage/v1/object/" + BUKTI_BUCKET + "/" + path, {
+        method:"POST",
+        headers:{ "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type":"image/jpeg", "x-upsert":"false" },
+        body: blob
+      });
+      if(!res.ok) throw new Error("upload");
+      await sbInsert("so_bukti", { kegiatan_id:k.id, nik:state.nik, role, nama:state.nama, path, uploaded_at:new Date().toISOString() });
+      ok++;
+    }
+    state.layBusy = false;
+    await loadLayout();
+    setState({layMsg: ok + " foto bukti tersimpan."});
+  }catch(e){
+    state.layBusy = false;
+    await loadLayout();
+    setState({layMsg: "Gagal upload foto" + (ok ? " (" + ok + " foto berhasil tersimpan)" : "") + ". Coba lagi."});
+  }
+}
+
+async function hapusBukti(b){
+  if(!confirm("Hapus foto ini?")) return;
+  try{
+    await fetch(SUPABASE_URL + "/rest/v1/so_bukti?id=eq." + b.id, { method:"DELETE", headers:{ "apikey":SUPABASE_KEY, "Authorization":"Bearer " + SUPABASE_KEY } });
+    await fetch(SUPABASE_URL + "/storage/v1/object/" + BUKTI_BUCKET + "/" + b.path, { method:"DELETE", headers:{ "apikey":SUPABASE_KEY, "Authorization":"Bearer " + SUPABASE_KEY } });
+    await loadLayout();
+    setState({layMsg:"Foto dihapus."});
+  }catch(e){ setState({layMsg:"Gagal menghapus foto."}); }
+}
+
+function renderLayout(){
+  const info = SECTION_INFO[state.section];
+  const role = state.section;
+  const wrap = el("div");
+  const nav = el("div", {class:"top-nav"});
+  nav.appendChild(el("button", {class:"back", text:"←", onClick:()=> setState({screen:"menu", layMsg:""})}));
+  wrap.appendChild(nav);
+  wrap.appendChild(tagEl(info.label + " · " + state.nama, info));
+  wrap.appendChild(el("h2", {text:"Layout"}));
+
+  const lc = el("div", {class:"so-card"});
+  lc.appendChild(el("h3", {text:"Link layout"}));
+  if(state.layoutUrl){
+    lc.appendChild(el("p", {class:"sub", text:"Gambar layout area dan gondola."}));
+    lc.appendChild(el("a", {class:"menu-btn", href:state.layoutUrl, target:"_blank", rel:"noopener", text:"Buka layout"}));
+  } else {
+    lc.appendChild(el("p", {class:"sub", text:"Link layout belum tersedia."}));
+  }
+  wrap.appendChild(lc);
+
+  wrap.appendChild(el("h3", {text:"Bukti cek gondola", style:"margin:16px 0 4px;"}));
+  wrap.appendChild(el("p", {class:"sub", text:"Cek gondola tugas kamu jauh sebelum hari SO, lalu upload foto buktinya di sini."}));
+  if(state.layLoading || !state.layData){
+    wrap.appendChild(el("div", {class:"loading", text:"Memuat..."}));
+    return wrap;
+  }
+  if(state.layMsg) wrap.appendChild(el("div", {class: state.layMsg.indexOf("Gagal") === 0 ? "error" : "success-text", style:"margin-bottom:10px;", text:state.layMsg}));
+  if(state.layData.length === 0){
+    wrap.appendChild(el("p", {class:"sub", text:"Belum ada penugasan."}));
+    return wrap;
+  }
+  state.layData.forEach(({k, pen, bukti, sub})=>{
+    const card = el("div", {class:"so-card"});
+    card.appendChild(el("h3", {text:k.nama}));
+    card.appendChild(el("div", {style:"margin-bottom:8px;"}, [el("span", {class:"chip muted", text:fmtTgl(k.tanggal)})]));
+    if(pen.length === 0){
+      card.appendChild(el("p", {class:"sub", text:"Belum ada penugasan."}));
+      wrap.appendChild(card);
+      return;
+    }
+    card.appendChild(el("div", {class:"sub", style:"margin:4px 0;", text: sub ? "Gondola tugas (menggantikan " + sub.nama + ")" : "Gondola tugas kamu"}));
+    groupGondola(pen, role).forEach(g=>{
+      const box = el("div", {class:"gond"});
+      box.appendChild(el("b", {text: g.from === g.to ? String(g.from) : g.from + " – " + g.to}));
+      if(g.lok) box.appendChild(el("span", {class:"chip muted", style:"margin-left:8px;", text:g.lok}));
+      card.appendChild(box);
+    });
+    card.appendChild(el("div", {style:"margin-top:10px;"}, [el("span", {class: "chip " + (bukti.length ? "good" : "muted"), text: bukti.length ? "Sudah upload " + bukti.length + " foto" : "Belum upload foto bukti"})]));
+    if(bukti.length){
+      const th = el("div", {class:"thumbs"});
+      bukti.forEach(b=>{
+        const t = el("div", {class:"thumb"});
+        t.appendChild(el("a", {href:buktiUrl(b.path), target:"_blank", rel:"noopener"}, [el("img", {src:buktiUrl(b.path), alt:"bukti", loading:"lazy"})]));
+        const x = el("button", {text:"\u00d7", title:"Hapus"});
+        x.addEventListener("click", ()=> hapusBukti(b));
+        t.appendChild(x);
+        th.appendChild(t);
+      });
+      card.appendChild(th);
+    }
+    const inp = el("input", {type:"file", accept:"image/*", multiple:"multiple", style:"display:none;"});
+    inp.addEventListener("change", ()=> uploadBukti(k, Array.from(inp.files)));
+    card.appendChild(inp);
+    const ub = el("button", {class:"primary", text: state.layBusy ? "Mengupload..." : "Upload foto bukti", disabled: state.layBusy ? "disabled" : null});
+    ub.addEventListener("click", ()=> inp.click());
+    card.appendChild(ub);
+    wrap.appendChild(card);
+  });
   return wrap;
 }
 
@@ -1468,7 +1627,19 @@ async function loadSO(){
     for(const k of kegiatan){
       const pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + nik + "&select=gondola,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
       const reg = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&nik=eq." + nik + "&role=eq." + role + "&select=*");
-      items.push({k, pen, reg});
+      let roster = null, sub = null;
+      const subReg = reg.find(r=> r.pengganti_nik);
+      if(role !== "counter" && (pen.length === 0 || subReg)){
+        const nikCol = role === "scanner" ? "scanner_nik" : "auditor_nik";
+        roster = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + nikCol + "=not.is.null&select=gondola,scanner_nik,scanner_nama,scanner_lokasi,auditor_nik,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc&limit=5000");
+        if(subReg) sub = {nik: subReg.pengganti_nik, nama: subReg.pengganti_nama};
+        else {
+          const taken = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&role=eq." + role + "&select=nik,pengganti_nik");
+          roster.taken = {};
+          taken.forEach(t=>{ roster.taken[t.nik] = true; if(t.pengganti_nik) roster.taken[t.pengganti_nik] = true; });
+        }
+      }
+      items.push({k, pen, reg, roster, sub});
     }
     setState({soLoading:false, soData:items});
   }catch(e){
@@ -1492,13 +1663,18 @@ function fmtTgl(iso){
   return d.toLocaleDateString("id-ID", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
 }
 
-async function submitSO(k, vals){
+async function submitSO(k, vals, sub){
   const role = state.section;
   const body = { kegiatan_id:k.id, nik:state.nik, role, sesi:k.sesi_aktif, nama:state.nama,
     departemen: role === "counter" ? state.departemen : null,
     hht_no: vals.hht || null, papan_jalan_no: vals.papan || null, id_participant: vals.idp || null,
     registered_at: new Date().toISOString() };
+  if(sub){ body.pengganti_nik = sub.nik; body.pengganti_nama = sub.nama; }
   try{
+    if(sub){
+      const dup = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&role=eq." + role + "&pengganti_nik=eq." + encodeURIComponent(sub.nik) + "&nik=neq." + encodeURIComponent(state.nik) + "&select=nama");
+      if(dup.length){ setState({soMsg:"Gagal: " + sub.nama + " sudah digantikan oleh " + dup[0].nama + "."}); return; }
+    }
     await sbUpsert("so_registrasi", body, "kegiatan_id,nik,role,sesi");
     await loadSO();
     setState({soMsg:"Registrasi tersimpan."});
@@ -1525,7 +1701,7 @@ function renderSO(){
     wrap.appendChild(el("p", {class:"sub", text:"Registrasi SO belum dibuka oleh admin. Coba lagi nanti."}));
     return wrap;
   }
-  state.soData.forEach(({k, pen, reg})=>{
+  state.soData.forEach(({k, pen, reg, roster, sub: subSaved})=>{
     const card = el("div", {class:"so-card"});
     card.appendChild(el("h3", {text:k.nama}));
     const meta = el("div", {style:"margin-bottom:8px;"});
@@ -1533,9 +1709,16 @@ function renderSO(){
     meta.appendChild(el("span", {class:"chip", text: k.sesi_aktif ? "Sesi " + SESI_LABEL[k.sesi_aktif] : "Sesi belum ditentukan"}));
     card.appendChild(meta);
 
-    const ranges = groupGondola(pen, role);
+    const pickSt = (state.soSub && state.soSub[k.id]) || {};
+    let sub = subSaved || null, penEff = pen;
+    if(!sub && pen.length === 0 && roster && pickSt.nik){
+      const nm = roster.find(r=> (role === "scanner" ? r.scanner_nik : r.auditor_nik) === pickSt.nik);
+      if(nm) sub = {nik: pickSt.nik, nama: role === "scanner" ? nm.scanner_nama : nm.auditor_nama};
+    }
+    if(sub && roster) penEff = roster.filter(r=> (role === "scanner" ? r.scanner_nik : r.auditor_nik) === sub.nik);
+    const ranges = groupGondola(penEff, role);
     if(ranges.length){
-      card.appendChild(el("div", {class:"sub", style:"margin:4px 0;", text:"Gondola tugas kamu"}));
+      card.appendChild(el("div", {class:"sub", style:"margin:4px 0;", text: sub ? "Gondola tugas (menggantikan " + sub.nama + ")" : "Gondola tugas kamu"}));
       ranges.forEach(g=>{
         const box = el("div", {class:"gond"});
         const b = el("b", {text: g.from === g.to ? String(g.from) : g.from + " – " + g.to});
@@ -1551,10 +1734,28 @@ function renderSO(){
     } else if(role === "counter"){
       card.appendChild(el("p", {class:"sub", text:"Penugasan gondola untuk Counter belum tersedia."}));
     } else {
-      card.appendChild(el("p", {class:"sub", text:"Tidak ada penugasan gondola atas NIK kamu di kegiatan ini. Hubungi admin jika seharusnya ada."}));
+      card.appendChild(el("p", {class:"sub", text:"Tidak ada penugasan gondola atas NIK kamu di kegiatan ini. Jika kamu menggantikan peserta yang terdaftar, pilih nama yang kamu gantikan di bawah ini."}));
+    }
+    if(!subSaved && pen.length === 0 && role !== "counter" && roster){
+      const people = {};
+      roster.forEach(r=>{
+        const n = role === "scanner" ? r.scanner_nik : r.auditor_nik;
+        if(!n || roster.taken[n]) return;
+        const p = people[n] || (people[n] = {nik:n, nama: role === "scanner" ? r.scanner_nama : r.auditor_nama, lok: role === "scanner" ? r.scanner_lokasi : r.auditor_lokasi, from:r.gondola, to:r.gondola});
+        p.to = r.gondola;
+      });
+      const list = Object.values(people).sort((a,b)=> String(a.nama).localeCompare(String(b.nama)));
+      const q = (pickSt.q || "").toLowerCase();
+      const shown = list.filter(p=> !q || (String(p.nama) + " " + p.nik + " " + (p.lok||"")).toLowerCase().includes(q));
+      const setPick = o=>{ state.soSub = Object.assign({}, state.soSub, {[k.id]: Object.assign({}, pickSt, o)}); render(); };
+      const qi = el("input", {type:"text", placeholder:"Cari nama / NIK yang digantikan", value: pickSt.q || ""});
+      qi.addEventListener("change", e=> setPick({q:e.target.value, nik:""}));
+      card.appendChild(qi);
+      card.appendChild(selectEl([["","Pilih peserta yang digantikan"]].concat(shown.map(p=> [p.nik, p.nama + " (" + p.nik + ") · " + (p.lok || "-") + " · gondola " + p.from + "–" + p.to])), pickSt.nik || "", v=> setPick({nik:v})));
     }
 
     const canReg = !!k.sesi_aktif && (role === "counter" || ranges.length > 0);
+    if(sub && ranges.length === 0) sub = null;
     const mine = reg.find(r=> r.sesi === k.sesi_aktif);
     if(!k.sesi_aktif){
       card.appendChild(el("p", {class:"sub", text:"Admin belum menentukan sesi (Backroom atau Selling). Registrasi dibuka setelah sesi ditentukan."}));
@@ -1582,7 +1783,7 @@ function renderSO(){
           if(role === "scanner" && !vals.hht){ setState({soMsg:"Gagal: nomor HHT belum diisi."}); return; }
           if(role === "auditor" && !vals.papan){ setState({soMsg:"Gagal: nomor papan jalan belum diisi."}); return; }
           if(role !== "counter" && !vals.idp){ setState({soMsg:"Gagal: ID participant belum diisi."}); return; }
-          submitSO(k, vals);
+          submitSO(k, vals, sub);
         });
         card.appendChild(btn);
       }
@@ -1602,9 +1803,10 @@ async function loadAdminSO(){
     const kegiatan = await sb("so_kegiatan?select=*&order=tanggal.asc");
     const pen = await sb("so_penugasan?select=kegiatan_id,gondola,scanner_nik,scanner_nama,auditor_nik,auditor_nama&limit=5000");
     const reg = await sb("so_registrasi?select=*&order=registered_at.desc&limit=5000");
+    const bukti = await sb("so_bukti?select=id,kegiatan_id,nik,role,nama,path,uploaded_at&order=uploaded_at.desc&limit=5000");
     const lay = await sb("training_setting?key=eq.layout_url&select=value");
     const kid = state.soKid || (kegiatan[0] ? kegiatan[0].id : null);
-    setState({adminSOLoading:false, adminSO:{kegiatan, pen, reg}, soKid:kid, layoutDraft: lay[0] ? (lay[0].value || "") : ""});
+    setState({adminSOLoading:false, adminSO:{kegiatan, pen, reg, bukti}, soKid:kid, layoutDraft: lay[0] ? (lay[0].value || "") : ""});
   }catch(e){
     setState({adminSOLoading:false, adminMsg:"Gagal memuat data SO."});
   }
@@ -1626,7 +1828,7 @@ function renderAdminSO(){
     box.appendChild(el("div", {class:"loading", text:"Memuat data SO..."}));
     return box;
   }
-  const {kegiatan, pen, reg} = state.adminSO;
+  const {kegiatan, pen, reg, bukti} = state.adminSO;
   if(state.adminMsg) box.appendChild(el("div", {class: state.adminMsg.indexOf("Gagal") === 0 ? "error" : "success-text", style:"margin-bottom:10px;", text:state.adminMsg}));
 
   // link layout
@@ -1670,7 +1872,7 @@ function renderAdminSO(){
     if(p.auditor_nik) expected["auditor|" + p.auditor_nik] = {role:"auditor", nik:p.auditor_nik, nama:p.auditor_nama};
   });
   const regHere = reg.filter(r=> r.kegiatan_id === cur.id && r.sesi === sesi);
-  const regMap = {}; regHere.forEach(r=>{ regMap[r.role + "|" + r.nik] = r; });
+  const regMap = {}; regHere.forEach(r=>{ regMap[r.role + "|" + r.nik] = r; if(r.pengganti_nik) regMap[r.role + "|" + r.pengganti_nik] = r; });
   const belumReg = Object.keys(expected).filter(k=> !regMap[k]).map(k=> expected[k]);
   const belumKembali = regHere.filter(r=> r.role !== "counter" && !r.dikembalikan);
 
@@ -1703,6 +1905,39 @@ function renderAdminSO(){
   });
   box.appendChild(b2);
 
+  // bukti cek gondola
+  const buktiHere = (bukti || []).filter(b=> b.kegiatan_id === cur.id);
+  const buktiMap = {}; buktiHere.forEach(b=>{ (buktiMap[b.role + "|" + b.nik] = buktiMap[b.role + "|" + b.nik] || []).push(b); });
+  const belumBukti = Object.keys(expected).filter(k=> !buktiMap[k]).map(k=> expected[k]);
+  const bh = el("h3", {text:"Bukti cek gondola (" + (Object.keys(expected).length - belumBukti.length) + " / " + Object.keys(expected).length + " sudah upload)", style:"margin:18px 0 8px;"});
+  box.appendChild(bh);
+  const bb = el("button", {class:"ghost", text:"Salin daftar belum upload bukti (" + belumBukti.length + ")"});
+  bb.addEventListener("click", async ()=>{
+    if(!belumBukti.length){ setState({adminMsg:"Semua sudah upload bukti."}); return; }
+    const lines = ["Belum upload bukti cek gondola - " + cur.nama, ""];
+    belumBukti.forEach((p,i)=> lines.push((i+1) + ". " + p.nama + " (" + p.nik + ") - " + SECTION_INFO[p.role].label));
+    await copyText(lines.join("\n"));
+    setState({adminMsg:"Daftar belum upload bukti tersalin, tinggal paste ke WhatsApp."});
+  });
+  box.appendChild(bb);
+  const bl = el("div", {class:"result-list"});
+  if(!buktiHere.length) bl.appendChild(el("div", {class:"loading", text:"Belum ada foto bukti."}));
+  Object.keys(buktiMap).forEach(key=>{
+    const arr = buktiMap[key], f = arr[0], info = SECTION_INFO[f.role];
+    const item = el("div", {class:"result-item", style:"--c:" + info.color + ";flex-direction:column;align-items:flex-start;"});
+    item.appendChild(el("div", {class:"result-name", text:(f.nama || f.nik) + " \u00b7 " + arr.length + " foto"}));
+    item.appendChild(el("div", {class:"result-meta", text:f.nik + " \u00b7 " + info.label}));
+    const th = el("div", {class:"thumbs"});
+    arr.forEach(b=>{
+      const t = el("div", {class:"thumb"});
+      t.appendChild(el("a", {href:buktiUrl(b.path), target:"_blank", rel:"noopener"}, [el("img", {src:buktiUrl(b.path), alt:"bukti", loading:"lazy"})]));
+      th.appendChild(t);
+    });
+    item.appendChild(th);
+    bl.appendChild(item);
+  });
+  box.appendChild(bl);
+
   const list = el("div", {class:"result-list"});
   if(!regHere.length) list.appendChild(el("div", {class:"loading", text:"Belum ada yang registrasi di sesi ini."}));
   regHere.forEach(r=>{
@@ -1711,6 +1946,7 @@ function renderAdminSO(){
     const left = el("div", {class:"result-left"});
     left.appendChild(el("div", {class:"result-name", text:r.nama || r.nik}));
     const det = [r.nik, info.label];
+    if(r.pengganti_nama) det.push("pengganti dari " + r.pengganti_nama + " (" + r.pengganti_nik + ")");
     if(r.hht_no) det.push("HHT " + r.hht_no);
     if(r.papan_jalan_no) det.push("Papan " + r.papan_jalan_no);
     if(r.id_participant) det.push("ID " + r.id_participant);
