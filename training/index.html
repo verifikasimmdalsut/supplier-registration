@@ -317,6 +317,9 @@
   .chip{ display:inline-block; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:600; background:var(--accent-soft); color:#8A5200; margin-right:6px; }
   .chip.good{ background:var(--good-soft); color:var(--good); }
   .chip.muted{ background:var(--surface-2); color:var(--text-muted); }
+  .date-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+  .date-chip{ border:1px solid var(--border); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; }
+  .date-chip.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
   .thumbs{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
   .thumb{ position:relative; width:84px; height:84px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
   .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -350,6 +353,15 @@ async function sb(path){
   });
   if(!res.ok) throw new Error("Gagal ambil data");
   return res.json();
+}
+async function sbAll(path){
+  const out = [];
+  for(let off=0; ; off+=1000){
+    const rows = await sb(path + "&limit=1000&offset=" + off);
+    out.push(...rows);
+    if(rows.length < 1000) break;
+  }
+  return out;
 }
 async function sbInsert(table, body){
   const res = await fetch(SUPABASE_URL + "/rest/v1/" + table, {
@@ -427,6 +439,7 @@ let state = {
   fJenis: "all",
   fStatus: "all",
   fTgl: "all",
+  fTglSet: {},
   adminGelombang: 1,
   apSection: "all",
   apJenis: "all",
@@ -961,20 +974,39 @@ function tglKey(iso){
 function tglLabel(key){
   return new Date(key + "T00:00:00").toLocaleDateString("id-ID", {day:"numeric", month:"long", year:"numeric"});
 }
+function tglMatch(iso){
+  const keys = Object.keys(state.fTglSet || {});
+  return keys.length === 0 || !!state.fTglSet[tglKey(iso)];
+}
+function tglShort(key){
+  return new Date(key + "T00:00:00").toLocaleDateString("id-ID", {day:"numeric", month:"short"});
+}
 function hasilFiltered(){
-  const t = state.fTgl;
-  return state.adminData.hasil.filter(h => t === "all" || tglKey(h.selesai_at) === t);
+  return state.adminData.hasil.filter(h => tglMatch(h.selesai_at));
 }
 function gelLabel(){
-  return state.fTgl === "all" ? "Semua tanggal" : tglLabel(state.fTgl);
+  const keys = Object.keys(state.fTglSet || {}).sort();
+  return keys.length === 0 ? "Semua tanggal" : "Tanggal " + keys.map(tglShort).join(" + ");
 }
 function gelSelect(){
   const set = {};
   state.adminData.hasil.forEach(h=>{ set[tglKey(h.selesai_at)] = true; });
   (state.adminData.approvals || []).forEach(a=>{ set[tglKey(a.requested_at)] = true; });
-  const opts = [["all","Semua tanggal"]];
-  Object.keys(set).sort().reverse().forEach(k=> opts.push([k, tglLabel(k)]));
-  return selectEl(opts, state.fTgl, v=> setState({fTgl:v}));
+  const wrap = el("div", {class:"date-chips", style:"grid-column:1 / -1;"});
+  const all = el("button", {class:"date-chip" + (Object.keys(state.fTglSet || {}).length === 0 ? " on" : ""), text:"Semua tanggal"});
+  all.addEventListener("click", ()=> setState({fTglSet:{}}));
+  wrap.appendChild(all);
+  Object.keys(set).sort().reverse().forEach(k=>{
+    const on = !!(state.fTglSet && state.fTglSet[k]);
+    const b = el("button", {class:"date-chip" + (on ? " on" : ""), text:tglShort(k)});
+    b.addEventListener("click", ()=>{
+      const next = Object.assign({}, state.fTglSet);
+      if(on) delete next[k]; else next[k] = true;
+      setState({fTglSet:next});
+    });
+    wrap.appendChild(b);
+  });
+  return wrap;
 }
 
 // muat ulang daftar persetujuan saja (dipakai polling di panel admin)
@@ -1058,7 +1090,7 @@ function renderAdmin(){
 
   const tabs = el("div", {class:"tabs"});
   const pendingN = state.adminData ? state.adminData.approvals.filter(a=> a.status === "menunggu").length : 0;
-  [["persetujuan","Persetujuan" + (pendingN ? " (" + pendingN + ")" : "")],["hasil","Nilai peserta"],["belum","Belum hadir"],["kunci","Buka kunci"],["so","Registrasi SO"]].forEach(t=>{
+  [["persetujuan","Persetujuan" + (pendingN ? " (" + pendingN + ")" : "")],["hasil","Nilai peserta"],["hadir","Sudah hadir"],["belum","Belum hadir"],["kunci","Buka kunci"],["so","Registrasi SO"]].forEach(t=>{
     const b = el("button", {class:"tab" + (state.adminTab === t[0] ? " active" : ""), text:t[1]});
     b.addEventListener("click", ()=>{ setState({adminTab:t[0], adminMsg:""}); if(t[0] === "so") loadAdminSO(); });
     tabs.appendChild(b);
@@ -1069,6 +1101,7 @@ function renderAdmin(){
   else if(state.adminTab === "so") wrap.appendChild(renderAdminSO());
   else if(state.adminDataLoading || !state.adminData) wrap.appendChild(el("div", {class:"loading", text:"Memuat data..."}));
   else if(state.adminTab === "persetujuan") wrap.appendChild(renderAdminPersetujuan());
+  else if(state.adminTab === "hadir") wrap.appendChild(renderAdminHadir());
   else if(state.adminTab === "belum") wrap.appendChild(renderAdminBelum());
   else wrap.appendChild(renderAdminHasil());
   return wrap;
@@ -1230,7 +1263,7 @@ async function saveGelombang(n){
 
 function renderAdminPersetujuan(){
   const box = el("div");
-  const all = state.adminData.approvals.filter(a=> state.fTgl === "all" || tglKey(a.requested_at) === state.fTgl);
+  const all = state.adminData.approvals.filter(a=> tglMatch(a.requested_at));
   const gRow = el("div", {class:"filters one", style:"margin-bottom:8px;"});
   gRow.appendChild(gelSelect());
   box.appendChild(gRow);
@@ -1370,6 +1403,66 @@ function renderAdminBelum(){
   return box;
 }
 
+function renderAdminHadir(){
+  const box = el("div");
+  const people = {};
+  state.adminData.hasil.forEach(h=>{
+    const k = h.section + "|" + h.identifier;
+    const p = people[k] || (people[k] = {section:h.section, id:h.identifier, nama:h.nama, dates:{}, pre:null, post:null});
+    p.dates[tglKey(h.selesai_at)] = true;
+  });
+  hasilFiltered().forEach(h=>{
+    const p = people[h.section + "|" + h.identifier];
+    p.inFilter = true;
+    const f = h.jenis === "pretest" ? "pre" : "post";
+    if(!p[f] || new Date(h.selesai_at) > new Date(p[f].selesai_at)) p[f] = h;
+  });
+  let rows = Object.values(people).filter(p=> p.inFilter);
+  if(state.fSection !== "all") rows = rows.filter(p=> p.section === state.fSection);
+  rows.sort((a,b)=> String(a.nama).localeCompare(String(b.nama)));
+  const terdaftar = state.adminData.peserta.filter(p=> state.fSection === "all" || p.section === state.fSection).length;
+
+  const stats = el("div", {class:"stat-grid two"});
+  [["Sudah hadir", rows.length, "var(--good)"],["Terdaftar", terdaftar, "var(--ink)"]].forEach(x=>{
+    const c = el("div", {class:"stat"});
+    c.appendChild(el("div", {class:"stat-num", text:String(x[1]), style:"color:" + x[2]}));
+    c.appendChild(el("div", {class:"stat-label", text:x[0]}));
+    stats.appendChild(c);
+  });
+  box.appendChild(stats);
+
+  box.appendChild(el("p", {class:"sub", style:"margin-bottom:6px;", text:"Pilih satu atau beberapa tanggal. Peserta dihitung hadir kalau ikut di salah satu tanggal yang dipilih."}));
+  const filters = el("div", {class:"filters one"});
+  filters.appendChild(gelSelect());
+  filters.appendChild(selectEl([["all","Semua section"],["counter","Counter"],["scanner","Scanner"],["auditor","Auditor"]], state.fSection, v=> setState({fSection:v})));
+  box.appendChild(filters);
+
+  const copyBtn = el("button", {class:"primary", text:"Salin daftar sudah hadir (" + rows.length + ")"});
+  copyBtn.addEventListener("click", async ()=>{
+    if(!rows.length){ setState({adminMsg:"Belum ada yang hadir."}); return; }
+    const lines = ["Daftar sudah hadir training - " + gelLabel(), ""];
+    rows.forEach((p,i)=> lines.push((i+1) + ". " + p.nama + " (" + p.id + ") - " + SECTION_INFO[p.section].label + " - " + Object.keys(p.dates).sort().map(tglShort).join(", ")));
+    await copyText(lines.join("\n"));
+    setState({adminMsg:"Daftar sudah hadir tersalin, tinggal paste ke WhatsApp."});
+  });
+  box.appendChild(copyBtn);
+  if(state.adminMsg) box.appendChild(el("div", {class:"success-text", style:"margin-top:10px;", text:state.adminMsg}));
+
+  const list = el("div", {class:"result-list"});
+  if(!rows.length) list.appendChild(el("div", {class:"loading", text:"Belum ada yang hadir di tanggal ini."}));
+  rows.forEach(p=>{
+    const info = SECTION_INFO[p.section];
+    const item = el("div", {class:"result-item", style:"--c:" + info.color});
+    const left = el("div", {class:"result-left"});
+    left.appendChild(el("div", {class:"result-name", text:p.nama}));
+    left.appendChild(el("div", {class:"result-meta", text:p.id + " \u00b7 " + info.label + " \u00b7 hadir " + Object.keys(p.dates).sort().map(tglShort).join(", ") + " \u00b7 Pre " + (p.pre ? p.pre.nilai : "-") + " \u00b7 Post " + (p.post ? p.post.nilai : "-")}));
+    item.appendChild(left);
+    list.appendChild(item);
+  });
+  box.appendChild(list);
+  return box;
+}
+
 function renderAdminKunci(){
   const box = el("div");
   box.appendChild(el("p", {class:"sub", text:"Isi NIK (atau nama untuk Counter), pilih jenis test, lalu buka kunci supaya peserta bisa mengulang."}));
@@ -1489,13 +1582,13 @@ async function loadLayout(){
     const kegiatan = await sb("so_kegiatan?select=*&order=tanggal.asc");
     const items = [];
     for(const k of kegiatan){
-      let pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + nik + "&select=gondola,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
+      let pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + nik + "&select=gondola,sesi,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
       let sub = null;
       if(pen.length === 0 && role !== "counter"){
         const rg = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&nik=eq." + nik + "&role=eq." + role + "&pengganti_nik=not.is.null&select=pengganti_nik,pengganti_nama&limit=1");
         if(rg[0]){
           sub = {nik: rg[0].pengganti_nik, nama: rg[0].pengganti_nama};
-          pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + encodeURIComponent(sub.nik) + "&select=gondola,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
+          pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + encodeURIComponent(sub.nik) + "&select=gondola,sesi,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
         }
       }
       const bukti = pen.length ? await sb("so_bukti?kegiatan_id=eq." + k.id + "&nik=eq." + nik + "&role=eq." + role + "&select=id,path,uploaded_at&order=uploaded_at.asc") : [];
@@ -1590,6 +1683,7 @@ function renderLayout(){
       const box = el("div", {class:"gond"});
       box.appendChild(el("b", {text: g.from === g.to ? String(g.from) : g.from + " – " + g.to}));
       if(g.lok) box.appendChild(el("span", {class:"chip muted", style:"margin-left:8px;", text:g.lok}));
+      if(g.sesi) box.appendChild(el("span", {class:"chip", style:"margin-left:6px;", text:SESI_LABEL[g.sesi]}));
       card.appendChild(box);
     });
     card.appendChild(el("div", {style:"margin-top:10px;"}, [el("span", {class: "chip " + (bukti.length ? "good" : "muted"), text: bukti.length ? "Sudah upload " + bukti.length + " foto" : "Belum upload foto bukti"})]));
@@ -1625,21 +1719,22 @@ async function loadSO(){
     const kegiatan = await sb("so_kegiatan?registrasi_buka=eq.true&select=*&order=tanggal.asc");
     const items = [];
     for(const k of kegiatan){
-      const pen = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + nik + "&select=gondola,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
+      const penAll = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + col + "=eq." + nik + "&select=gondola,sesi,scanner_nama,scanner_lokasi,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
+      const pen = k.sesi_aktif ? penAll.filter(r=> r.sesi === k.sesi_aktif) : penAll;
       const reg = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&nik=eq." + nik + "&role=eq." + role + "&select=*");
       let roster = null, sub = null;
       const subReg = reg.find(r=> r.pengganti_nik);
       if(role !== "counter" && (pen.length === 0 || subReg)){
         const nikCol = role === "scanner" ? "scanner_nik" : "auditor_nik";
-        roster = await sb("so_penugasan?kegiatan_id=eq." + k.id + "&" + nikCol + "=not.is.null&select=gondola,scanner_nik,scanner_nama,scanner_lokasi,auditor_nik,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc&limit=5000");
+        roster = await sbAll("so_penugasan?kegiatan_id=eq." + k.id + (k.sesi_aktif ? "&sesi=eq." + k.sesi_aktif : "") + "&" + nikCol + "=not.is.null&select=gondola,sesi,scanner_nik,scanner_nama,scanner_lokasi,auditor_nik,auditor_nama,auditor_lokasi,counter_nama,counter_brand&order=gondola.asc");
         if(subReg) sub = {nik: subReg.pengganti_nik, nama: subReg.pengganti_nama};
         else {
-          const taken = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&role=eq." + role + "&select=nik,pengganti_nik");
+          const taken = await sb("so_registrasi?kegiatan_id=eq." + k.id + "&role=eq." + role + (k.sesi_aktif ? "&sesi=eq." + k.sesi_aktif : "") + "&select=nik,pengganti_nik");
           roster.taken = {};
           taken.forEach(t=>{ roster.taken[t.nik] = true; if(t.pengganti_nik) roster.taken[t.pengganti_nik] = true; });
         }
       }
-      items.push({k, pen, reg, roster, sub});
+      items.push({k, pen, penAll, reg, roster, sub});
     }
     setState({soLoading:false, soData:items});
   }catch(e){
@@ -1651,9 +1746,9 @@ function groupGondola(rows, role){
   const out = []; let cur = null;
   rows.forEach(r=>{
     const lok = role === "auditor" ? r.auditor_lokasi : r.scanner_lokasi;
-    const key = [r.scanner_nama, r.auditor_nama, r.counter_nama, lok].join("|");
+    const key = [r.scanner_nama, r.auditor_nama, r.counter_nama, lok, r.sesi].join("|");
     if(cur && cur.key === key && r.gondola === cur.to + 1){ cur.to = r.gondola; }
-    else { cur = {key, from:r.gondola, to:r.gondola, lok, scanner:r.scanner_nama, auditor:r.auditor_nama, counter:r.counter_nama}; out.push(cur); }
+    else { cur = {key, from:r.gondola, to:r.gondola, lok, sesi:r.sesi, scanner:r.scanner_nama, auditor:r.auditor_nama, counter:r.counter_nama}; out.push(cur); }
   });
   return out;
 }
@@ -1701,7 +1796,7 @@ function renderSO(){
     wrap.appendChild(el("p", {class:"sub", text:"Registrasi SO belum dibuka oleh admin. Coba lagi nanti."}));
     return wrap;
   }
-  state.soData.forEach(({k, pen, reg, roster, sub: subSaved})=>{
+  state.soData.forEach(({k, pen, penAll, reg, roster, sub: subSaved})=>{
     const card = el("div", {class:"so-card"});
     card.appendChild(el("h3", {text:k.nama}));
     const meta = el("div", {style:"margin-bottom:8px;"});
@@ -1724,6 +1819,7 @@ function renderSO(){
         const b = el("b", {text: g.from === g.to ? String(g.from) : g.from + " – " + g.to});
         box.appendChild(b);
         if(g.lok) box.appendChild(el("span", {class:"chip muted", style:"margin-left:8px;", text:g.lok}));
+        if(g.sesi) box.appendChild(el("span", {class:"chip", style:"margin-left:6px;", text:SESI_LABEL[g.sesi]}));
         const team = [];
         if(g.counter) team.push("Counter: " + g.counter);
         if(g.scanner) team.push("Scanner: " + g.scanner);
@@ -1734,9 +1830,10 @@ function renderSO(){
     } else if(role === "counter"){
       card.appendChild(el("p", {class:"sub", text:"Penugasan gondola untuk Counter belum tersedia."}));
     } else {
-      card.appendChild(el("p", {class:"sub", text:"Tidak ada penugasan gondola atas NIK kamu di kegiatan ini. Jika kamu menggantikan peserta yang terdaftar, pilih nama yang kamu gantikan di bawah ini."}));
+      const other = (penAll || []).length;
+      card.appendChild(el("p", {class:"sub", text: other ? "Kamu tidak bertugas di sesi " + SESI_LABEL[k.sesi_aktif] + ". Gondola tugas kamu ada di sesi lain, jadi tidak perlu registrasi sekarang." : "Tidak ada penugasan gondola atas NIK kamu di kegiatan ini. Jika kamu menggantikan peserta yang terdaftar, pilih nama yang kamu gantikan di bawah ini."}));
     }
-    if(!subSaved && pen.length === 0 && role !== "counter" && roster){
+    if(!subSaved && pen.length === 0 && (penAll || []).length === 0 && role !== "counter" && roster){
       const people = {};
       roster.forEach(r=>{
         const n = role === "scanner" ? r.scanner_nik : r.auditor_nik;
@@ -1801,7 +1898,7 @@ async function loadAdminSO(){
   setState({adminSOLoading:true});
   try{
     const kegiatan = await sb("so_kegiatan?select=*&order=tanggal.asc");
-    const pen = await sb("so_penugasan?select=kegiatan_id,gondola,scanner_nik,scanner_nama,auditor_nik,auditor_nama&limit=5000");
+    const pen = await sbAll("so_penugasan?select=kegiatan_id,gondola,sesi,scanner_nik,scanner_nama,auditor_nik,auditor_nama&order=gondola.asc");
     const reg = await sb("so_registrasi?select=*&order=registered_at.desc&limit=5000");
     const bukti = await sb("so_bukti?select=id,kegiatan_id,nik,role,nama,path,uploaded_at&order=uploaded_at.desc&limit=5000");
     const lay = await sb("training_setting?key=eq.layout_url&select=value");
@@ -1867,7 +1964,7 @@ function renderAdminSO(){
   box.appendChild(filters);
 
   const expected = {};
-  pen.filter(p=> p.kegiatan_id === cur.id).forEach(p=>{
+  pen.filter(p=> p.kegiatan_id === cur.id && (!p.sesi || p.sesi === sesi)).forEach(p=>{
     if(p.scanner_nik) expected["scanner|" + p.scanner_nik] = {role:"scanner", nik:p.scanner_nik, nama:p.scanner_nama};
     if(p.auditor_nik) expected["auditor|" + p.auditor_nik] = {role:"auditor", nik:p.auditor_nik, nama:p.auditor_nama};
   });
@@ -1908,8 +2005,13 @@ function renderAdminSO(){
   // bukti cek gondola
   const buktiHere = (bukti || []).filter(b=> b.kegiatan_id === cur.id);
   const buktiMap = {}; buktiHere.forEach(b=>{ (buktiMap[b.role + "|" + b.nik] = buktiMap[b.role + "|" + b.nik] || []).push(b); });
-  const belumBukti = Object.keys(expected).filter(k=> !buktiMap[k]).map(k=> expected[k]);
-  const bh = el("h3", {text:"Bukti cek gondola (" + (Object.keys(expected).length - belumBukti.length) + " / " + Object.keys(expected).length + " sudah upload)", style:"margin:18px 0 8px;"});
+  const expectedAll = {};
+  pen.filter(p=> p.kegiatan_id === cur.id).forEach(p=>{
+    if(p.scanner_nik) expectedAll["scanner|" + p.scanner_nik] = {role:"scanner", nik:p.scanner_nik, nama:p.scanner_nama};
+    if(p.auditor_nik) expectedAll["auditor|" + p.auditor_nik] = {role:"auditor", nik:p.auditor_nik, nama:p.auditor_nama};
+  });
+  const belumBukti = Object.keys(expectedAll).filter(k=> !buktiMap[k]).map(k=> expectedAll[k]);
+  const bh = el("h3", {text:"Bukti cek gondola (" + (Object.keys(expectedAll).length - belumBukti.length) + " / " + Object.keys(expectedAll).length + " sudah upload)", style:"margin:18px 0 8px;"});
   box.appendChild(bh);
   const bb = el("button", {class:"ghost", text:"Salin daftar belum upload bukti (" + belumBukti.length + ")"});
   bb.addEventListener("click", async ()=>{
