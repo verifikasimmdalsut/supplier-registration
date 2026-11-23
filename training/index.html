@@ -460,7 +460,25 @@ let state = {
   salahMap: {}
 };
 
-function setState(patch){ state = Object.assign({}, state, patch); render(); }
+const LOGIN_KEY = "training_login_v1";
+function persistLogin(){
+  try{
+    if(state.screen === "home"){ localStorage.removeItem(LOGIN_KEY); return; }
+    if(state.section && state.identifier && state.screen !== "admin"){
+      localStorage.setItem(LOGIN_KEY, JSON.stringify({t:Date.now(), section:state.section, nama:state.nama, nik:state.nik, identifier:state.identifier, brand:state.brand, departemen:state.departemen}));
+    }
+  }catch(e){}
+}
+function restoreLogin(){
+  try{
+    const raw = localStorage.getItem(LOGIN_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    if(!d || !d.section || !d.identifier || Date.now() - d.t > 12 * 3600 * 1000){ localStorage.removeItem(LOGIN_KEY); return; }
+    state = Object.assign({}, state, {section:d.section, nama:d.nama, nik:d.nik, identifier:d.identifier, brand:d.brand || "", departemen:d.departemen || "", screen:"menu"});
+  }catch(e){}
+}
+function setState(patch){ state = Object.assign({}, state, patch); persistLogin(); render(); }
 
 function render(){
   const app = document.getElementById("app");
@@ -1506,6 +1524,7 @@ function renderAdminKunci(){
 }
 
 
+restoreLogin();
 render();
 
 // ===== MENU UTAMA SETELAH LOGIN =====
